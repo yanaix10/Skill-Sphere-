@@ -1,64 +1,50 @@
-# 🌐 SkillSphere
+# SkillSphere
 
-<div align="center">
+Real-Time Competitive Programming Arena, Developer Social Hub & Skill Assessment Platform.
 
-![SkillSphere Logo](frontend/public/logo.svg)
-
-### Real-Time Competitive Programming Arena, Developer Social Hub & Skill Assessment Platform
-
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.6-blue.svg?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![React](https://img.shields.io/badge/React-19.0-61DAFB.svg?logo=react&logoColor=black)](https://react.dev/)
-[![Vite](https://img.shields.io/badge/Vite-7.3-646CFF.svg?logo=vite&logoColor=white)](https://vitejs.dev/)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-v4.0-38B2AC.svg?logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
-[![Node.js](https://img.shields.io/badge/Node.js-v20+-339933.svg?logo=node.js&logoColor=white)](https://nodejs.org/)
-[![Socket.IO](https://img.shields.io/badge/Socket.IO-v4.8-010101.svg?logo=socket.io&logoColor=white)](https://socket.io/)
-[![Vitest](https://img.shields.io/badge/Vitest-v5.0-FCC72B.svg?logo=vitest&logoColor=black)](https://vitest.dev/)
-
-**[🚀 Live Demo](https://xskillsphere.vercel.app)** • **[📖 API Spec](docs/API.md)** • **[🐳 Judge0 Setup](docs/JUDGE0.md)**
-
-</div>
+[Live Demo](https://xskillsphere.vercel.app) • [API Documentation](docs/API.md) • [Judge0 Setup](docs/JUDGE0.md)
 
 ---
 
-## ⚡ Overview
+## Overview
 
-**SkillSphere** is a competitive programming platform connecting developers through rapid-fire 1v1 coding duels, real-time social messaging, and timed skill assessments.
-
----
-
-## 🚀 Key Features
-
-* **⚔️ 1v1 Coding Duel:**
-  * Real-time head-to-head algorithmic battles in **Python 3** and **C++**.
-  * Progressive difficulty ramp (Easy $\rightarrow$ Medium $\rightarrow$ Hard) with adaptive tag balancing.
-  * Server clock authority with a 10-second anti-race evaluation buffer and 30-second disconnect grace period.
-  * Secure output sanitizer preventing test harness or assert exposure.
-  * Dual execution engines: remote **Judge0 CE** sandbox and instant offline **MockRunner**.
-
-* **💬 3-Panel Social Hub & Chat:**
-  * Discord-inspired resizable multi-column layout (`react-resizable-panels`).
-  * Real-time messaging powered by Firebase Firestore with inline timestamps and sleek custom scrollbars.
-  * Slide-in Contact Profile drawer displaying developer statistics, university, skills, and in-place profile editing.
-
-* **🌓 Dual Theme Engine:**
-  * Instant Dark and Light mode toggle with persistent state and zinc color tokens.
-
-* **📝 Assessments & Practice:**
-  * Timed multi-category quizzes (Linux, Python, Algorithms) with real-time analytics.
-  * Solo practice arena powered by the **Monaco Code Editor**.
+SkillSphere is a competitive programming platform connecting developers through rapid-fire 1v1 coding duels, real-time social messaging, and timed skill assessments.
 
 ---
 
-## 🛠 Tech Stack
+## Features
 
-* **Frontend:** React 19, TypeScript, Vite, Tailwind CSS v4, Monaco Editor, Lucide Icons
-* **Backend:** Node.js, Express, Socket.IO, TypeScript, MongoDB (Mongoose), Firebase Firestore
-* **Execution:** Judge0 CE (Docker) / Built-in MockRunner (Zero-dependency local dev)
-* **Testing:** Vitest (18 automated unit and integration tests)
+### 1v1 Coding Duel
+* Real-time head-to-head algorithmic battles in Python 3 and C++.
+* Progressive difficulty ramp (Easy to Medium to Hard) with adaptive tag balancing.
+* Server clock authority with a 10-second anti-race evaluation buffer and 30-second disconnect grace period.
+* Secure output sanitizer preventing test harness or assertion exposure.
+* Dual execution engines: remote Judge0 CE sandbox and instant offline MockRunner.
+
+### Social Hub & 3-Panel Chat
+* Discord-inspired resizable multi-column layout.
+* Real-time messaging powered by Firebase Firestore with inline timestamps and sleek custom scrollbars.
+* Slide-in contact profile drawer displaying developer statistics, university, skills, and in-place profile editing.
+
+### Dual Theme Support
+* Instant Dark and Light mode toggle with persistent state and clean zinc styling.
+
+### Assessments & Practice
+* Timed multi-category quizzes (Linux, Python, Algorithms) with real-time analytics.
+* Solo practice arena powered by the Monaco Code Editor.
 
 ---
 
-## 🏁 Quickstart
+## Tech Stack
+
+* **Frontend:** React 19, TypeScript, Vite, Tailwind CSS, Monaco Editor, Lucide Icons
+* **Backend:** Node.js, Express, Socket.IO, TypeScript, MongoDB, Firebase Firestore
+* **Execution:** Judge0 CE (Docker) / Built-in MockRunner (local development)
+* **Testing:** Vitest (automated unit and integration test suite)
+
+---
+
+## Quickstart
 
 ### 1. Install Dependencies
 ```bash
@@ -71,18 +57,17 @@ cp .env.example .env
 cp backend/.env.example backend/.env
 cp frontend/.env.example frontend/.env
 ```
-*(Defaults to `RUNNER=mock` so you can test and play immediately without Docker).*
 
 ### 3. Start Development Servers
 ```bash
 npm run dev
 ```
-* **Frontend:** [http://localhost:5173](http://localhost:5173)
-* **Backend:** [http://localhost:5000](http://localhost:5000)
+* Frontend: http://localhost:5173
+* Backend: http://localhost:5000
 
 ### 4. Run Tests & Demos
 ```bash
-# Run unit & integration test suites
+# Run unit and integration tests
 npm test
 
 # Run terminal 2-bot battle demo
@@ -94,18 +79,20 @@ npm run seed
 
 ---
 
-## 🐳 Self-Hosting Judge0 (Optional)
+## Self-Hosting Judge0 (Optional)
 
 To enable sandboxed code execution via Docker:
+
 ```bash
 docker compose -f docker-compose.judge0.yml up -d
 ```
-Set `RUNNER=judge0` in `backend/.env`. See [`docs/JUDGE0.md`](docs/JUDGE0.md) for details.
+
+Set `RUNNER=judge0` in `backend/.env`. Refer to [`docs/JUDGE0.md`](docs/JUDGE0.md) for detailed configuration.
 
 ---
 
-## 📜 Attributions & License
+## Attributions & License
 
-* **MBPP Dataset:** [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)
-* **MultiPL-E Dataset:** [MIT License](https://opensource.org/licenses/MIT)
+* MBPP Dataset: [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)
+* MultiPL-E Dataset: [MIT License](https://opensource.org/licenses/MIT)
 * Full citations and author references are documented in [`ATTRIBUTION.md`](ATTRIBUTION.md).
