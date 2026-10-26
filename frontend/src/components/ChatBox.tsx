@@ -187,7 +187,7 @@ const Chatbox: React.FC<ChatboxProps> = ({ selectedUser }) => {
       </div>
 
       {/* Messages Feed */}
-      <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-2.5 bg-background [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-zinc-800 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-zinc-700">
+      <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-2.5 bg-background">
         {messages.length === 0 && (
           <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground text-sm">
             <p>No messages yet. Say hello to {displayName}!</p>

@@ -1,5 +1,6 @@
 import React from 'react';
 import Editor from '@monaco-editor/react';
+import { useTheme } from '../context/ThemeContext';
 
 interface CodeEditorProps {
   code: string;
@@ -9,29 +10,32 @@ interface CodeEditorProps {
 }
 
 const CodeEditor: React.FC<CodeEditorProps> = ({ code, language, onChange, onLanguageChange }) => {
+	const { resolvedTheme } = useTheme();
+	const monacoTheme = resolvedTheme === "dark" ? "vs-dark" : "light";
+
 	const handleEditorChange = (value: string | undefined) => {
 		if (onChange) onChange(value || "");
 	};
 
 	return (
-		<div className="flex flex-col h-full w-full bg-[#1e1e1e] p-4 rounded-xl border border-gray-800">
+		<div className="flex flex-col h-full w-full bg-card p-4 rounded-xl border border-border text-card-foreground shadow-sm transition-colors duration-200">
 			<div className="flex justify-between items-center mb-3">
-				<h2 className="text-white font-semibold text-lg">Code Editor</h2>
+				<h2 className="text-foreground font-semibold text-base">Code Editor</h2>
 				<select 
 					value={language}
 					onChange={(e) => onLanguageChange && onLanguageChange(e.target.value)}
-					className="bg-gray-800 text-gray-300 border border-gray-700 text-sm rounded focus:ring-blue-500 focus:border-blue-500 block p-2 cursor-pointer outline-none"
+					className="bg-secondary text-secondary-foreground border border-border text-xs font-medium rounded-lg focus:ring-1 focus:ring-primary block px-3 py-1.5 cursor-pointer outline-none"
 				>
 					<option value="python">Python 3</option>
 					<option value="cpp">C++ (GCC)</option>
 				</select>
 			</div>
 
-			<div className="h-[680px] overflow-hidden border border-gray-700">
+			<div className="h-[680px] overflow-hidden border border-border rounded-lg">
 				<Editor
 					height="100%"
 					language={language}
-					theme="vs-dark"
+					theme={monacoTheme}
 					value={code}
 					onChange={handleEditorChange}
 					options={{

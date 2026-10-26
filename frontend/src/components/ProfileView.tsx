@@ -78,7 +78,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ data, userId, onEdit }) => {
   }
 
   return (
-    <aside className="w-full h-full bg-card border-l border-border flex flex-col overflow-y-auto text-card-foreground [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-zinc-800 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-zinc-700">
+    <aside className="w-full h-full bg-card border-l border-border flex flex-col overflow-y-auto text-card-foreground">
       {/* Banner Cover - full width */}
       <div className="h-32 w-full bg-gradient-to-r from-slate-200 via-slate-100 to-slate-200 dark:from-zinc-800 dark:via-zinc-900 dark:to-zinc-800 relative shrink-0 border-b border-border/40">
         {userData.bannerUrl && (

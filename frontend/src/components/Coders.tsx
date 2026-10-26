@@ -27,33 +27,36 @@ const Coders: React.FC = () => {
   );
 
   return (
-    <div className="bg-[#0f172a] text-white rounded-lg h-full flex flex-col">
-      <div className="pb-[15px] border-b border-[#1e293b] mb-[15px]">
-        <h3 className="m-0">Rankings</h3>
+    <div className="bg-card text-card-foreground h-full flex flex-col p-4 font-sans">
+      <div className="pb-3 border-b border-border mb-3">
+        <h3 className="m-0 text-sm font-semibold">Rankings</h3>
         <input
           type="text"
           placeholder="Search coders..."
-          className="w-full p-2.5 bg-[#1e293b] border border-[#334155] rounded text-white mt-2.5 box-border outline-none focus:border-blue-500"
+          className="w-full px-3 py-2 bg-secondary border border-border rounded-lg text-foreground mt-2 box-border outline-none text-xs focus:border-primary"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />
       </div>
 
-      <div className="overflow-y-auto grow flex flex-col gap-2.5 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-thumb]:bg-[#334155] [&::-webkit-scrollbar-thumb]:rounded-full">
+      <div className="overflow-y-auto grow flex flex-col gap-2">
         {filteredCoders.map((coder) => (
-          <div key={coder.id} className="bg-[#1e293b] p-4 rounded-md flex justify-between items-center transition-colors duration-200 ease-in hover:bg-[#334155]">
-            <div className="flex flex-col gap-1">
-              <span className="text-base font-bold">{coder.name}</span>
+          <div
+            key={coder.id}
+            className="bg-secondary/50 border border-border p-3 rounded-lg flex justify-between items-center transition-colors duration-150 hover:bg-secondary"
+          >
+            <div className="flex flex-col gap-0.5">
+              <span className="text-xs font-bold text-foreground">{coder.name}</span>
               <span 
-                className="text-xs uppercase tracking-[0.5px]" 
-                style={{ color: coder.color, fontWeight: "bold" }}
+                className="text-[10px] uppercase tracking-wider font-semibold" 
+                style={{ color: coder.color }}
               >
                 {coder.rank}
               </span>
             </div>
-            <div className="text-right text-sm text-[#94a3b8]">
-              <span>Rating:</span>
-              <span className="block text-blue-400 font-bold text-lg">{coder.rating}</span>
+            <div className="text-right text-xs text-muted-foreground">
+              <span className="block text-[10px]">Rating</span>
+              <span className="text-primary font-bold text-sm">{coder.rating}</span>
             </div>
           </div>
         ))}

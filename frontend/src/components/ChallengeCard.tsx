@@ -52,22 +52,22 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({ setMode }) => {
 	}
 
 	return (
-		<div className="flex justify-center items-center h-screen bg-[#0f172a] font-sans overflow-hidden">
-			<div className="bg-[#1e293b] text-[#f8fafc] w-full max-w-[520px] h-full flex flex-col justify-between p-6">
+		<div className="flex justify-center items-center h-full bg-background font-sans overflow-hidden text-foreground transition-colors duration-200">
+			<div className="bg-card text-card-foreground w-full max-w-[520px] h-full flex flex-col justify-between p-6 border border-border rounded-xl shadow-sm">
 				<div>
-					<h2 className="text-[20px] font-bold mb-6">Challenge Someone</h2>
+					<h2 className="text-lg font-bold mb-6 text-foreground">Challenge Someone</h2>
 
 					<div className="flex flex-col gap-4">
 						<div className="flex flex-col gap-2">
-							<label className="text-[12px] text-[#94a3b8] uppercase tracking-[0.5px] font-bold">
+							<label className="text-xs text-muted-foreground uppercase tracking-wider font-bold">
 								GAME TYPE
 							</label>
 
 							<div className="grid grid-cols-2 gap-3">
 								<button
-									className={`py-3 rounded text-[14px] font-bold transition-all duration-200 w-full ${gameType === "MCQ"
-										? "bg-[#0f172a] border-2 border-blue-500 text-white"
-										: "bg-[#0f172a] border-2 border-transparent text-[#cbd5e1]"
+									className={`py-3 rounded-lg text-xs font-bold transition-all duration-200 w-full cursor-pointer border ${gameType === "MCQ"
+										? "bg-primary text-primary-foreground border-primary shadow-sm"
+										: "bg-secondary border-border text-secondary-foreground hover:bg-secondary/80"
 										}`}
 									onClick={() => setGameType("MCQ")}
 								>
@@ -75,9 +75,9 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({ setMode }) => {
 								</button>
 
 								<button
-									className={`py-3 rounded text-[14px] font-bold transition-all duration-200 w-full ${gameType === "CODE"
-										? "bg-[#0f172a] border-2 border-blue-500 text-white"
-										: "bg-[#0f172a] border-2 border-transparent text-[#cbd5e1]"
+									className={`py-3 rounded-lg text-xs font-bold transition-all duration-200 w-full cursor-pointer border ${gameType === "CODE"
+										? "bg-primary text-primary-foreground border-primary shadow-sm"
+										: "bg-secondary border-border text-secondary-foreground hover:bg-secondary/80"
 										}`}
 									onClick={() => setGameType("CODE")}
 								>
@@ -89,43 +89,40 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({ setMode }) => {
 				</div>
 
 				<div className="flex flex-col gap-3 mt-4">
-					<button onClick={() => { setMode("challenge"); handleCreateChallenge(); }} className="w-full py-4 rounded-md text-[15px] font-bold bg-[#334155] text-[#cbd5e1] hover:bg-[#475569] transition">
+					<button onClick={() => { setMode("challenge"); handleCreateChallenge(); }} className="w-full py-3.5 rounded-lg text-xs font-bold bg-primary text-primary-foreground hover:bg-primary/90 transition shadow-sm cursor-pointer">
 						CREATE CHALLENGE
 					</button>
 					{joinCode && (
 						<div className="flex justify-center mt-3">
-							<div className="bg-white text-black px-6 py-3  border-gray-300 shadow-md text-xl font-semibold tracking-[0.4em] font-mono">
+							<div className="bg-secondary text-foreground px-6 py-3 border border-border rounded-lg shadow-sm text-lg font-semibold tracking-[0.4em] font-mono">
 								{joinCode}
 							</div>
 						</div>
 					)}
-					<button onClick={() => setMode("challenge")} className="w-full py-4 rounded-md text-[15px] font-bold bg-blue-600 text-white hover:bg-blue-500 transition">
+					<button onClick={() => setMode("challenge")} className="w-full py-3.5 rounded-lg text-xs font-bold bg-secondary border border-border text-secondary-foreground hover:bg-secondary/80 transition cursor-pointer">
 						JOIN A CHALLENGE
 					</button>
 
-					<button className="w-full py-4 rounded-md text-[15px] font-bold bg-blue-600 text-white hover:bg-blue-500 transition">
-						START GAME
-					</button>
-					<div className="flex flex-col gap-2">
-						<label className="text-[12px] text-[#94a3b8] uppercase tracking-[0.5px] font-bold">
+					<div className="flex flex-col gap-2 mt-2">
+						<label className="text-xs text-muted-foreground uppercase tracking-wider font-bold">
 							OPPONENT
 						</label>
 						<input
 							type="text"
 							placeholder="Enter username or leave empty for anyone"
-							className="bg-[#0f172a] border-2 border-transparent text-white p-3 rounded text-[14px] outline-none focus:border-blue-500 w-full"
+							className="bg-secondary border border-border text-foreground p-3 rounded-lg text-xs outline-none focus:border-primary w-full"
 						/>
 					</div>
 					{errorMessage && (
-						<p style={{ color: 'red' }}>{errorMessage}</p>
+						<p className="text-destructive text-xs font-semibold">{errorMessage}</p>
 					)}
 					
 					{!opponent ? (
-						<div className="mt-4 text-yellow-400 text-sm">
+						<div className="mt-4 text-amber-500 text-xs font-medium">
 							Waiting for opponent...
 						</div>
 					) : (
-						<div className="mt-4 text-green-400 text-sm">
+						<div className="mt-4 text-green-500 text-xs font-medium">
 							Opponent Joined: {opponent.name || opponent.id}
 						</div>
 					)}

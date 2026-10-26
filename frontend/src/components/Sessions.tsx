@@ -50,12 +50,12 @@ const Sessions: React.FC<SessionsProps> = ({ setSelectedSessionId, setMode }) =>
         fetchSessions();
     }, []);
 
-    if (loading) return <div className="text-white">LOADING SESSIONS...</div>;
+    if (loading) return <div className="text-muted-foreground p-4 text-xs font-semibold">LOADING SESSIONS...</div>;
 
     return (
         <div className="p-4">
             {sessions.length === 0 ? (
-                <p className="text-gray-400">No sessions recorded yet.</p>
+                <p className="text-muted-foreground text-xs p-2">No sessions recorded yet.</p>
             ) : (
                 sessions.map((s) => {
                     const userName = auth.currentUser?.displayName || auth.currentUser?.email?.split('@')[0] || "Player";
@@ -67,20 +67,28 @@ const Sessions: React.FC<SessionsProps> = ({ setSelectedSessionId, setMode }) =>
                         <div
                             key={s._id}
                             onClick={() => { setSelectedSessionId(s._id); setMode("session"); }}
-                            className={`border ${isWinner ? 'border-green-700/50 hover:bg-green-900/20' : 'border-gray-700 hover:bg-gray-800'} p-4 mb-3 cursor-pointer text-white rounded transition-colors`}
+                            className={`border ${
+                                isWinner 
+                                    ? 'border-green-500/30 bg-green-500/5 hover:bg-green-500/10' 
+                                    : 'border-border bg-card hover:bg-secondary/60'
+                            } p-4 mb-3 cursor-pointer text-card-foreground rounded-xl transition-all shadow-sm`}
                         >
                             <div className="flex justify-between items-center mb-2">
-                                <div className="font-bold text-lg text-blue-400">1v1 Challenge</div>
-                                <div className={`text-xs font-bold px-2 py-1 rounded ${isWinner ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
+                                <div className="font-bold text-sm text-primary">1v1 Challenge</div>
+                                <div className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                                    isWinner 
+                                        ? 'bg-green-500/15 text-green-600 dark:text-green-400 border border-green-500/30' 
+                                        : 'bg-red-500/15 text-red-600 dark:text-red-400 border border-red-500/30'
+                                }`}>
                                     {isWinner ? 'VICTORY' : 'DEFEAT'}
                                 </div>
                             </div>
-                            <div className="flex items-center gap-4 text-sm mb-2">
-                                <div className="font-bold">You: <span className="text-blue-400">{myPlayer?.score || 0}</span></div>
-                                <div className="text-gray-500 font-black italic">VS</div>
-                                <div className="font-bold">{opponent?.userDetails?.name || "Opponent"}: <span className="text-red-400">{opponent?.score || 0}</span></div>
+                            <div className="flex items-center gap-3 text-xs mb-2">
+                                <div className="font-semibold text-foreground">You: <span className="text-primary font-bold">{myPlayer?.score || 0}</span></div>
+                                <div className="text-muted-foreground font-black italic">VS</div>
+                                <div className="font-semibold text-foreground">{opponent?.userDetails?.name || "Opponent"}: <span className="text-destructive font-bold">{opponent?.score || 0}</span></div>
                             </div>
-                            <div className="text-xs text-gray-500">
+                            <div className="text-[11px] text-muted-foreground">
                                 {new Date(s.createdAt).toLocaleString()}
                             </div>
                         </div>

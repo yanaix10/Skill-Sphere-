@@ -14,7 +14,13 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Sun, Moon } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Sun, Moon, Laptop, Check } from "lucide-react";
 import ProfileDialog from "@/components/ui/profile-dialog";
 import { useTheme } from "../context/ThemeContext";
 
@@ -28,7 +34,7 @@ const navigationLinks = [
 export default function Navbar() {
   const [fullName, setFullName] = useState<string>("");
   const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const { theme, toggleTheme } = useTheme();
+  const { theme, setTheme, resolvedTheme } = useTheme();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -150,20 +156,55 @@ export default function Navbar() {
 
           {/* Right side - User actions & Theme Toggle docked to the right */}
           <div className="flex items-center gap-2">
-            {/* Theme Toggle Button */}
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={toggleTheme}
-              className="h-8 w-8 text-muted-foreground hover:text-foreground"
-              title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-            >
-              {theme === "dark" ? (
-                <Sun className="h-4 w-4 text-amber-400" />
-              ) : (
-                <Moon className="h-4 w-4 text-slate-700" />
-              )}
-            </Button>
+            {/* Theme Selector Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-muted-foreground hover:text-foreground cursor-pointer"
+                  title={`Current theme: ${theme} (${resolvedTheme})`}
+                >
+                  {resolvedTheme === "dark" ? (
+                    <Moon className="h-4 w-4 text-blue-400" />
+                  ) : (
+                    <Sun className="h-4 w-4 text-amber-500" />
+                  )}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-36 bg-popover border-border text-popover-foreground">
+                <DropdownMenuItem
+                  className="text-xs cursor-pointer flex items-center justify-between"
+                  onClick={() => setTheme("light")}
+                >
+                  <div className="flex items-center gap-2">
+                    <Sun className="w-3.5 h-3.5 text-amber-500" />
+                    <span>Light</span>
+                  </div>
+                  {theme === "light" && <Check className="w-3.5 h-3.5 text-primary" />}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="text-xs cursor-pointer flex items-center justify-between"
+                  onClick={() => setTheme("dark")}
+                >
+                  <div className="flex items-center gap-2">
+                    <Moon className="w-3.5 h-3.5 text-blue-400" />
+                    <span>Dark</span>
+                  </div>
+                  {theme === "dark" && <Check className="w-3.5 h-3.5 text-primary" />}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="text-xs cursor-pointer flex items-center justify-between"
+                  onClick={() => setTheme("system")}
+                >
+                  <div className="flex items-center gap-2">
+                    <Laptop className="w-3.5 h-3.5 text-muted-foreground" />
+                    <span>System</span>
+                  </div>
+                  {theme === "system" && <Check className="w-3.5 h-3.5 text-primary" />}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
 
             {currentUser ? (
               <>

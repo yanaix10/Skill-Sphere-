@@ -38,7 +38,7 @@ const router = createBrowserRouter([
   }
 ]);
 
-function App() {
+function AppContent() {
   const getInitialUser = (): User | null => {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
@@ -81,16 +81,16 @@ function App() {
   if(loading) return <div className="bg-background text-foreground h-screen w-screen flex items-center justify-center text-xl font-bold">Loading SkillSphere...</div>;
   
   if(user === null){
-    return (
-      <ThemeProvider>
-        <SignupCard />
-      </ThemeProvider>
-    );
+    return <SignupCard />;
   }
 
+  return <RouterProvider router={router} />;
+}
+
+function App() {
   return (
     <ThemeProvider>
-      <RouterProvider router={router} />
+      <AppContent />
     </ThemeProvider>
   );
 }

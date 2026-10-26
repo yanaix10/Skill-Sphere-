@@ -27,14 +27,14 @@ const Sidebar: React.FC<SidebarProps> = ({ mode, setMode, setSelectedSessionId, 
 	const isSessionActive = mode !== "main";
 
 	return (
-		<div className="w-[30vw] h-full bg-[#121212] border-l border-[#2a2a2a] flex flex-col font-sans text-white box-border">
-			<div className="flex border-b border-[#2a2a2a] bg-[#181818]">
+		<div className="w-[30vw] min-w-[320px] max-w-[420px] h-full bg-card border-l border-border flex flex-col font-sans text-card-foreground box-border transition-colors duration-200">
+			<div className="flex border-b border-border bg-card">
 				{["+ Code", "Sessions", "Coders"].map((tab) => (
 					<button
 						key={tab}
-						className={`flex-1 py-4 bg-transparent border-none border-b-2 text-sm font-semibold cursor-pointer transition-all duration-200 hover:bg-[#222222] ${activeTab === tab
-							? "text-white border-[#3b82f6]"
-							: "text-[#888888] border-transparent hover:text-[#e0e0e0]"
+						className={`flex-1 py-4 bg-transparent border-none border-b-2 text-sm font-semibold cursor-pointer transition-all duration-200 ${activeTab === tab
+							? "text-primary border-primary"
+							: "text-muted-foreground border-transparent hover:text-foreground hover:bg-secondary/50"
 							}`}
 						onClick={() => {
 							if (isSessionActive) {
@@ -50,7 +50,7 @@ const Sidebar: React.FC<SidebarProps> = ({ mode, setMode, setSelectedSessionId, 
 				))}
 			</div>
 
-			<div className="tab-content flex-1 overflow-y-auto  ">
+			<div className="tab-content flex-1 overflow-y-auto">
 				{activeTab === "Sessions" && <Sessions setSelectedSessionId={setSelectedSessionId} setMode={setMode} />}
 				{activeTab === "Coders" && <Coders />}
 
@@ -58,19 +58,18 @@ const Sidebar: React.FC<SidebarProps> = ({ mode, setMode, setSelectedSessionId, 
 					<>
 						{currentView === "main" ? (
 							<div className="main-code-view">
-
 								<div
-									className={`flex justify-between items-center h-[50px] mx-5 my-[15px] rounded px-4 text-base font-bold tracking-[0.5px] transition-all duration-300 ${isSessionActive ? "bg-[#1f2937]/50 opacity-65 cursor-not-allowed" : "bg-[#1f2937] cursor-pointer hover:bg-[#374151]"}`}
+									className={`flex justify-between items-center h-[50px] mx-5 my-[15px] rounded-lg px-4 text-sm font-bold tracking-[0.5px] border border-border transition-all duration-300 ${isSessionActive ? "bg-secondary/50 opacity-65 cursor-not-allowed text-muted-foreground" : "bg-secondary text-foreground cursor-pointer hover:bg-secondary/80"}`}
 									onClick={() => {
 										if (isSessionActive) return;
 										setIsExpanded(!isExpanded);
 									}}
 								>
 									<div className="flex items-center gap-2">
-										<span>{quizConfig.category}</span> <span className="text-[#6b7280]">•</span> <span>{quizConfig.limit} Qs</span> <span className="text-[#6b7280]">•</span> <span className="text-red-500 uppercase">{quizConfig.difficulty}</span>
-										{isSessionActive && <span className="text-xs text-gray-500 italic ml-2">(Locked)</span>}
+										<span>{quizConfig.category}</span> <span className="text-muted-foreground">•</span> <span>{quizConfig.limit} Qs</span> <span className="text-muted-foreground">•</span> <span className="text-red-500 uppercase">{quizConfig.difficulty}</span>
+										{isSessionActive && <span className="text-xs text-muted-foreground italic ml-2">(Locked)</span>}
 									</div>
-									{!isSessionActive && <div className={`transition-transform duration-300 ease-in text-[#989795] ${isExpanded ? "rotate-180" : ""}`}>▼</div>}
+									{!isSessionActive && <div className={`transition-transform duration-300 ease-in text-muted-foreground ${isExpanded ? "rotate-180" : ""}`}>▼</div>}
 								</div>
 
 								<div className={`grid transition-all duration-300 ease-out overflow-hidden ${isExpanded && !isSessionActive ? "[grid-template-rows:1fr] opacity-100 visible" : "[grid-template-rows:0fr] opacity-0 invisible"}`}>
@@ -85,24 +84,24 @@ const Sidebar: React.FC<SidebarProps> = ({ mode, setMode, setSelectedSessionId, 
 													setMode("main");
 												}
 											}}
-											className="w-full p-[14px] rounded-md text-sm font-bold tracking-[1px] cursor-pointer border-none transition-transform duration-100 ease-in active:scale-[0.98] bg-red-600 text-white shadow-[0_4px_14px_rgba(220,38,38,0.3)] hover:bg-red-700"
+											className="w-full p-[14px] rounded-lg text-sm font-bold tracking-[1px] cursor-pointer border-none transition-transform duration-100 ease-in active:scale-[0.98] bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90"
 										>
 											QUIT SESSION
 										</button>
 									) : (
 										<>
-											<button onClick={() => setMode("practice")} className="w-full p-[14px] rounded-md text-sm font-bold tracking-[1px] cursor-pointer border-none transition-transform duration-100 ease-in active:scale-[0.98] bg-blue-600 text-white shadow-[0_4px_14px_rgba(37,99,235,0.3)] hover:bg-blue-700">START QUIZ</button>
+											<button onClick={() => setMode("practice")} className="w-full p-[14px] rounded-lg text-sm font-bold tracking-[1px] cursor-pointer border-none transition-all duration-100 ease-in active:scale-[0.98] bg-primary text-primary-foreground shadow-sm hover:bg-primary/90">START QUIZ</button>
 											<button
-												className="w-full p-[14px] rounded-md text-sm font-bold tracking-[1px] cursor-pointer transition-transform duration-100 ease-in active:scale-[0.98] bg-[#2a2a2a] text-white hover:bg-[#333333] border-none"
+												className="w-full p-[14px] rounded-lg text-sm font-bold tracking-[1px] cursor-pointer transition-all duration-100 ease-in active:scale-[0.98] bg-secondary text-secondary-foreground border border-border hover:bg-secondary/80"
 												onClick={() => {
 													setMode("challenge");
 												}}
 											>
 												1V1 CHALLENGE
 											</button>
-											<button onClick={() => alert('Future scope')} className="w-full p-[14px] rounded-md text-sm font-bold tracking-[1px] cursor-pointer transition-transform duration-100 ease-in active:scale-[0.98] bg-[#2a2a2a] text-white hover:bg-[#333333] border-none">CODE A FRIEND</button>
+											<button onClick={() => alert('Future scope')} className="w-full p-[14px] rounded-lg text-sm font-bold tracking-[1px] cursor-pointer transition-all duration-100 ease-in active:scale-[0.98] bg-secondary text-secondary-foreground border border-border hover:bg-secondary/80">CODE A FRIEND</button>
 											<button
-												className="w-full p-[14px] rounded-md text-sm font-bold tracking-[1px] cursor-pointer transition-all duration-100 ease-in active:scale-[0.98] bg-transparent border border-[#444444] text-[#a3a3a3] hover:border-white hover:text-white"
+												className="w-full p-[14px] rounded-lg text-sm font-bold tracking-[1px] cursor-pointer transition-all duration-100 ease-in active:scale-[0.98] bg-transparent border border-border text-muted-foreground hover:border-foreground hover:text-foreground hover:bg-secondary/30"
 												onClick={() => alert('Future scope')}
 											>
 												TOURNAMENTS
@@ -113,7 +112,7 @@ const Sidebar: React.FC<SidebarProps> = ({ mode, setMode, setSelectedSessionId, 
 							</div>
 						) : (
 							<div className="flex flex-col h-full p-5">
-								<button className="bg-transparent border-none text-slate-400 text-base font-bold cursor-pointer pb-5 flex items-center transition-colors duration-200 hover:text-white" onClick={() => setCurrentView("main")}>
+								<button className="bg-transparent border-none text-muted-foreground text-sm font-bold cursor-pointer pb-5 flex items-center transition-colors duration-200 hover:text-foreground" onClick={() => setCurrentView("main")}>
 									← Go Back
 								</button>
 								{currentView === "custom" && <ChallengeCard setMode={setMode} />}

@@ -47,8 +47,8 @@ const SessionDetails: React.FC<SessionDetailsProps> = ({ sessionId, setMode }) =
 
     if (!session || !session.questions || !session.questions[currentIndex]) {
         return (
-            <div className="flex-1 h-full bg-[#121212] text-white p-8 flex items-center justify-center">
-                <div className="text-xl font-mono animate-pulse text-blue-400 uppercase tracking-widest">
+            <div className="flex-1 h-full bg-background text-foreground p-8 flex items-center justify-center">
+                <div className="text-sm font-mono animate-pulse text-primary uppercase tracking-widest font-semibold">
                     Initializing Data...
                 </div>
             </div>
@@ -70,61 +70,61 @@ const SessionDetails: React.FC<SessionDetailsProps> = ({ sessionId, setMode }) =
     const isCorrect = selectedAnswerId && correctOpt && selectedAnswerId === correctOpt.id;
 
     return (
-        <div className="flex-1 h-full bg-[#121212] text-white p-8 flex flex-col font-sans overflow-y-auto">
-            <div className="flex justify-between items-center mb-10 border-b border-gray-800 pb-4">
+        <div className="flex-1 h-full bg-background text-foreground p-8 flex flex-col font-sans overflow-y-auto transition-colors duration-200">
+            <div className="flex justify-between items-center mb-8 border-b border-border pb-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-blue-400 uppercase tracking-tight">Session Review</h1>
-                    <p className="text-gray-500 text-sm font-mono">ID: {sessionId}</p>
+                    <h1 className="text-xl font-bold text-primary uppercase tracking-tight">Session Review</h1>
+                    <p className="text-muted-foreground text-xs font-mono">ID: {sessionId}</p>
                 </div>
                 <div className="text-right">
-                    <div className="text-3xl font-mono font-bold text-white">
-                        {session.score} <span className="text-gray-600">/</span> {totalQuestions}
+                    <div className="text-2xl font-mono font-bold text-foreground">
+                        {session.score} <span className="text-muted-foreground">/</span> {totalQuestions}
                     </div>
-                    <span className="text-[10px] uppercase tracking-widest text-gray-500 font-bold">Accuracy Score</span>
+                    <span className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">Accuracy Score</span>
                 </div>
             </div>
 
-            <div className="bg-[#1f2937] p-6 rounded border-l-4 border-blue-500 mb-8 shadow-xl">
-                <span className="text-xs text-blue-400 font-bold uppercase tracking-widest">Question {currentIndex + 1}</span>
-                <h2 className="text-xl mt-3 font-medium leading-relaxed">
+            <div className="bg-card p-6 rounded-xl border-l-4 border-primary border border-border mb-6 shadow-sm text-card-foreground">
+                <span className="text-xs text-primary font-bold uppercase tracking-wider">Question {currentIndex + 1}</span>
+                <h2 className="text-lg mt-2 font-semibold leading-relaxed">
                     {currentAnswerRecord.text || currentAnswerRecord.question || currentAnswerRecord.title}
                 </h2>
                 {currentAnswerRecord.description && (
-                    <p className="text-gray-400 text-sm mt-2 italic">{currentAnswerRecord.description}</p>
+                    <p className="text-muted-foreground text-xs mt-2 italic">{currentAnswerRecord.description}</p>
                 )}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
-                <div className={`p-6 rounded border transition-all ${isCorrect ? 'border-green-500/50 bg-green-500/5' : 'border-red-500/50 bg-red-500/5'}`}>
-                    <span className="text-[10px] uppercase font-black tracking-widest opacity-50 mb-2 block">Your Selection</span>
-                    <p className={`text-lg font-bold ${isCorrect ? 'text-green-400' : 'text-red-400'}`}>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                <div className={`p-5 rounded-xl border transition-all ${isCorrect ? 'border-green-500/40 bg-green-500/5' : 'border-red-500/40 bg-red-500/5'}`}>
+                    <span className="text-[10px] uppercase font-bold tracking-wider opacity-60 mb-2 block">Your Selection</span>
+                    <p className={`text-base font-bold ${isCorrect ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
                         {selectedAnswerText}
                     </p>
-                    <div className="mt-3">
+                    <div className="mt-2.5">
                         {isCorrect ? 
-                            <span className="text-[10px] bg-green-500/20 text-green-500 px-2 py-1 rounded font-bold">CORRECT</span> : 
-                            <span className="text-[10px] bg-red-500/20 text-red-500 px-2 py-1 rounded font-bold">INCORRECT</span>
+                            <span className="text-[10px] bg-green-500/20 text-green-600 dark:text-green-400 px-2 py-0.5 rounded font-bold">CORRECT</span> : 
+                            <span className="text-[10px] bg-red-500/20 text-red-600 dark:text-red-400 px-2 py-0.5 rounded font-bold">INCORRECT</span>
                         }
                     </div>
                 </div>
 
                 {!isCorrect && (
-                    <div className="p-6 rounded border border-green-500/30 bg-green-500/5">
-                        <span className="text-[10px] uppercase font-black tracking-widest text-green-500/60 mb-2 block">Correct Answer</span>
-                        <p className="text-lg font-bold text-green-400">
+                    <div className="p-5 rounded-xl border border-green-500/30 bg-green-500/5">
+                        <span className="text-[10px] uppercase font-bold tracking-wider text-green-600/70 dark:text-green-400/70 mb-2 block">Correct Answer</span>
+                        <p className="text-base font-bold text-green-600 dark:text-green-400">
                             {correctAnswerText}
                         </p>
-                        <div className="mt-3">
-                            <span className="text-[10px] bg-green-500/20 text-green-500 px-2 py-1 rounded font-bold">REQUIRED</span>
+                        <div className="mt-2.5">
+                            <span className="text-[10px] bg-green-500/20 text-green-600 dark:text-green-400 px-2 py-0.5 rounded font-bold">REQUIRED</span>
                         </div>
                     </div>
                 )}
             </div>
 
-            <div className="mt-auto flex justify-between items-center pt-6 border-t border-gray-800">
-                <div className="flex gap-3">
+            <div className="mt-auto flex justify-between items-center pt-6 border-t border-border">
+                <div className="flex gap-2.5">
                     <button
-                        className="h-[45px] px-8 bg-[#252525] border border-gray-700 text-gray-300 font-bold hover:bg-[#333] disabled:opacity-20 transition-all rounded-sm"
+                        className="h-[42px] px-6 bg-secondary border border-border text-secondary-foreground font-semibold text-xs hover:bg-secondary/80 disabled:opacity-30 transition-all rounded-lg cursor-pointer"
                         onClick={() => setCurrentIndex(p => p - 1)}
                         disabled={currentIndex === 0}
                     >
@@ -132,7 +132,7 @@ const SessionDetails: React.FC<SessionDetailsProps> = ({ sessionId, setMode }) =
                     </button>
 
                     <button
-                        className="h-[45px] px-8 bg-[#252525] border border-gray-700 text-gray-300 font-bold hover:bg-[#333] disabled:opacity-20 transition-all rounded-sm"
+                        className="h-[42px] px-6 bg-secondary border border-border text-secondary-foreground font-semibold text-xs hover:bg-secondary/80 disabled:opacity-30 transition-all rounded-lg cursor-pointer"
                         onClick={() => setCurrentIndex(p => p + 1)}
                         disabled={currentIndex === totalQuestions - 1}
                     >
@@ -142,7 +142,7 @@ const SessionDetails: React.FC<SessionDetailsProps> = ({ sessionId, setMode }) =
 
                 <button
                     onClick={() => setMode("main")}
-                    className="h-[45px] px-10 bg-blue-600 hover:bg-blue-700 text-white font-bold transition-all shadow-lg shadow-blue-600/20 rounded-sm"
+                    className="h-[42px] px-8 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs transition-all shadow-sm rounded-lg cursor-pointer"
                 >
                     EXIT REVIEW
                 </button>
