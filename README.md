@@ -2,8 +2,6 @@
 
 Real-Time Competitive Programming Arena, Developer Social Hub & Skill Assessment Platform.
 
-[Live Demo](https://xskillsphere.vercel.app) • [API Documentation](docs/API.md) • [Judge0 Setup](docs/JUDGE0.md)
-
 ---
 
 ## Overview
