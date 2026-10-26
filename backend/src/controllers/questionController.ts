@@ -8,7 +8,11 @@ const quizApi = axios.create({
 });
 
 quizApi.interceptors.request.use((config) => {
-	config.headers.Authorization = `Bearer ${process.env.QUIZ_API_KEY}`;
+	const key = process.env.QUIZ_API_KEY;
+	if (key) {
+		config.headers.Authorization = `Bearer ${key}`;
+		config.headers['X-Api-Key'] = key;
+	}
 	return config;
 });
 
@@ -46,8 +50,10 @@ export const startPracticeSession = async (req: Request, res: Response): Promise
 		const limit = parseInt(String(req.body?.limit || req.query?.limit || 10));
 
 		const params: any = {};
-		if (category) params.category = category;
-		if (difficulty) params.difficulty = difficulty;
+		if (category) {
+			params.category = category;
+		}
+		if (difficulty) params.difficulty = difficulty.toLowerCase();
 		if (tags) params.tags = tags;
 		if (limit) params.limit = limit;
 
@@ -72,13 +78,19 @@ export const startPracticeSession = async (req: Request, res: Response): Promise
 		}
 
 		const questionsData = rawQuestions.map(q => {
+			const rawTags = q.tags || [];
+			const formattedTags = Array.isArray(rawTags)
+				? rawTags.map((t: any) => (typeof t === 'string' ? t : t?.name)).filter(Boolean)
+				: [];
+
 			return {
 				id: String(q.id || q._id),
 				text: q.question || q.text,
 				type: q.type,
 				difficulty: q.difficulty,
 				explanation: q.explanation,
-				category: q.category,
+				category: q.category || category,
+				tags: formattedTags,
 				answers: transformAnswers(q.answers, q.correct_answers)
 			};
 		});

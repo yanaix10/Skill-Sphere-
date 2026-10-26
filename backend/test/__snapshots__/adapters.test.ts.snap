@@ -1,0 +1,25 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`Language Adapters & Program Builders > builds C++ program with player file and harness main() 1`] = `
+"#include<assert.h>
+#include<bits/stdc++.h>
+
+bool solve(int n) {
+    return n > 0;
+}
+
+int main() {
+    auto candidate = solve;
+    assert(candidate(2) == true);
+    return 0;
+}"
+`;
+
+exports[`Language Adapters & Program Builders > builds Python program by appending harness after player code 1`] = `
+"def solve(n):
+    return n * 2
+
+assert solve(2) == 4
+assert solve(3) == 6
+"
+`;

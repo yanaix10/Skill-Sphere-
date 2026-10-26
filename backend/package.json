@@ -1,14 +1,23 @@
 {
-  "name": "backend",
+  "name": "skill-sphere-backend",
   "version": "1.0.0",
   "type": "module",
-  "description": "",
-  "main": "index.js",
+  "description": "Backend service for SkillSphere platform",
+  "main": "dist/server.js",
   "scripts": {
-    "dev": "tsx watch server.ts",
+    "dev": "tsx watch src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "vitest run",
+    "seed": "tsx src/scripts/seedQuestions.ts",
+    "demo:match": "tsx src/scripts/demoMatch.ts",
+    "qa:python": "tsx src/scripts/qaPython.ts",
+    "qa:cpp-compile": "tsx src/scripts/qaCppCompile.ts",
+    "stats:questions": "tsx src/scripts/statsQuestions.ts",
+    "questions:disable": "tsx src/scripts/disableQuestion.ts",
+    "seed:dsa": "tsx src/seedDsa.ts",
+    "import:multipl": "tsx src/scripts/importMbppMultiPLE.ts",
+    "test:engine": "tsx src/scripts/testExecutionVerification.ts"
   },
   "keywords": [],
   "author": "",
@@ -19,14 +28,19 @@
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "firebase-admin": "^13.8.0",
+    "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.5.0",
-    "socket.io": "^4.8.3"
+    "socket.io": "^4.8.3",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^22.10.2",
+    "socket.io-client": "^4.8.4",
     "tsx": "^4.19.2",
-    "typescript": "^5.7.3"
+    "typescript": "^5.7.3",
+    "vitest": "^5.0.5"
   }
 }

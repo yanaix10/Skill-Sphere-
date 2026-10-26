@@ -39,7 +39,7 @@ const challengeSessionSchema = new Schema<IChallengeSession>({
     default: null,
   },
   questions: {
-    type: Array,
+    type: [Schema.Types.Mixed] as any,
     default: [],
   }
 }, { timestamps: true });

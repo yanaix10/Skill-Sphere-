@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { mbppCuratedQuestions } from "../data/mbppQuestions.js";
 
 const collections: Record<string, Map<string, any>> = {
   ChallengeSession: new Map(),
@@ -225,6 +226,56 @@ const setupInMemoryMock = () => {
     return sampled;
   };
 
+  // Monkey-patch static findOneAndUpdate
+  (mongoose.Model as any).findOneAndUpdate = async function(this: any, query: any = {}, update: any = {}, options: any = {}) {
+    const modelName = this.modelName;
+    const docs = Array.from(collections[modelName]?.values() || []);
+    let found = docs.find(doc => {
+      for (const key in query) {
+        if (String(doc[key]) !== String(query[key])) return false;
+      }
+      return true;
+    });
+
+    if (!found && options?.upsert) {
+      found = { ...query, _id: new mongoose.Types.ObjectId() };
+      if (!collections[modelName]) collections[modelName] = new Map();
+      collections[modelName].set(String(found._id), found);
+    }
+
+    if (found) {
+      const updateData = update.$set ? { ...update.$set } : { ...update };
+      Object.assign(found, updateData);
+      collections[modelName].set(String(found._id), found);
+      return wrapDoc(this, found);
+    }
+    return null;
+  };
+
+  // Monkey-patch static updateMany
+  (mongoose.Model as any).updateMany = async function(this: any, query: any = {}, update: any = {}) {
+    const modelName = this.modelName;
+    const docs = Array.from(collections[modelName]?.values() || []);
+    let matchedCount = 0;
+    docs.forEach(doc => {
+      let matches = true;
+      for (const key in query) {
+        if (query[key] && typeof query[key] === 'object' && '$in' in query[key]) {
+          if (!query[key].$in.includes(doc[key])) matches = false;
+        } else if (String(doc[key]) !== String(query[key])) {
+          matches = false;
+        }
+      }
+      if (matches) {
+        const updateData = update.$set ? { ...update.$set } : { ...update };
+        Object.assign(doc, updateData);
+        collections[modelName].set(String(doc._id), doc);
+        matchedCount++;
+      }
+    });
+    return { matchedCount, modifiedCount: matchedCount };
+  };
+
   seedDsaInMemory();
 };
 
@@ -443,6 +494,29 @@ const seedDsaInMemory = () => {
         java: "public static String solve(String input) {\n  // return answer\n  String[] parts = input.split(\",\");\n  return parts[parts.length - 1];\n}",
         c: "char* solve(char* input) {\n  // dummy C code\n  return \"3\"; \n}"
       }
+    });
+  }
+
+  // Insert curated MBPP MultiPL-E questions into memory map first
+  for (const mbpp of mbppCuratedQuestions) {
+    const id = new mongoose.Types.ObjectId();
+    collections.DsaQuestion.set(String(id), {
+      _id: id,
+      taskId: mbpp.taskId,
+      title: mbpp.title,
+      description: mbpp.description,
+      difficulty: mbpp.difficulty,
+      category: mbpp.category,
+      points: mbpp.points,
+      languages: mbpp.languages,
+      initialCode: {
+        cpp: mbpp.languages.cpp.starterCode,
+        python: mbpp.languages.python.starterCode,
+        javascript: mbpp.languages.javascript.starterCode,
+        java: mbpp.languages.java.starterCode,
+        c: mbpp.languages.c.starterCode
+      },
+      testCases: []
     });
   }
 

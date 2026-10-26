@@ -1,36 +1,28 @@
 {
-  "name": "2026",
+  "name": "skill-sphere",
+  "version": "1.0.0",
   "private": true,
-  "version": "0.0.0",
-  "type": "module",
+  "description": "SkillSphere - Collaborative coding, quizzes, and competitive programming platform",
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "lint": "eslint .",
-    "preview": "vite preview"
-  },
-  "dependencies": {
-    "@monaco-editor/react": "^4.7.0",
-    "axios": "^1.15.2",
-    "firebase": "^12.7.0",
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0",
-    "react-router-dom": "^7.14.1",
-    "socket.io-client": "^4.8.3"
+    "dev": "concurrently -n \"BACKEND,FRONTEND\" -c \"blue,magenta\" \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "npm run dev --workspace=skill-sphere-backend",
+    "dev:frontend": "npm run dev --workspace=skill-sphere-frontend",
+    "build": "npm run build --workspace=skill-sphere-backend && npm run build --workspace=skill-sphere-frontend",
+    "build:backend": "npm run build --workspace=skill-sphere-backend",
+    "build:frontend": "npm run build --workspace=skill-sphere-frontend",
+    "lint:frontend": "npm run lint --workspace=skill-sphere-frontend",
+    "test": "npm run test --workspace=skill-sphere-backend",
+    "seed": "npm run seed --workspace=skill-sphere-backend",
+    "demo:match": "npm run demo:match --workspace=skill-sphere-backend",
+    "seed:dsa": "npm run seed:dsa --workspace=skill-sphere-backend",
+    "test:engine": "npm run test:engine --workspace=skill-sphere-backend",
+    "import:multipl": "npm run import:multipl --workspace=skill-sphere-backend"
   },
   "devDependencies": {
-    "@eslint/js": "^9.39.1",
-    "@tailwindcss/vite": "^4.0.0",
-    "@types/node": "^22.10.2",
-    "@types/react": "^19.2.5",
-    "@types/react-dom": "^19.2.3",
-    "@vitejs/plugin-react": "^5.1.1",
-    "eslint": "^9.39.1",
-    "eslint-plugin-react-hooks": "^7.0.1",
-    "eslint-plugin-react-refresh": "^0.4.24",
-    "globals": "^16.5.0",
-    "tailwindcss": "^4.0.0",
-    "typescript": "^5.7.3",
-    "vite": "^7.2.4"
+    "concurrently": "^9.1.2"
   }
 }

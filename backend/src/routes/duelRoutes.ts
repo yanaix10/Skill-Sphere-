@@ -1,0 +1,100 @@
+import express, { Request, Response } from 'express';
+import { z } from 'zod';
+import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
+import { getCodeRunner } from '../runner/index.js';
+
+const router = express.Router();
+const JWT_SECRET = process.env.JWT_SECRET || 'skillsphere-coding-duel-secret-2026';
+
+const guestSchema = z.object({
+  nickname: z.string().trim().min(1, 'Nickname cannot be empty').max(30, 'Nickname too long')
+});
+
+/**
+ * POST /api/guest (and /api/duel/guest)
+ * Registers a guest player and returns a signed token.
+ */
+router.post('/guest', (req: Request, res: Response): any => {
+  try {
+    const parseRes = guestSchema.safeParse(req.body);
+    if (!parseRes.success) {
+      return res.status(400).json({
+        success: false,
+        message: parseRes.error.issues[0]?.message || 'Invalid nickname'
+      });
+    }
+
+    const { nickname } = parseRes.data;
+    const playerId = `guest_${crypto.randomBytes(4).toString('hex')}`;
+    const token = jwt.sign(
+      {
+        playerId,
+        nickname
+      },
+      JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+
+    return res.status(201).json({
+      success: true,
+      playerId,
+      token,
+      nickname
+    });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+/**
+ * GET /api/languages (and /api/duel/languages)
+ * Returns the list of supported languages for Coding Duel.
+ */
+router.get('/languages', (_req: Request, res: Response) => {
+  return res.json({
+    languages: [
+      {
+        id: 'python',
+        displayName: 'Python 3',
+        editorMode: 'python',
+        version: '3.10'
+      },
+      {
+        id: 'cpp',
+        displayName: 'C++ (GCC)',
+        editorMode: 'cpp',
+        version: 'C++17'
+      }
+    ]
+  });
+});
+
+/**
+ * GET /api/health (and /api/duel/health)
+ * Reports system health and runner connectivity.
+ */
+router.get('/health', async (_req: Request, res: Response) => {
+  const runnerType = (process.env.RUNNER || 'mock').toLowerCase().trim();
+  let runnerReachable = true;
+
+  try {
+    const runner = getCodeRunner();
+    if (runner.initialize) {
+      await runner.initialize();
+    }
+  } catch (err) {
+    runnerReachable = false;
+  }
+
+  return res.json({
+    status: 'healthy',
+    runner: {
+      type: runnerType,
+      reachable: runnerReachable
+    },
+    timestamp: Date.now()
+  });
+});
+
+export default router;

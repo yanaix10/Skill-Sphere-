@@ -7,6 +7,7 @@ export interface IQuestion {
 	difficulty?: string;
 	explanation?: string;
 	category?: string;
+	tags?: string[];
 	answers: Array<{
 		id: string;
 		text: string;
@@ -31,6 +32,7 @@ const questionSchema = new Schema<IQuestion>({
 	difficulty: { type: String },
 	explanation: { type: String },
 	category: { type: String },
+	tags: [{ type: String }],
 	answers: [{
 		id: String,
 		text: String,
