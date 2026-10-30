@@ -15,12 +15,13 @@ export function getCodeRunner(): CodeRunner {
     return runnerInstance;
   }
 
-  const runnerType = (process.env.RUNNER || 'mock').toLowerCase().trim();
+  const runnerType = (process.env.RUNNER || 'judge0').toLowerCase().trim();
 
-  if (runnerType === 'judge0') {
-    runnerInstance = new Judge0Runner();
-  } else {
+  if (runnerType === 'mock') {
     runnerInstance = new MockRunner();
+  } else {
+    // Default to Judge0 runner with automatic local fallback
+    runnerInstance = new Judge0Runner();
   }
 
   return runnerInstance;

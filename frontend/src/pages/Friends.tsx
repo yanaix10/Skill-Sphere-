@@ -17,7 +17,7 @@ import {
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { CardDescription, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -90,23 +90,28 @@ const Friends: React.FC = () => {
           const friendData = d.data();
           let name = friendData.name || "";
           let avatarUrl = friendData.avatarUrl || "";
-          if (!name) {
-            try {
-              const uDoc = await getDoc(doc(db, "users", d.id));
-              if (uDoc.exists()) {
-                const uData = uDoc.data();
-                name = uData.name || "";
-                avatarUrl = uData.avatarUrl || "";
-              }
-            } catch (e) {}
+          let username = friendData.username || "";
+
+          // Always fetch live profile document so updated photos and names are visible
+          try {
+            const uDoc = await getDoc(doc(db, "users", d.id));
+            if (uDoc.exists()) {
+              const uData = uDoc.data();
+              if (uData.name) name = uData.name;
+              if (uData.avatarUrl) avatarUrl = uData.avatarUrl;
+              if (uData.username) username = uData.username;
+            }
+          } catch (e) {
+            console.warn("Could not fetch friend user profile:", e);
           }
+
           return {
             id: d.id,
-            username: friendData.username || "",
-            name: name || friendData.username || "",
+            ...friendData,
+            username: username || friendData.username || "",
+            name: name || username || friendData.username || "",
             avatarUrl,
             status: friendData.status || "",
-            ...friendData,
           } as Friend;
         })
       );

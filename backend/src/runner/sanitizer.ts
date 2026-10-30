@@ -80,6 +80,28 @@ export function sanitizeOutput(options: SanitizeOptions): string {
         return 'Syntax error in code submission.';
       }
 
+      if (language === 'javascript' || language === 'js') {
+        const syntaxLineMatch = text.match(/(?:.*):(\d+)(?:\r?\n)(.*SyntaxError:.*)/i);
+        if (syntaxLineMatch) {
+          const lineNum = parseInt(syntaxLineMatch[1], 10);
+          if (lineNum <= playerCodeLines) {
+            return `Line ${lineNum}: ${syntaxLineMatch[2].trim()}`;
+          }
+        }
+        return 'Syntax error in JavaScript submission.';
+      }
+
+      if (language === 'java') {
+        const errorLineMatch = text.match(/Solution\.java:(\d+):\s*error:\s*(.*)/i);
+        if (errorLineMatch) {
+          const lineNum = parseInt(errorLineMatch[1], 10);
+          if (lineNum <= playerCodeLines) {
+            return `Line ${lineNum}: error: ${errorLineMatch[2].trim()}`;
+          }
+        }
+        return 'Compilation error in Java submission.';
+      }
+
       return 'Compilation error in submission.';
     }
 
@@ -113,6 +135,30 @@ export function sanitizeOutput(options: SanitizeOptions): string {
         }
 
         return 'Runtime error occurred during execution.';
+      }
+
+      // JavaScript runtime error
+      if (language === 'javascript' || language === 'js') {
+        if (text.includes('AssertionError') || text.includes('ERR_ASSERTION')) {
+          return 'Some tests failed';
+        }
+        const errorMatch = text.match(/([a-zA-Z0-9_]+Error):\s*(.*)/i);
+        if (errorMatch) {
+          return `Runtime Error: ${errorMatch[1]}: ${errorMatch[2]}`.slice(0, MAX_PUBLIC_MESSAGE_LENGTH);
+        }
+        return 'Runtime error in JavaScript execution.';
+      }
+
+      // Java runtime error
+      if (language === 'java') {
+        if (text.includes('Assertion failed') || text.includes('AssertionError')) {
+          return 'Some tests failed';
+        }
+        const exceptionMatch = text.match(/Exception in thread "main"\s+([a-zA-Z0-9_\.]+):\s*(.*)/i);
+        if (exceptionMatch) {
+          return `Runtime Error: ${exceptionMatch[1]}: ${exceptionMatch[2]}`.slice(0, MAX_PUBLIC_MESSAGE_LENGTH);
+        }
+        return 'Runtime error in Java execution.';
       }
 
       // C++ runtime error

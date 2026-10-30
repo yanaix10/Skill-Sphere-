@@ -6,6 +6,7 @@ import { getMatchManager } from '../match/MatchManager.js';
 import { Match } from '../match/Match.js';
 import { getCodeRunner } from '../runner/index.js';
 import { getLanguageAdapter, MAX_CODE_BYTES } from '../runner/adapters.js';
+import { loadAllQuestions } from '../match/questionSelector.js';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'skillsphere-coding-duel-secret-2026';
 const REVEAL_SOLUTIONS = process.env.REVEAL_SOLUTIONS !== 'false';
@@ -153,8 +154,15 @@ export function setupSocketGateway(io: Server): void {
         const payload = joinChallengeSchema.parse(rawPayload);
         const code = payload.challengeId.toUpperCase().trim();
         const nickname = payload.userDetails?.name || auth.nickname;
-        const rawLang = payload.language || 'python';
-        const language = (rawLang.toLowerCase() === 'cpp' || rawLang.toLowerCase() === 'c') ? 'cpp' : 'python';
+        const rawLang = (payload.language || 'python').toLowerCase().trim();
+        let language = 'python';
+        if (rawLang === 'cpp' || rawLang === 'c' || rawLang === 'c++') {
+          language = 'cpp';
+        } else if (rawLang === 'javascript' || rawLang === 'js' || rawLang === 'node') {
+          language = 'javascript';
+        } else if (rawLang === 'java') {
+          language = 'java';
+        }
         const clientPlayerId = payload.playerId || auth.playerId;
 
         socket.join(code);
@@ -494,6 +502,71 @@ export function setupSocketGateway(io: Server): void {
 
     socket.on('queue:leave', () => {
       manager.leaveQueue(socket.id);
+    });
+
+    // =========================================================================
+    // Sandbox Run Protocol (Live Testing in Sandbox Area)
+    // =========================================================================
+    socket.on('sandbox:run', async (payload: { code: string; language: string; questionId?: string }) => {
+      try {
+        const allQuestions = loadAllQuestions();
+        const q = allQuestions.find((item) => item.id === payload.questionId) || allQuestions[0];
+        if (!q) {
+          socket.emit('sandbox:result', {
+            success: false,
+            message: 'Question not found in question bank.'
+          });
+          return;
+        }
+
+        const adapter = getLanguageAdapter(payload.language || 'python');
+        const variant = q.variants[adapter.id];
+        if (!variant) {
+          socket.emit('sandbox:result', {
+            success: false,
+            message: `Question does not support language ${adapter.displayName}`
+          });
+          return;
+        }
+
+        let sampleHarness = variant.harness;
+        if (variant.example) {
+          if (adapter.id === 'cpp') {
+            const candidateMatch = variant.harness.match(/auto candidate\s*=\s*[^;]+;/);
+            const candidateLine = candidateMatch ? candidateMatch[0] : '';
+            sampleHarness = `\nint main() {\n    ${candidateLine}\n    ${variant.example}\n    return 0;\n}\n`;
+          } else {
+            sampleHarness = `\n\n${variant.example}\n`;
+          }
+        }
+
+        const fullProgram = adapter.buildProgram(payload.code, {
+          starterCode: variant.starterCode,
+          harness: sampleHarness,
+          example: variant.example
+        });
+
+        const playerCodeLines = payload.code.split('\n').length;
+        const result = await runner.run({
+          language: adapter.id,
+          source: fullProgram,
+          playerCodeLines
+        });
+
+        const isSuccess = result.verdict === 'passed';
+        socket.emit('sandbox:result', {
+          success: isSuccess,
+          message: isSuccess
+            ? 'Sample assertion passed! All sample test cases passed.'
+            : result.publicMessage || 'Sample assertion failed.',
+          executionTimeMs: result.timeMs
+        });
+      } catch (err: any) {
+        socket.emit('sandbox:result', {
+          success: false,
+          message: err.message || 'Sandbox execution error'
+        });
+      }
     });
 
     // Disconnect handler

@@ -28,10 +28,21 @@ const Profile: React.FC = () => {
     collegeName: '', degree: '', branch: '', year: '', about: ''
   });
 
-  useEffect(() => {
-    const fetchUserData = async () => {
-      const user = auth.currentUser;
-      if (user) {
+  const fetchUserData = async () => {
+    const user = auth.currentUser;
+    if (user) {
+      if (user.uid === "test-user-123") {
+        const local = localStorage.getItem("skillsphere_dev_profile");
+        if (local) {
+          try {
+            setFormData(JSON.parse(local));
+            setIsExistingUser(true);
+            setIsEditing(false);
+            return;
+          } catch (e) {}
+        }
+      }
+      try {
         const docRef = doc(db, "users", user.uid);
         const docSnap = await getDoc(docRef);
 
@@ -42,9 +53,19 @@ const Profile: React.FC = () => {
         } else {
           setIsEditing(true);
         }
+      } catch (err) {
+        console.error("Error fetching user data:", err);
       }
-    };
+    }
+  };
+
+  useEffect(() => {
     fetchUserData();
+    const onProfileUpdate = () => {
+      fetchUserData();
+    };
+    window.addEventListener("profile-updated", onProfileUpdate);
+    return () => window.removeEventListener("profile-updated", onProfileUpdate);
   }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -148,6 +169,7 @@ const Profile: React.FC = () => {
       <ProfileDialog
         open={isEditDialogOpen}
         onOpenChange={setIsEditDialogOpen}
+        onSaved={fetchUserData}
       />
     </div>
   );

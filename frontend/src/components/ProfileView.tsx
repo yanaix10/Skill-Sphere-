@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { db } from '../firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { db, auth } from '../firebase';
+import { doc, getDoc, onSnapshot } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import ProfileDialog from '@/components/ui/profile-dialog';
@@ -26,48 +26,66 @@ interface ProfileViewProps {
 }
 
 const ProfileView: React.FC<ProfileViewProps> = ({ data, userId, onEdit }) => {
-  const [userData, setUserData] = useState<ProfileData | null>(null);
+  const [userData, setUserData] = useState<ProfileData | null>(data || null);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
 
   useEffect(() => {
-    const fetchProfile = async () => {
-      if (data) {
-        setUserData(data);
-        return;
-      }
-      if (userId) {
-        if (userId === "test-user-123") {
-          const local = localStorage.getItem("skillsphere_dev_profile");
-          if (local) {
-            try {
-              setUserData(JSON.parse(local));
-              return;
-            } catch (e) {}
-          }
-        }
-        try {
-          const userDoc = await getDoc(doc(db, "users", userId));
-          if (userDoc.exists()) {
-            setUserData(userDoc.data() as ProfileData);
-          } else {
-            setUserData({
-              name: "Soul Honest",
-              username: "soul_honest",
-              degree: "B.Com in Management",
-              age: 22,
-              homeCity: "Sitapur",
-              collegeName: "VIT Chennai",
-              year: 1,
-              about: "Moj Masti Padhai",
-            });
-          }
-        } catch (error) {
-          console.error("Error fetching profile:", error);
-        }
+    if (data) {
+      setUserData(data);
+    }
+  }, [data]);
+
+  useEffect(() => {
+    const handleProfileUpdated = (e: any) => {
+      const updated = e.detail;
+      const currentUid = auth.currentUser?.uid;
+      if (updated && (userId === currentUid || !userId)) {
+        setUserData((prev) => ({ ...prev, ...updated }));
       }
     };
-    fetchProfile();
-  }, [userId, data]);
+    window.addEventListener("profile-updated", handleProfileUpdated);
+    return () => window.removeEventListener("profile-updated", handleProfileUpdated);
+  }, [userId]);
+
+  useEffect(() => {
+    if (!userId) return;
+
+    if (userId === "test-user-123") {
+      const local = localStorage.getItem("skillsphere_dev_profile");
+      if (local) {
+        try {
+          setUserData(JSON.parse(local));
+          return;
+        } catch (e) {}
+      }
+    }
+
+    // Subscribe to live Firestore user document for instant avatar/banner updates
+    const unsubscribe = onSnapshot(
+      doc(db, "users", userId),
+      (userDoc) => {
+        if (userDoc.exists()) {
+          setUserData(userDoc.data() as ProfileData);
+        } else {
+          setUserData({
+            name: "Soul Honest",
+            username: "soul_honest",
+            degree: "B.Com in Management",
+            age: 22,
+            homeCity: "Sitapur",
+            collegeName: "VIT Chennai",
+            year: 1,
+            about: "Moj Masti Padhai",
+          });
+        }
+      },
+      (error) => {
+        console.error("Error subscribing to profile:", error);
+      }
+    );
+
+    return () => unsubscribe();
+  }, [userId]);
 
   if (!userData) {
     return (

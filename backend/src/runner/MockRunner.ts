@@ -170,6 +170,108 @@ export class MockRunner implements CodeRunner {
       }
     }
 
+    if (language === 'javascript' || language === 'js') {
+      const tmpFile = path.join(tmpDir, `local_run_${randId}.cjs`);
+      try {
+        fs.writeFileSync(tmpFile, source);
+        await execPromise(`node "${tmpFile}"`, { timeout: 4000 });
+        const timeMs = Date.now() - startTime;
+        return {
+          verdict: 'passed',
+          timeMs,
+          publicMessage: 'All tests passed!'
+        };
+      } catch (err: any) {
+        const timeMs = Date.now() - startTime;
+        const stderr = err.stderr || err.message || '';
+        let verdict: any = 'failed';
+        if (err.killed || err.signal === 'SIGTERM') {
+          verdict = 'timeout';
+        } else if (stderr.includes('SyntaxError')) {
+          verdict = 'compile_error';
+        } else if (stderr.includes('AssertionError') || stderr.includes('assert')) {
+          verdict = 'failed';
+        } else {
+          verdict = 'runtime_error';
+        }
+
+        const publicMessage = sanitizeOutput({
+          verdict,
+          rawOutput: stderr,
+          playerCodeLines,
+          language: 'javascript'
+        });
+
+        return {
+          verdict,
+          timeMs,
+          publicMessage
+        };
+      } finally {
+        if (fs.existsSync(tmpFile)) fs.unlinkSync(tmpFile);
+      }
+    }
+
+    if (language === 'java') {
+      const classDir = path.join(tmpDir, `java_${randId}`);
+      fs.mkdirSync(classDir, { recursive: true });
+      const srcFile = path.join(classDir, 'Solution.java');
+
+      try {
+        fs.writeFileSync(srcFile, source);
+        try {
+          await execPromise(`javac "${srcFile}"`, { timeout: 6000 });
+        } catch (compileErr: any) {
+          const publicMessage = sanitizeOutput({
+            verdict: 'compile_error',
+            rawOutput: compileErr.stderr || compileErr.message,
+            playerCodeLines,
+            language: 'java'
+          });
+          return {
+            verdict: 'compile_error',
+            publicMessage
+          };
+        }
+
+        await execPromise(`java -cp "${classDir}" Solution`, { timeout: 4000 });
+        const timeMs = Date.now() - startTime;
+        return {
+          verdict: 'passed',
+          timeMs,
+          publicMessage: 'All tests passed!'
+        };
+      } catch (runErr: any) {
+        const timeMs = Date.now() - startTime;
+        const stderr = runErr.stderr || runErr.message || '';
+        let verdict: any = 'failed';
+        if (runErr.killed || runErr.signal === 'SIGTERM') {
+          verdict = 'timeout';
+        } else if (stderr.includes('Assertion') || stderr.includes('Assertion failed')) {
+          verdict = 'failed';
+        } else {
+          verdict = 'runtime_error';
+        }
+
+        const publicMessage = sanitizeOutput({
+          verdict,
+          rawOutput: stderr,
+          playerCodeLines,
+          language: 'java'
+        });
+
+        return {
+          verdict,
+          timeMs,
+          publicMessage
+        };
+      } finally {
+        if (fs.existsSync(classDir)) {
+          fs.rmSync(classDir, { recursive: true, force: true });
+        }
+      }
+    }
+
     return {
       verdict: 'failed',
       timeMs: 62,

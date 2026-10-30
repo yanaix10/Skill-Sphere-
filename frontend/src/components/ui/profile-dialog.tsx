@@ -20,6 +20,8 @@ import { Check, ImagePlus, X } from "lucide-react";
 import { useId, useState, useEffect } from "react";
 import { auth, db } from "../../firebase";
 import { doc, getDoc, setDoc } from "firebase/firestore";
+import { updateProfile } from "firebase/auth";
+import { compressImage } from "@/lib/image-utils";
 
 export interface ProfileDialogProps {
   open?: boolean;
@@ -52,6 +54,7 @@ export function ProfileDialog({
   const [avatarImage, setAvatarImage] = useState<string | null>(
     "https://cdn.21st.dev/assets/localized/8d83e28e14ccb2140152662c91092e7696fada2802b4e1bb82d1d363f6723ed4.jpg"
   );
+  const [isSaving, setIsSaving] = useState(false);
 
   const maxLength = 180;
   const {
@@ -137,25 +140,42 @@ export function ProfileDialog({
       avatarUrl: avatarImage,
     };
 
-    if (user) {
-      if (user.uid === "test-user-123") {
-        localStorage.setItem(
-          "skillsphere_dev_profile",
-          JSON.stringify(profilePayload)
-        );
-      } else {
-        try {
+    setIsSaving(true);
+    try {
+      if (user) {
+        if (user.uid === "test-user-123") {
+          localStorage.setItem(
+            "skillsphere_dev_profile",
+            JSON.stringify(profilePayload)
+          );
+        } else {
           await setDoc(doc(db, "users", user.uid), profilePayload, {
             merge: true,
           });
-        } catch (e) {
-          console.error("Error saving profile to Firestore:", e);
+          try {
+            await updateProfile(user, {
+              displayName: profilePayload.name,
+              photoURL: avatarImage || undefined,
+            });
+          } catch (authErr) {
+            console.warn("Could not update auth profile photo:", authErr);
+          }
         }
       }
-    }
 
-    if (onSaved) onSaved();
-    if (onOpenChange) onOpenChange(false);
+      // Broadcast profile change so UI components update live
+      window.dispatchEvent(
+        new CustomEvent("profile-updated", { detail: profilePayload })
+      );
+
+      if (onSaved) onSaved();
+      if (onOpenChange) onOpenChange(false);
+    } catch (e) {
+      console.error("Error saving profile:", e);
+      alert("Failed to save profile. Please check console for details.");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -354,8 +374,8 @@ export function ProfileDialog({
               Cancel
             </Button>
           </DialogClose>
-          <Button type="button" onClick={handleSave}>
-            Save changes
+          <Button type="button" onClick={handleSave} disabled={isSaving}>
+            {isSaving ? "Saving..." : "Save changes"}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -373,6 +393,7 @@ function ProfileBg({
   const [hideDefault, setHideDefault] = useState(false);
   const {
     previewUrl,
+    setPreviewUrl,
     fileInputRef,
     handleThumbnailClick,
     handleFileChange,
@@ -381,13 +402,24 @@ function ProfileBg({
 
   const currentImage = previewUrl || (!hideDefault ? defaultImage : null);
 
-  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     handleFileChange(e);
     const file = e.target.files?.[0];
     if (file && onImageChange) {
-      const reader = new FileReader();
-      reader.onload = () => onImageChange(reader.result as string);
-      reader.readAsDataURL(file);
+      try {
+        // Compress banner to max 900x320 at 0.75 quality (keeps size ~40-60KB)
+        const compressed = await compressImage(file, 900, 320, 0.75);
+        setPreviewUrl(compressed);
+        onImageChange(compressed);
+      } catch (err) {
+        console.warn("Banner compression failed, falling back to FileReader:", err);
+        const reader = new FileReader();
+        reader.onload = () => {
+          setPreviewUrl(reader.result as string);
+          onImageChange(reader.result as string);
+        };
+        reader.readAsDataURL(file);
+      }
     }
   };
 
@@ -453,18 +485,34 @@ function Avatar({
   defaultImage?: string;
   onImageChange?: (url: string | null) => void;
 }) {
-  const { previewUrl, fileInputRef, handleThumbnailClick, handleFileChange } =
-    useImageUpload();
+  const {
+    previewUrl,
+    setPreviewUrl,
+    fileInputRef,
+    handleThumbnailClick,
+    handleFileChange,
+  } = useImageUpload();
 
   const currentImage = previewUrl || defaultImage;
 
-  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     handleFileChange(e);
     const file = e.target.files?.[0];
     if (file && onImageChange) {
-      const reader = new FileReader();
-      reader.onload = () => onImageChange(reader.result as string);
-      reader.readAsDataURL(file);
+      try {
+        // Compress avatar to max 300x300 at 0.8 quality (keeps size ~20-35KB)
+        const compressed = await compressImage(file, 300, 300, 0.8);
+        setPreviewUrl(compressed);
+        onImageChange(compressed);
+      } catch (err) {
+        console.warn("Avatar compression failed, falling back to FileReader:", err);
+        const reader = new FileReader();
+        reader.onload = () => {
+          setPreviewUrl(reader.result as string);
+          onImageChange(reader.result as string);
+        };
+        reader.readAsDataURL(file);
+      }
     }
   };
 

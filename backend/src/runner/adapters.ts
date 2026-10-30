@@ -29,16 +29,46 @@ export const cppAdapter: LanguageAdapter = {
   }
 };
 
+export const javascriptAdapter: LanguageAdapter = {
+  id: 'javascript',
+  displayName: 'JavaScript (Node.js)',
+  editorMode: 'javascript',
+  judge0NamePattern: /JavaScript \(Node\.js/i,
+  buildStarter(variant: LanguageVariant): string {
+    return variant.starterCode;
+  },
+  buildProgram(playerCode: string, variant: LanguageVariant): string {
+    return `${playerCode.trimEnd()}\n\n${variant.harness.trimStart()}`;
+  }
+};
+
+export const javaAdapter: LanguageAdapter = {
+  id: 'java',
+  displayName: 'Java (OpenJDK)',
+  editorMode: 'java',
+  judge0NamePattern: /Java \(OpenJDK/i,
+  buildStarter(variant: LanguageVariant): string {
+    return variant.starterCode;
+  },
+  buildProgram(playerCode: string, variant: LanguageVariant): string {
+    return `${playerCode.trimEnd()}\n\n${variant.harness.trimStart()}`;
+  }
+};
+
 export const languageAdapters: Record<string, LanguageAdapter> = {
   python: pythonAdapter,
-  cpp: cppAdapter
+  cpp: cppAdapter,
+  c: cppAdapter,
+  javascript: javascriptAdapter,
+  js: javascriptAdapter,
+  java: javaAdapter
 };
 
 export function getLanguageAdapter(lang: string): LanguageAdapter {
   const normalized = lang.toLowerCase().trim();
   const adapter = languageAdapters[normalized];
   if (!adapter) {
-    throw new Error(`Unsupported programming language: "${lang}". Supported: ${Object.keys(languageAdapters).join(', ')}`);
+    throw new Error(`Unsupported programming language: "${lang}". Supported: python, cpp, javascript, java`);
   }
   return adapter;
 }

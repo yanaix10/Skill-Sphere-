@@ -1,0 +1,439 @@
+import fs from 'fs';
+import path from 'path';
+
+export interface UnifiedChallengeQuestion {
+  id: string;
+  name: string;
+  title: string;
+  description: string;
+  challengeCategory: 'dsa' | 'webdev';
+  subCategory: 'algo' | 'bugfix' | 'js' | 'ts' | 'react';
+  difficultyLevel: 1 | 2 | 3;
+  difficulty: 'EASY' | 'MEDIUM' | 'HARD';
+  tags: string[];
+  source: 'freecodecamp' | 'type-challenges' | 'quixbugs' | 'debugbench' | 'mbpp' | 'humaneval';
+  executionEngine: 'judge0' | 'sandpack' | 'in-browser-eval' | 'ts-compiler';
+  starterCode: string;
+  solution: string;
+  testSuite: string;
+  sampleTests?: string;
+  languages?: Record<string, any>;
+  files?: Record<string, string>;
+  points: number;
+}
+
+export const challengeQuestions: UnifiedChallengeQuestion[] = [
+  // ==========================================
+  // WEBDEV: JAVASCRIPT (freeCodeCamp)
+  // ==========================================
+  {
+    id: "fcc_reverse_string",
+    name: "fcc_reverse_string",
+    title: "Reverse a String",
+    description: "Reverse the provided string and return the reversed string. For example, 'hello' should become 'olleh'.",
+    challengeCategory: "webdev",
+    subCategory: "js",
+    difficultyLevel: 1,
+    difficulty: "EASY",
+    tags: ["javascript", "string", "algorithms", "webdev"],
+    source: "freecodecamp",
+    executionEngine: "in-browser-eval",
+    starterCode: `function reverseString(str) {\n  // Write your code here\n  return str;\n}\n\n// Example test call\nconsole.log(reverseString("hello"));`,
+    solution: `function reverseString(str) {\n  return str.split("").reverse().join("");\n}`,
+    testSuite: `
+      expect(reverseString("hello")).to.equal("olleh");
+      expect(reverseString("Howdy")).to.equal("ydwoH");
+      expect(reverseString("Greetings from Earth")).to.equal("htraE morf sgniteerG");
+    `,
+    sampleTests: `reverseString("hello") === "olleh"`,
+    points: 10
+  },
+  {
+    id: "fcc_factorialize",
+    name: "fcc_factorialize",
+    title: "Factorialize a Number",
+    description: "Return the factorial of the provided integer. If the integer is represented with the letter n, a factorial is the product of all positive integers less than or equal to n. 0! is 1.",
+    challengeCategory: "webdev",
+    subCategory: "js",
+    difficultyLevel: 1,
+    difficulty: "EASY",
+    tags: ["javascript", "math", "recursion", "webdev"],
+    source: "freecodecamp",
+    executionEngine: "in-browser-eval",
+    starterCode: `function factorialize(num) {\n  // Write your code here\n  return num;\n}\n\nconsole.log(factorialize(5));`,
+    solution: `function factorialize(num) {\n  if (num <= 1) return 1;\n  return num * factorialize(num - 1);\n}`,
+    testSuite: `
+      expect(factorialize(5)).to.equal(120);
+      expect(factorialize(10)).to.equal(3628800);
+      expect(factorialize(0)).to.equal(1);
+    `,
+    sampleTests: `factorialize(5) === 120`,
+    points: 10
+  },
+  {
+    id: "fcc_find_longest_word",
+    name: "fcc_find_longest_word",
+    title: "Find the Longest Word in a String",
+    description: "Return the length of the longest word in the provided sentence. Your response should be a number.",
+    challengeCategory: "webdev",
+    subCategory: "js",
+    difficultyLevel: 2,
+    difficulty: "MEDIUM",
+    tags: ["javascript", "string", "array-methods", "webdev"],
+    source: "freecodecamp",
+    executionEngine: "in-browser-eval",
+    starterCode: `function findLongestWordLength(str) {\n  // Write your code here\n  return str.length;\n}\n\nconsole.log(findLongestWordLength("The quick brown fox jumped over the lazy dog"));`,
+    solution: `function findLongestWordLength(str) {\n  return Math.max(...str.split(" ").map(w => w.length));\n}`,
+    testSuite: `
+      expect(findLongestWordLength("The quick brown fox jumped over the lazy dog")).to.equal(6);
+      expect(findLongestWordLength("May the force be with you")).to.equal(5);
+      expect(findLongestWordLength("Google do a barrel roll")).to.equal(6);
+    `,
+    sampleTests: `findLongestWordLength("May the force be with you") === 5`,
+    points: 20
+  },
+  {
+    id: "fcc_chunky_monkey",
+    name: "fcc_chunky_monkey",
+    title: "Chunky Monkey (Array Chunks)",
+    description: "Write a function that splits an array (first argument) into groups the length of size (second argument) and returns them as a two-dimensional array.",
+    challengeCategory: "webdev",
+    subCategory: "js",
+    difficultyLevel: 2,
+    difficulty: "MEDIUM",
+    tags: ["javascript", "arrays", "algorithms", "webdev"],
+    source: "freecodecamp",
+    executionEngine: "in-browser-eval",
+    starterCode: `function chunkArrayInGroups(arr, size) {\n  // Write your code here\n  return arr;\n}\n\nconsole.log(chunkArrayInGroups(["a", "b", "c", "d"], 2));`,
+    solution: `function chunkArrayInGroups(arr, size) {\n  const result = [];\n  for (let i = 0; i < arr.length; i += size) {\n    result.push(arr.slice(i, i + size));\n  }\n  return result;\n}`,
+    testSuite: `
+      expect(chunkArrayInGroups(["a", "b", "c", "d"], 2)).to.deep.equal([["a", "b"], ["c", "d"]]);
+      expect(chunkArrayInGroups([0, 1, 2, 3, 4, 5], 3)).to.deep.equal([[0, 1, 2], [3, 4, 5]]);
+      expect(chunkArrayInGroups([0, 1, 2, 3, 4, 5], 4)).to.deep.equal([[0, 1, 2, 3], [4, 5]]);
+    `,
+    sampleTests: `chunkArrayInGroups(["a", "b", "c", "d"], 2) -> [["a", "b"], ["c", "d"]]`,
+    points: 20
+  },
+  {
+    id: "fcc_diff_two_arrays",
+    name: "fcc_diff_two_arrays",
+    title: "Diff Two Arrays (Symmetric Difference)",
+    description: "Compare two arrays and return a new array with any items only found in one of the two given arrays, but not both. In other words, return the symmetric difference of the two arrays.",
+    challengeCategory: "webdev",
+    subCategory: "js",
+    difficultyLevel: 3,
+    difficulty: "HARD",
+    tags: ["javascript", "arrays", "functional-programming", "webdev"],
+    source: "freecodecamp",
+    executionEngine: "in-browser-eval",
+    starterCode: `function diffArray(arr1, arr2) {\n  // Write your code here\n  return [];\n}\n\nconsole.log(diffArray([1, 2, 3, 5], [1, 2, 3, 4, 5]));`,
+    solution: `function diffArray(arr1, arr2) {\n  return [\n    ...arr1.filter(item => !arr2.includes(item)),\n    ...arr2.filter(item => !arr1.includes(item))\n  ];\n}`,
+    testSuite: `
+      expect(diffArray([1, 2, 3, 5], [1, 2, 3, 4, 5])).to.deep.equal([4]);
+      expect(diffArray(["diorite", "andesite", "grass", "dirt", "pink wool", "dead shrub"], ["diorite", "andesite", "grass", "dirt", "dead shrub"])).to.deep.equal(["pink wool"]);
+    `,
+    sampleTests: `diffArray([1, 2, 3, 5], [1, 2, 3, 4, 5]) -> [4]`,
+    points: 30
+  },
+
+  // ==========================================
+  // WEBDEV: TYPESCRIPT (Type Challenges)
+  // ==========================================
+  {
+    id: "tc_pick",
+    name: "tc_pick",
+    title: "TypeScript: Implement Pick<T, K>",
+    description: "Implement the built-in Pick<T, K> generic without using it. Construct a type by picking the set of properties K from T.",
+    challengeCategory: "webdev",
+    subCategory: "ts",
+    difficultyLevel: 1,
+    difficulty: "EASY",
+    tags: ["typescript", "generics", "type-challenges", "webdev"],
+    source: "type-challenges",
+    executionEngine: "ts-compiler",
+    starterCode: `type MyPick<T, K extends keyof T> = any;\n\n// Example usage:\ninterface Todo {\n  title: string;\n  description: string;\n  completed: boolean;\n}\ntype TodoPreview = MyPick<Todo, 'title' | 'completed'>;`,
+    solution: `type MyPick<T, K extends keyof T> = { [P in K]: T[P] };`,
+    testSuite: `
+      import type { Equal, Expect } from '@type-challenges/utils';
+      interface Todo { title: string; description: string; completed: boolean; }
+      type cases = [
+        Expect<Equal<MyPick<Todo, 'title'>, { title: string }>>,
+        Expect<Equal<MyPick<Todo, 'title' | 'completed'>, { title: string; completed: boolean }>>
+      ];
+    `,
+    sampleTests: `MyPick<Todo, 'title'> === { title: string }`,
+    points: 10
+  },
+  {
+    id: "tc_readonly",
+    name: "tc_readonly",
+    title: "TypeScript: Implement Readonly<T>",
+    description: "Implement the built-in Readonly<T> generic without using it. Construct a type with all properties of T set to readonly, meaning the properties of the constructed type cannot be reassigned.",
+    challengeCategory: "webdev",
+    subCategory: "ts",
+    difficultyLevel: 1,
+    difficulty: "EASY",
+    tags: ["typescript", "generics", "mapped-types", "webdev"],
+    source: "type-challenges",
+    executionEngine: "ts-compiler",
+    starterCode: `type MyReadonly<T> = any;\n\ninterface Todo {\n  title: string;\n  description: string;\n}`,
+    solution: `type MyReadonly<T> = { readonly [P in keyof T]: T[P] };`,
+    testSuite: `
+      import type { Equal, Expect } from '@type-challenges/utils';
+      interface Todo { title: string; description: string; }
+      type cases = [
+        Expect<Equal<MyReadonly<Todo>, { readonly title: string; readonly description: string }>>
+      ];
+    `,
+    sampleTests: `MyReadonly<Todo> sets all keys to readonly`,
+    points: 10
+  },
+  {
+    id: "tc_tuple_to_object",
+    name: "tc_tuple_to_object",
+    title: "TypeScript: Tuple to Object",
+    description: "Given an array or tuple, transform it into an object type where the keys and values are the elements of the tuple.",
+    challengeCategory: "webdev",
+    subCategory: "ts",
+    difficultyLevel: 1,
+    difficulty: "EASY",
+    tags: ["typescript", "tuples", "indexed-access", "webdev"],
+    source: "type-challenges",
+    executionEngine: "ts-compiler",
+    starterCode: `type TupleToObject<T extends readonly (string | number | symbol)[]> = any;\n\nconst tuple = ['tesla', 'model 3', 'model X', 'model Y'] as const;`,
+    solution: `type TupleToObject<T extends readonly (string | number | symbol)[]> = { [P in T[number]]: P };`,
+    testSuite: `
+      import type { Equal, Expect } from '@type-challenges/utils';
+      const tuple = ['tesla', 'model 3', 'model X', 'model Y'] as const;
+      type cases = [
+        Expect<Equal<TupleToObject<typeof tuple>, { tesla: 'tesla'; 'model 3': 'model 3'; 'model X': 'model X'; 'model Y': 'model Y' }>>
+      ];
+    `,
+    sampleTests: `TupleToObject<['a', 'b']> === { a: 'a', b: 'b' }`,
+    points: 10
+  },
+  {
+    id: "tc_first_of_array",
+    name: "tc_first_of_array",
+    title: "TypeScript: First of Array",
+    description: "Implement a generic First<T> that takes an Array T and returns its first element's type. Return never if the array is empty.",
+    challengeCategory: "webdev",
+    subCategory: "ts",
+    difficultyLevel: 1,
+    difficulty: "EASY",
+    tags: ["typescript", "tuples", "conditional-types", "webdev"],
+    source: "type-challenges",
+    executionEngine: "ts-compiler",
+    starterCode: `type First<T extends any[]> = any;\n\ntype arr1 = ['a', 'b', 'c'];\ntype head1 = First<arr1>; // expected 'a'`,
+    solution: `type First<T extends any[]> = T extends [infer Head, ...any[]] ? Head : never;`,
+    testSuite: `
+      import type { Equal, Expect } from '@type-challenges/utils';
+      type cases = [
+        Expect<Equal<First<['a', 'b', 'c']>, 'a'>>,
+        Expect<Equal<First<[3, 2, 1]>, 3>>,
+        Expect<Equal<First<[]>, never>>
+      ];
+    `,
+    sampleTests: `First<['a', 'b']> === 'a'`,
+    points: 10
+  },
+  {
+    id: "tc_awaited",
+    name: "tc_awaited",
+    title: "TypeScript: Implement Awaited",
+    description: "If we have a type which is wrapped type like Promise<ExampleType>, how can we get a type which is inside the wrapped type? Recursively unwrap Promise types.",
+    challengeCategory: "webdev",
+    subCategory: "ts",
+    difficultyLevel: 2,
+    difficulty: "MEDIUM",
+    tags: ["typescript", "promises", "recursion", "webdev"],
+    source: "type-challenges",
+    executionEngine: "ts-compiler",
+    starterCode: `type MyAwaited<T extends PromiseLike<any>> = any;\n\ntype X = Promise<string>;`,
+    solution: `type MyAwaited<T extends PromiseLike<any>> = T extends PromiseLike<infer U> ? (U extends PromiseLike<any> ? MyAwaited<U> : U) : never;`,
+    testSuite: `
+      import type { Equal, Expect } from '@type-challenges/utils';
+      type cases = [
+        Expect<Equal<MyAwaited<Promise<string>>, string>>,
+        Expect<Equal<MyAwaited<Promise<Promise<number>>>, number>>
+      ];
+    `,
+    sampleTests: `MyAwaited<Promise<string>> === string`,
+    points: 20
+  },
+
+  // ==========================================
+  // WEBDEV: REACT (freeCodeCamp React)
+  // ==========================================
+  {
+    id: "react_simple_jsx",
+    name: "react_simple_jsx",
+    title: "React: Create a Simple JSX Element",
+    description: "Create a variable JSX that stores an h1 element with the text 'Hello JSX!'. Ensure you use valid JSX syntax.",
+    challengeCategory: "webdev",
+    subCategory: "react",
+    difficultyLevel: 1,
+    difficulty: "EASY",
+    tags: ["react", "jsx", "components", "webdev"],
+    source: "freecodecamp",
+    executionEngine: "sandpack",
+    starterCode: `// Write your JSX element below:\nconst JSX = <div>Replace me</div>;\n\nexport default function App() {\n  return JSX;\n}`,
+    solution: `const JSX = <h1>Hello JSX!</h1>;\n\nexport default function App() {\n  return JSX;\n}`,
+    testSuite: `
+      expect(JSX.type).to.equal("h1");
+      expect(JSX.props.children).to.equal("Hello JSX!");
+    `,
+    sampleTests: `JSX element renders an h1 tag with text 'Hello JSX!'`,
+    points: 10
+  },
+  {
+    id: "react_counter",
+    name: "react_counter",
+    title: "React: Simple Counter Component",
+    description: "Build a counter component using useState. It should display the current count and have buttons to increment and decrement by 1, and reset to 0.",
+    challengeCategory: "webdev",
+    subCategory: "react",
+    difficultyLevel: 2,
+    difficulty: "MEDIUM",
+    tags: ["react", "hooks", "useState", "webdev"],
+    source: "freecodecamp",
+    executionEngine: "sandpack",
+    starterCode: `import React, { useState } from 'react';\n\nexport default function Counter() {\n  const [count, setCount] = useState(0);\n\n  return (\n    <div>\n      <h1 data-testid="count">{count}</h1>\n      <button data-testid="inc" onClick={() => {}}>Increment</button>\n      <button data-testid="dec" onClick={() => {}}>Decrement</button>\n      <button data-testid="reset" onClick={() => {}}>Reset</button>\n    </div>\n  );\n}`,
+    solution: `import React, { useState } from 'react';\n\nexport default function Counter() {\n  const [count, setCount] = useState(0);\n  return (\n    <div>\n      <h1 data-testid="count">{count}</h1>\n      <button data-testid="inc" onClick={() => setCount(c => c + 1)}>Increment</button>\n      <button data-testid="dec" onClick={() => setCount(c => c - 1)}>Decrement</button>\n      <button data-testid="reset" onClick={() => setCount(0)}>Reset</button>\n    </div>\n  );\n}`,
+    testSuite: `
+      // Verifies increment, decrement and reset buttons update count
+    `,
+    sampleTests: `Clicking Increment increases count, Decrement decreases, Reset zeroes count`,
+    points: 20
+  },
+  {
+    id: "react_controlled_input",
+    name: "react_controlled_input",
+    title: "React: Controlled Input Form",
+    description: "Create a controlled input that stores its typed text in state and mirrors the typed text live into a paragraph tag with data-testid='preview'.",
+    challengeCategory: "webdev",
+    subCategory: "react",
+    difficultyLevel: 2,
+    difficulty: "MEDIUM",
+    tags: ["react", "forms", "controlled-components", "webdev"],
+    source: "freecodecamp",
+    executionEngine: "sandpack",
+    starterCode: `import React, { useState } from 'react';\n\nexport default function ControlledInput() {\n  const [input, setInput] = useState('');\n\n  return (\n    <div>\n      <input value="" onChange={() => {}} />\n      <p data-testid="preview"></p>\n    </div>\n  );\n}`,
+    solution: `import React, { useState } from 'react';\n\nexport default function ControlledInput() {\n  const [input, setInput] = useState('');\n  return (\n    <div>\n      <input value={input} onChange={(e) => setInput(e.target.value)} />\n      <p data-testid="preview">{input}</p>\n    </div>\n  );\n}`,
+    testSuite: `
+      // Verifies typing updates input value and mirror paragraph
+    `,
+    sampleTests: `Typing 'hello' in input reflects in preview paragraph`,
+    points: 20
+  },
+
+  // ==========================================
+  // DSA: ALGORITHMS (MBPP & HumanEval)
+  // ==========================================
+  {
+    id: "mbpp_3",
+    name: "mbpp_3",
+    title: "Is Not Prime",
+    description: "Write a function to identify non-prime numbers. Return true if the number is composite (not prime), and false if the number is prime.",
+    challengeCategory: "dsa",
+    subCategory: "algo",
+    difficultyLevel: 1,
+    difficulty: "EASY",
+    tags: ["math", "numbers", "dsa", "prime"],
+    source: "mbpp",
+    executionEngine: "judge0",
+    starterCode: `def is_not_prime(n: int) -> bool:\n    # Write your code here\n    pass`,
+    solution: `import math\ndef is_not_prime(n):\n    if n < 2:\n        return True\n    for i in range(2, int(math.isqrt(n)) + 1):\n        if n % i == 0:\n            return True\n    return False`,
+    testSuite: `assert is_not_prime(2) == False\nassert is_not_prime(10) == True\nassert is_not_prime(35) == True\nassert is_not_prime(37) == False\nprint("ALL_TESTS_PASSED")`,
+    sampleTests: `is_not_prime(2) == False, is_not_prime(10) == True`,
+    languages: {
+      python: {
+        starterCode: `def is_not_prime(n: int) -> bool:\n    pass`,
+        testSuite: `assert is_not_prime(2) == False\nassert is_not_prime(10) == True\nprint("ALL_TESTS_PASSED")`
+      },
+      cpp: {
+        starterCode: `bool is_not_prime(int n) {\n    return false;\n}`,
+        testSuite: `int main() { assert(is_not_prime(2) == false); assert(is_not_prime(10) == true); return 0; }`
+      }
+    },
+    points: 10
+  },
+  {
+    id: "mbpp_433",
+    name: "mbpp_433",
+    title: "Is Greater Than Elements",
+    description: "Write a function to check whether the entered number is greater than all elements in the given array.",
+    challengeCategory: "dsa",
+    subCategory: "algo",
+    difficultyLevel: 1,
+    difficulty: "EASY",
+    tags: ["arrays", "dsa", "search"],
+    source: "mbpp",
+    executionEngine: "judge0",
+    starterCode: `def check_greater(arr: list, number: int) -> bool:\n    # Write your code here\n    pass`,
+    solution: `def check_greater(arr, number):\n    return all(number > x for x in arr)`,
+    testSuite: `assert check_greater([1, 2, 3, 4, 5], 4) == False\nassert check_greater([2, 3, 4, 5], 6) == True\nassert check_greater([10, 20, 30], 35) == True\nprint("ALL_TESTS_PASSED")`,
+    sampleTests: `check_greater([1, 2, 3], 4) == True`,
+    points: 10
+  },
+
+  // ==========================================
+  // DSA: BUG FIXING (QuixBugs & DebugBench)
+  // ==========================================
+  {
+    id: "qb_bitcount",
+    name: "qb_bitcount",
+    title: "BugFix: Bitcount",
+    description: "The following program is supposed to count the number of set bits (1s) in the binary representation of integer n. However, there is a single-line bug in how n is updated. Fix the bug.",
+    challengeCategory: "dsa",
+    subCategory: "bugfix",
+    difficultyLevel: 1,
+    difficulty: "EASY",
+    tags: ["bitwise", "debugging", "quixbugs", "dsa"],
+    source: "quixbugs",
+    executionEngine: "judge0",
+    starterCode: `def bitcount(n: int) -> int:\n    count = 0\n    while n:\n        n ^= n - 1  # <-- BUG: Fix this line\n        count += 1\n    return count`,
+    solution: `def bitcount(n: int) -> int:\n    count = 0\n    while n:\n        n &= n - 1\n        count += 1\n    return count`,
+    testSuite: `assert bitcount(127) == 7\nassert bitcount(128) == 1\nassert bitcount(0) == 0\nassert bitcount(13) == 3\nprint("ALL_TESTS_PASSED")`,
+    sampleTests: `bitcount(13) -> 3 (since 13 = 1101 in binary)`,
+    points: 10
+  },
+  {
+    id: "qb_find_in_sorted",
+    name: "qb_find_in_sorted",
+    title: "BugFix: Binary Search In Sorted",
+    description: "The following function performs binary search on a sorted array. It contains a classic off-by-one boundary bug when narrowing the search window. Find and fix the error.",
+    challengeCategory: "dsa",
+    subCategory: "bugfix",
+    difficultyLevel: 2,
+    difficulty: "MEDIUM",
+    tags: ["binary-search", "arrays", "debugging", "quixbugs"],
+    source: "quixbugs",
+    executionEngine: "judge0",
+    starterCode: `def find_in_sorted(arr, x):\n    def binsearch(start, end):\n        if start == end:\n            return -1\n        mid = start + (end - start) // 2\n        if x < arr[mid]:\n            return binsearch(start, mid)\n        elif x > arr[mid]:\n            return binsearch(mid, end) # <-- BUG HERE\n        else:\n            return mid\n\n    return binsearch(0, len(arr))`,
+    solution: `def find_in_sorted(arr, x):\n    def binsearch(start, end):\n        if start == end:\n            return -1\n        mid = start + (end - start) // 2\n        if x < arr[mid]:\n            return binsearch(start, mid)\n        elif x > arr[mid]:\n            return binsearch(mid + 1, end)\n        else:\n            return mid\n\n    return binsearch(0, len(arr))`,
+    testSuite: `assert find_in_sorted([1, 2, 3, 4, 5], 3) == 2\nassert find_in_sorted([1, 3, 5, 7, 9], 9) == 4\nassert find_in_sorted([1, 3, 5, 7, 9], 8) == -1\nprint("ALL_TESTS_PASSED")`,
+    sampleTests: `find_in_sorted([1, 3, 5, 7], 5) == 2`,
+    points: 20
+  },
+  {
+    id: "db_destination_city",
+    name: "db_destination_city",
+    title: "BugFix: Destination City (DebugBench Row 112)",
+    description: "You are given paths where paths[i] = [cityA, cityB]. Return the destination city (city with no outgoing paths). The provided C++ code has indexing and iterator errors. Fix them so the program compiles and passes.",
+    challengeCategory: "dsa",
+    subCategory: "bugfix",
+    difficultyLevel: 2,
+    difficulty: "MEDIUM",
+    tags: ["cpp", "hashset", "debugging", "debugbench"],
+    source: "debugbench",
+    executionEngine: "judge0",
+    starterCode: `class Solution {\npublic:\n    string destCity(vector<vector<string>>& paths) {\n        unordered_set<string> st;\n        for (auto row : paths) st.insert(row[0]); // BUG 1\n        for (auto row : paths) if(st.count(row[0]) > 0) st.erase(row[0]);\n        return *st.end(); // BUG 2\n    }\n};`,
+    solution: `class Solution {\npublic:\n    string destCity(vector<vector<string>>& paths) {\n        unordered_set<string> st;\n        for (auto row : paths) st.insert(row[1]);\n        for (auto row : paths) if(st.count(row[0]) > 0) st.erase(row[0]);\n        return *st.begin();\n    }\n};`,
+    testSuite: `
+      // Tests destination city matches end city of the chain
+    `,
+    sampleTests: `paths = [["London","New York"],["New York","Lima"],["Lima","Sao Paulo"]] -> "Sao Paulo"`,
+    points: 20
+  }
+];

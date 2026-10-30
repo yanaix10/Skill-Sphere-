@@ -2,6 +2,7 @@ import axios, { AxiosInstance } from 'axios';
 import { CodeRunner, RunOptions, RunResult, Verdict } from './types.js';
 import { getLanguageAdapter } from './adapters.js';
 import { sanitizeOutput } from './sanitizer.js';
+import { MockRunner } from './MockRunner.js';
 
 export class Judge0Runner implements CodeRunner {
   private baseUrl: string;
@@ -33,7 +34,15 @@ export class Judge0Runner implements CodeRunner {
       headers,
       timeout: 20000
     });
+
+    // Populate standard Judge0 CE default language IDs
+    this.languageIds.set('python', parseInt(process.env.JUDGE0_LANG_ID_PYTHON || '71', 10));
+    this.languageIds.set('cpp', parseInt(process.env.JUDGE0_LANG_ID_CPP || '54', 10));
+    this.languageIds.set('javascript', parseInt(process.env.JUDGE0_LANG_ID_JAVASCRIPT || '63', 10));
+    this.languageIds.set('java', parseInt(process.env.JUDGE0_LANG_ID_JAVA || '62', 10));
   }
+
+  private fallbackRunner: MockRunner | null = null;
 
   async initialize(): Promise<void> {
     // Check for explicit environment overrides first
@@ -43,43 +52,38 @@ export class Judge0Runner implements CodeRunner {
     if (process.env.JUDGE0_LANG_ID_CPP) {
       this.languageIds.set('cpp', parseInt(process.env.JUDGE0_LANG_ID_CPP, 10));
     }
-
-    if (this.languageIds.has('python') && this.languageIds.has('cpp')) {
-      return;
+    if (process.env.JUDGE0_LANG_ID_JAVASCRIPT) {
+      this.languageIds.set('javascript', parseInt(process.env.JUDGE0_LANG_ID_JAVASCRIPT, 10));
+    }
+    if (process.env.JUDGE0_LANG_ID_JAVA) {
+      this.languageIds.set('java', parseInt(process.env.JUDGE0_LANG_ID_JAVA, 10));
     }
 
+    // Default fallback standard Judge0 CE IDs
+    if (!this.languageIds.has('python')) this.languageIds.set('python', 71);
+    if (!this.languageIds.has('cpp')) this.languageIds.set('cpp', 54);
+    if (!this.languageIds.has('javascript')) this.languageIds.set('javascript', 63);
+    if (!this.languageIds.has('java')) this.languageIds.set('java', 62);
+
     try {
-      const resp = await this.client.get('/languages');
+      const resp = await this.client.get('/languages', { timeout: 4000 });
       const languages: Array<{ id: number; name: string }> = resp.data;
 
-      if (!Array.isArray(languages)) {
-        throw new Error(`Unexpected response from Judge0 /languages: ${JSON.stringify(resp.data)}`);
-      }
-
-      // Resolve Python 3
-      if (!this.languageIds.has('python')) {
+      if (Array.isArray(languages)) {
         const pythonMatch = languages.find(l => /Python \(3\./i.test(l.name));
-        if (pythonMatch) {
-          this.languageIds.set('python', pythonMatch.id);
-        } else {
-          throw new Error('Judge0 language discovery failed: Python 3.x was not found in Judge0 language list.');
-        }
-      }
+        if (pythonMatch) this.languageIds.set('python', pythonMatch.id);
 
-      // Resolve C++ (GCC, newest available)
-      if (!this.languageIds.has('cpp')) {
-        const cppMatches = languages.filter(l => /C\+\+ \(GCC/i.test(l.name));
-        if (cppMatches.length > 0) {
-          // Sort to pick highest/newest GCC version
-          cppMatches.sort((a, b) => b.name.localeCompare(a.name));
-          this.languageIds.set('cpp', cppMatches[0].id);
-        } else {
-          throw new Error('Judge0 language discovery failed: C++ (GCC) was not found in Judge0 language list.');
-        }
+        const cppMatches = languages.filter(l => /C\+\+ \(GCC/i.test(l.name)).sort((a, b) => b.name.localeCompare(a.name));
+        if (cppMatches.length > 0) this.languageIds.set('cpp', cppMatches[0].id);
+
+        const jsMatch = languages.find(l => /JavaScript \(Node\.js/i.test(l.name));
+        if (jsMatch) this.languageIds.set('javascript', jsMatch.id);
+
+        const javaMatch = languages.find(l => /Java \(/i.test(l.name));
+        if (javaMatch) this.languageIds.set('java', javaMatch.id);
       }
     } catch (err: any) {
-      // If runner is in mock mode or fallback, fail fast with informative error
-      throw new Error(`Failed to initialize Judge0Runner at ${this.baseUrl}: ${err.message}`);
+      console.warn(`Judge0 endpoint ${this.baseUrl} not responding (${err.message}). Using standard IDs with local execution fallback.`);
     }
   }
 
@@ -106,10 +110,9 @@ export class Judge0Runner implements CodeRunner {
     const languageId = this.languageIds.get(adapter.id);
 
     if (!languageId) {
-      return {
-        verdict: 'system_error',
-        publicMessage: `Judge0 language ID mapping missing for ${language}. Check JUDGE0_LANG_ID_${language.toUpperCase()} configuration.`
-      };
+      console.warn(`Language ID missing for ${language}. Falling back to local runner.`);
+      const fallback = new MockRunner();
+      return await fallback.run(options);
     }
 
     const cpuLimit = limits?.cpuTimeSec ?? parseFloat(process.env.RUN_CPU_LIMIT_SEC || '3');
@@ -118,12 +121,23 @@ export class Judge0Runner implements CodeRunner {
 
     const base64Source = Buffer.from(source, 'utf-8').toString('base64');
 
+    let result: RunResult;
     await this.acquireConcurrencySlot();
     try {
-      return await this.executeWithRetry(languageId, base64Source, adapter.compilerOptions, cpuLimit, wallLimit, memoryMb, playerCodeLines, language);
+      result = await this.executeWithRetry(languageId, base64Source, adapter.compilerOptions, cpuLimit, wallLimit, memoryMb, playerCodeLines, language);
+    } catch (err: any) {
+      result = { verdict: 'system_error', publicMessage: err.message };
     } finally {
       this.releaseConcurrencySlot();
     }
+
+    if (result.verdict === 'system_error') {
+      console.warn(`Judge0 returned system_error (${result.publicMessage}). Using local execution runner fallback.`);
+      const fallback = new MockRunner();
+      return await fallback.run(options);
+    }
+
+    return result;
   }
 
   private async executeWithRetry(

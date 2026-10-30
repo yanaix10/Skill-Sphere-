@@ -124,10 +124,10 @@ export class MatchManager {
     const roomCode = (customCode || crypto.randomBytes(3).toString('hex')).toUpperCase();
     const matchId = `match_${crypto.randomBytes(4).toString('hex')}`;
 
-    // Select questions supporting the host's language (defaulting to python or cpp)
-    const normalizedLang = (hostPlayer.language === 'cpp' || hostPlayer.language === 'c') ? 'cpp' : 'python';
+    // Select questions supporting the host's language
+    const normalizedLang = hostPlayer.language.toLowerCase().trim();
     const questions = selectMatchQuestions({
-      languages: [normalizedLang, 'cpp'],
+      languages: [normalizedLang],
       count: this.defaultConfig.questionCount
     });
 

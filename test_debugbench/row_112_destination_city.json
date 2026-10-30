@@ -1,0 +1,20 @@
+{
+  "solution_explanation": "# Intuition\\n<!-- Describe your first thoughts on how to solve this problem. -->\\n\\n# Approach\\n<!-- Describe your approach to solving the problem. -->\\n\\n# Complexity\\n- Time complexity:\\n<!-- Add your time complexity here, e.g. $$O(n)$$ -->\\n\\n- Space complexity:\\n<!-- Add your space complexity here, e.g. $$O(n)$$ -->\\n\\n# Code\\n```\\nclass Solution {\\npublic:\\n    string destCity(vector<vector<string>>& paths) {\\n        unordered_set<string> st;\\n        for (auto row : paths)st.insert(row[1]);\\n        for (auto row : paths)if(st.count(row[0]) > 0) st.erase(row[0]);\\n        return *st.begin();\\n    }\\n};\\n\\n```",
+  "question": "You are given the array paths, where paths[i] = [cityAi, cityBi] means there exists a direct path going from cityAi to cityBi. Return the destination city, that is, the city without any path outgoing to another city.\nIt is guaranteed that the graph of paths forms a line without any loop, therefore, there will be exactly one destination city.",
+  "examples": [
+    "Input: paths = [[\"London\",\"New York\"],[\"New York\",\"Lima\"],[\"Lima\",\"Sao Paulo\"]]\nOutput: \"Sao Paulo\" \nExplanation: Starting at \"London\" city you will reach \"Sao Paulo\" city which is the destination city. Your trip consist of: \"London\" -> \"New York\" -> \"Lima\" -> \"Sao Paulo\".",
+    "Input: paths = [[\"B\",\"C\"],[\"D\",\"B\"],[\"C\",\"A\"]]\nOutput: \"A\"\nExplanation: All possible trips are:\u00a0\n\"D\" -> \"B\" -> \"C\" -> \"A\".\u00a0\n\"B\" -> \"C\" -> \"A\".\u00a0\n\"C\" -> \"A\".\u00a0\n\"A\".\u00a0\nClearly the destination city is \"A\".",
+    "Input: paths = [[\"A\",\"Z\"]]\nOutput: \"Z\""
+  ],
+  "constraints": "1 <= paths.length <= 100\npaths[i].length == 2\n1 <= cityAi.length, cityBi.length <= 10\ncityAi != cityBi\nAll strings consist of lowercase and uppercase English letters and the space character.",
+  "buggy_code": "\nclass Solution {\npublic:\n    string destCity(vector<vector<string>>& paths) {\n        unordered_set<string> st;\n        for (auto row : paths)st.insert(row[0]); \n        for (auto row : paths)if(st.count(row[0]) > 0) st.erase(row[0]);\n        return *st.end();\n    }\n};\n",
+  "solution": "class Solution {\npublic:\n    string destCity(vector<vector<string>>& paths) {\n        unordered_set<string> st;\n        for (auto row : paths)st.insert(row[1]);\n        for (auto row : paths)if(st.count(row[0]) > 0) st.erase(row[0]);\n        return *st.begin();\n    }\n};",
+  "bug_explanation": "a mixture of indexing error, variable value error",
+  "subtype": "double",
+  "level": "easy",
+  "slug": "destination-city",
+  "release_time": 1691676957,
+  "language": "cpp",
+  "category": "multiple error",
+  "row_index": 112
+}

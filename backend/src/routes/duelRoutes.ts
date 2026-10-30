@@ -65,9 +65,52 @@ router.get('/languages', (_req: Request, res: Response) => {
         displayName: 'C++ (GCC)',
         editorMode: 'cpp',
         version: 'C++17'
+      },
+      {
+        id: 'javascript',
+        displayName: 'JavaScript (Node.js)',
+        editorMode: 'javascript',
+        version: 'v20+'
+      },
+      {
+        id: 'java',
+        displayName: 'Java (OpenJDK)',
+        editorMode: 'java',
+        version: '17'
       }
     ]
   });
+});
+
+/**
+ * GET /api/duel/questions
+ * Returns all public questions for sandboxing and offline practice.
+ */
+router.get('/questions', async (_req: Request, res: Response): Promise<any> => {
+  try {
+    const { loadAllQuestions } = await import('../match/questionSelector.js');
+    const all = loadAllQuestions().filter((q) => q.enabled);
+    const questions = all.map((q) => ({
+      id: q.id,
+      title: q.title,
+      statement: q.statement,
+      difficulty: (q as any).difficulty || 'MEDIUM',
+      tags: q.tags,
+      category: (q as any).challengeCategory || 'dsa',
+      variants: Object.fromEntries(
+        Object.entries(q.variants || {}).map(([lang, v]) => [
+          lang,
+          {
+            starterCode: v.starterCode,
+            example: v.example
+          }
+        ])
+      )
+    }));
+    return res.json({ success: true, questions });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, message: err.message });
+  }
 });
 
 /**
