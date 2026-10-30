@@ -26,8 +26,8 @@ import { useTheme } from "../context/ThemeContext";
 
 const navigationLinks = [
   { href: "/", label: "Home" },
-  { href: "/quizzes", label: "Quizzes" },
-  { href: "/games", label: "Games" },
+  { href: "/games", label: "WebDev Arena" },
+  { href: "/quizzes", label: "Quizzes & Duels" },
   { href: "/friends", label: "Friends" },
 ];
 

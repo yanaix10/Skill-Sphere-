@@ -2,6 +2,8 @@ import express, { Request, Response } from 'express';
 import { z } from 'zod';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
+import fs from 'fs';
+import path from 'path';
 import { getCodeRunner } from '../runner/index.js';
 
 const router = express.Router();
@@ -108,6 +110,32 @@ router.get('/questions', async (_req: Request, res: Response): Promise<any> => {
       )
     }));
     return res.json({ success: true, questions });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+/**
+ * GET /api/webdev/challenges (and /api/duel/webdev/challenges)
+ * Returns curated WebDev challenges from challenge_questions.json
+ */
+router.get('/webdev/challenges', async (_req: Request, res: Response): Promise<any> => {
+  try {
+    const possiblePaths = [
+      path.resolve(process.cwd(), 'backend/data/challenge_questions.json'),
+      path.resolve(process.cwd(), 'data/challenge_questions.json')
+    ];
+
+    for (const p of possiblePaths) {
+      if (fs.existsSync(p)) {
+        const raw = fs.readFileSync(p, 'utf-8');
+        const allQuestions = JSON.parse(raw);
+        const webdevQuestions = allQuestions.filter((q: any) => q.challengeCategory === 'webdev');
+        return res.json({ success: true, count: webdevQuestions.length, challenges: webdevQuestions });
+      }
+    }
+
+    return res.json({ success: true, count: 0, challenges: [] });
   } catch (err: any) {
     return res.status(500).json({ success: false, message: err.message });
   }

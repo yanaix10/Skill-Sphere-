@@ -16,6 +16,7 @@ import CodeEditor from "./CodeEditor";
 import { auth } from "../firebase";
 import { BACKEND_URL } from "../utils/api";
 import { defaultQuestions, SandBoxQuestion } from "../data/dsaQuestions";
+import WebDevArena from "./WebDevArena";
 
 function getPersistentPlayerId(): string {
   if (typeof window === "undefined") return "guest";
@@ -164,8 +165,8 @@ export default function Challenge({
   useEffect(() => {
     if (isDuelActive && challengeConfig?.action) {
       const mode = challengeConfig.gameMode || "dsa_sprint";
-      if (mode !== "dsa_sprint") {
-        alert(`${mode === "webdev_arena" ? "WebDev Arena" : "Full-Stack Blitz"} is locked and coming soon! Defaulting to DSA Sprint.`);
+      if (mode === "fullstack_blitz") {
+        alert("Full-Stack Blitz is locked and coming soon! Defaulting to active arena mode.");
       }
 
       if (challengeConfig.action === "create") {
@@ -447,6 +448,10 @@ export default function Challenge({
     currentMatchQuestion?.languages?.[language]?.example ||
     currentMatchQuestion?.variants?.[language]?.example
     : currentSandboxQuestion?.variants?.[language as keyof typeof currentSandboxQuestion.variants]?.example;
+
+  if (challengeConfig?.gameMode === "webdev_arena") {
+    return <WebDevArena />;
+  }
 
   return (
     <div className="h-full w-full flex flex-col overflow-hidden bg-background font-sans text-foreground select-none">

@@ -58,8 +58,8 @@ const Sidebar: React.FC<SidebarProps> = ({
   };
 
   const handleLaunchChallenge = () => {
-    if (selectedGameMode !== "dsa_sprint") {
-      alert(`${selectedGameMode === "webdev_arena" ? "WebDev Arena" : "Full-Stack Blitz"} is locked & coming soon! Launching DSA Sprint.`);
+    if (selectedGameMode === "fullstack_blitz") {
+      alert("Full-Stack Blitz is locked & coming soon! Defaulting to active mode.");
     }
     if (onLaunchChallenge) {
       onLaunchChallenge({
@@ -256,7 +256,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                               className="w-full py-2 px-3 bg-secondary text-foreground border border-border rounded-lg text-xs font-medium focus:ring-1 focus:ring-primary outline-none cursor-pointer"
                             >
                               <option value="dsa_sprint">DSA Sprint (Active)</option>
-                              <option value="webdev_arena">WebDev Arena (Coming Soon)</option>
+                              <option value="webdev_arena">WebDev Arena (Active)</option>
                               <option value="fullstack_blitz">Full-Stack Blitz (Coming Soon)</option>
                             </select>
                           </div>
