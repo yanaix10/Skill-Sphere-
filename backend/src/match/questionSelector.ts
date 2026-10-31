@@ -115,6 +115,21 @@ try {
 `;
           }
 
+          const variants: Record<string, any> = {
+            [langKey]: {
+              starterCode: starter,
+              harness: harness,
+              example: q.sampleTests || ''
+            }
+          };
+          if (!isTs) {
+            variants['typescript'] = {
+              starterCode: starter,
+              harness: harness,
+              example: q.sampleTests || ''
+            };
+          }
+
           return {
             id: q.id,
             title: q.title,
@@ -122,13 +137,7 @@ try {
             estMinutes: q.difficultyLevel === 1 ? 2 : q.difficultyLevel === 2 ? 3 : 4,
             tags: q.tags || (isTs ? ['webdev', 'typescript'] : ['webdev', 'javascript']),
             enabled: true,
-            variants: {
-              [langKey]: {
-                starterCode: starter,
-                harness: harness,
-                example: q.sampleTests || ''
-              }
-            }
+            variants
           };
         });
         return cachedWebdevQuestions!;
@@ -241,6 +250,7 @@ export function sanitizeQuestionForClient(q: MatchQuestion): any {
 
   const difficulty = q.estMinutes <= 2 ? 'EASY' : q.estMinutes === 3 ? 'MEDIUM' : 'HARD';
   const category = q.tags[0] ? q.tags[0].toUpperCase() : 'ALGORITHMS';
+  const firstVariant = Object.values(languages)[0];
 
   return {
     id: q.id,
@@ -251,6 +261,8 @@ export function sanitizeQuestionForClient(q: MatchQuestion): any {
     category,
     tags: q.tags,
     estMinutes: q.estMinutes,
+    starterCode: firstVariant?.starterCode || '',
+    sampleTests: firstVariant?.sampleTests || firstVariant?.example || '',
     languages
   };
 }

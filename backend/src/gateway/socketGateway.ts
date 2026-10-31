@@ -96,7 +96,7 @@ export function setupSocketGateway(io: Server): void {
     io.to(roomKey).emit('match:state', publicState);
 
     // 2. Frontend Native format for Challenge.tsx
-    const countdownSec = parseInt(process.env.COUNTDOWN_SEC || '60', 10);
+    const countdownSec = parseInt(process.env.COUNTDOWN_SEC || '5', 10);
     const nativeState = {
       challengeId: roomKey,
       status: match.state === 'in_progress' ? 'started' : match.state,
@@ -199,53 +199,36 @@ export function setupSocketGateway(io: Server): void {
             onStateChange: (m) => broadcastMatchState(m)
           });
         } else {
-          // Check if this socket or playerId or nickname is already recognized in the room
-          const existingBySocket = [...match.players.values()].find((p) => p.socketId === socket.id);
-          const existingPlayer = match.players.get(clientPlayerId) ||
-            [...match.players.values()].find((p) => !p.connected && p.nickname === nickname) ||
-            (match.players.size <= 2 ? [...match.players.values()].find((p) => p.playerId === clientPlayerId) : undefined);
+          // Check if this player already belongs to the room by ID or nickname
+          const normalizedNick = nickname.trim().toLowerCase();
+          const existingPlayer =
+            match.players.get(clientPlayerId) ||
+            [...match.players.values()].find((p) => p.playerId === clientPlayerId) ||
+            [...match.players.values()].find((p) => p.nickname.trim().toLowerCase() === normalizedNick);
 
-          if (match.state === 'waiting' && match.players.size < 2) {
-            if (existingBySocket) {
-              // Same socket re-sending join, update metadata
-              existingBySocket.nickname = nickname;
-              existingBySocket.language = language;
-            } else if (existingPlayer && !existingPlayer.connected) {
-              // Disconnected player reconnecting
-              manager.handleReconnect(match.id, existingPlayer.playerId, socket.id);
-            } else if (existingPlayer && existingPlayer.connected) {
-              // Collision: client has same ID while existing player is actively connected (e.g. 2 tabs in same browser session)
-              // Generate unique player ID so 2nd player joins properly as Player 2
-              const uniquePlayerId = `${clientPlayerId}_${socket.id.substring(0, 6)}`;
-              manager.joinRoom(code, {
-                playerId: uniquePlayerId,
-                nickname,
-                language,
-                socketId: socket.id
-              });
-            } else {
-              // Brand new 2nd player
-              manager.joinRoom(code, {
-                playerId: clientPlayerId,
-                nickname,
-                language,
-                socketId: socket.id
-              });
-            }
-
-            if (match.state === 'waiting' && match.players.size === 2) {
+          if (existingPlayer) {
+            // Reconnect player to their active room session
+            manager.handleReconnect(match.id, existingPlayer.playerId, socket.id);
+            existingPlayer.nickname = nickname;
+            existingPlayer.language = language;
+          } else if (match.players.size < 2) {
+            // Join as player 2
+            manager.joinRoom(code, {
+              playerId: clientPlayerId,
+              nickname,
+              language,
+              socketId: socket.id
+            });
+            if (match.players.size === 2 && match.state === 'waiting') {
               match.startCountdown();
             }
           } else {
-            // Room is full or match is countdown / in_progress / finished
-            if (existingBySocket) {
-              // Already connected on this socket
-            } else if (existingPlayer) {
-              // Disconnected player rejoining mid-session
-              manager.handleReconnect(match.id, existingPlayer.playerId, socket.id);
-            } else {
-              socket.emit('error', { message: 'Room is already full or match in progress.' });
-              return;
+            // Fallback for reloaded clients where ID may have regenerated:
+            // If one of the 2 players is disconnected, reconnect into that slot
+            const disconnectedPlayer = [...match.players.values()].find((p) => !p.connected);
+            if (disconnectedPlayer) {
+              manager.handleReconnect(match.id, disconnectedPlayer.playerId, socket.id);
+              disconnectedPlayer.nickname = nickname;
             }
           }
         }

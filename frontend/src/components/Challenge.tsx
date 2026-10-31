@@ -591,18 +591,61 @@ export default function Challenge({
     (currentMatchQuestion as any)?.sampleTests ||
     "";
 
-  // Format 1-minute countdown timer (e.g. 01:00, 00:45)
+  // Re-sync with room if match is started but questions haven't arrived yet
+  useEffect(() => {
+    if (inRoom && roomCode && isStarted && (!challengeState?.questions || challengeState.questions.length === 0)) {
+      socket.emit("join_challenge", {
+        challengeId: roomCode,
+        userDetails: { name: getUserName() },
+        gameMode,
+        language: gameMode === "webdev_arena" ? "javascript" : langRef.current,
+        playerId: getPersistentPlayerId()
+      });
+    }
+  }, [inRoom, roomCode, isStarted, challengeState?.questions, gameMode]);
+
+  // Format countdown timer (e.g. 00:05, 00:45)
   const formatTimer = (sec: number | null) => {
-    if (sec === null) return "01:00";
+    if (sec === null) return "00:05";
     const m = Math.floor(sec / 60);
     const s = sec % 60;
     return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
   };
 
   // =========================================================================
-  // VIEW 1: ACTIVE CHALLENGE MATCH (Revealed ONLY after 1-minute countdown)
+  // VIEW 1: ACTIVE CHALLENGE MATCH
   // =========================================================================
   if (isStarted) {
+    if (!currentMatchQuestion) {
+      return (
+        <div className="h-full w-full flex flex-col items-center justify-center p-6 bg-background font-sans text-foreground select-none">
+          <div className="max-w-md w-full bg-card border border-border rounded-xl p-8 text-center space-y-4 shadow-lg">
+            <div className="w-12 h-12 rounded-full bg-primary/10 border border-primary/20 text-primary flex items-center justify-center mx-auto animate-spin">
+              <RotateCcw className="w-5 h-5" />
+            </div>
+            <h2 className="text-base font-bold text-foreground">Preparing Challenge Arena...</h2>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              Synchronizing room <span className="font-mono font-bold text-foreground">{roomCode}</span> specifications and test harness with the server.
+            </p>
+            <button
+              onClick={() => {
+                socket.emit("join_challenge", {
+                  challengeId: roomCode,
+                  userDetails: { name: getUserName() },
+                  gameMode,
+                  language: gameMode === "webdev_arena" ? "javascript" : langRef.current,
+                  playerId: getPersistentPlayerId()
+                });
+              }}
+              className="px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground font-bold rounded-lg text-xs uppercase tracking-wider cursor-pointer transition-colors shadow-xs"
+            >
+              Sync Arena State
+            </button>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="h-full w-full flex flex-col overflow-hidden bg-background font-sans text-foreground select-none">
         {/* Top Header: Professional Arena Status & Scoreboard */}

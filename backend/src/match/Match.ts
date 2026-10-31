@@ -107,8 +107,8 @@ export class Match implements MatchContext {
     player.disconnectedAt = Date.now();
     this.socketToPlayer.delete(socketId);
 
-    // If still in waiting room, remove player or clean up
-    if (this.state === 'waiting' || this.state === 'countdown') {
+    // Only remove player if waiting room has not found an opponent yet
+    if (this.state === 'waiting' && this.players.size < 2) {
       this.players.delete(playerId);
       this.notifyStateChange();
     }
@@ -254,7 +254,7 @@ export class Match implements MatchContext {
 
   public tick(): void {
     if (this.state === 'countdown') {
-      const countdownMs = parseInt(process.env.COUNTDOWN_SEC || '60', 10) * 1000;
+      const countdownMs = parseInt(process.env.COUNTDOWN_SEC || '5', 10) * 1000;
       if (Date.now() - this.countdownStartsAt >= countdownMs) {
         this.startMatch();
       }
