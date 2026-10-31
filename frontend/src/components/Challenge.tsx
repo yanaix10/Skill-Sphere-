@@ -359,9 +359,12 @@ export default function Challenge({
       setCountdown(remaining > 0 ? remaining : duration);
     });
 
-    socket.on("challenge_started", () => {
+    socket.on("challenge_started", (startedState?: ChallengeState) => {
       setIsStarted(true);
       setCountdown(null);
+      if (startedState && startedState.questions && startedState.questions.length > 0) {
+        setChallengeState(startedState);
+      }
     });
 
     socket.on("challenge_end", ({ winner }: { winner: Player }) => {
@@ -543,18 +546,43 @@ export default function Challenge({
           : (availableLangs.includes("typescript") || currentMatchQuestion?.tags?.includes("typescript") ? "typescript" : "javascript"))
       : language;
 
-  // Sync active language when question changes in WebDev arena
+  // Sync active language and starter code when question changes in WebDev arena or DSA sprint
   useEffect(() => {
-    if (isStarted && currentMatchQuestion && gameMode === "webdev_arena") {
+    if (currentMatchQuestion) {
       const qLangs = Object.keys(currentMatchQuestion.languages || currentMatchQuestion.variants || {});
-      const detected = (qLangs.includes("typescript") || currentMatchQuestion.tags?.includes("typescript"))
-        ? "typescript"
-        : "javascript";
-      if (detected !== language) {
-        setLanguage(detected);
+      let detected = language;
+      if (gameMode === "webdev_arena") {
+        detected = (qLangs.includes("typescript") || currentMatchQuestion.tags?.includes("typescript"))
+          ? "typescript"
+          : "javascript";
+        if (detected !== language) {
+          setLanguage(detected);
+        }
+      }
+
+      // Initialize code if empty or moving to next question
+      if (!code || prevIndexRef.current !== p1Index) {
+        prevIndexRef.current = p1Index;
+        const curRoom = roomCode || stateRef.current.roomCode;
+        const savedDraft = curRoom && currentMatchQuestion.id
+          ? sessionStorage.getItem(`skillsphere_code_${curRoom}_${currentMatchQuestion.id}`)
+          : null;
+        if (savedDraft) {
+          setCode(savedDraft);
+        } else {
+          const starter =
+            currentMatchQuestion.languages?.[detected]?.starterCode ||
+            currentMatchQuestion.variants?.[detected]?.starterCode ||
+            currentMatchQuestion.initialCode?.[detected] ||
+            (currentMatchQuestion as any)?.starterCode ||
+            "";
+          if (starter) {
+            setCode(starter);
+          }
+        }
       }
     }
-  }, [p1Index, isStarted, currentMatchQuestion, gameMode, language]);
+  }, [p1Index, isStarted, currentMatchQuestion, gameMode, language, code, roomCode]);
 
   const activeSampleAssertion =
     currentMatchQuestion?.languages?.[activeLang]?.sampleTests ||

@@ -319,7 +319,7 @@ export class Match implements MatchContext {
   }
 
   public getPublicQuestions(): PublicMatchQuestion[] {
-    if (this.state === 'waiting' || this.state === 'countdown') {
+    if (!this.questions || this.questions.length === 0) {
       return [];
     }
     return this.questions.map(sanitizeQuestionForClient);
