@@ -212,6 +212,44 @@ export class MockRunner implements CodeRunner {
       }
     }
 
+    if (language === 'typescript' || language === 'ts') {
+      const tmpFile = path.join(tmpDir, `local_run_${randId}.ts`);
+      try {
+        fs.writeFileSync(tmpFile, source);
+        await execPromise(`npx tsc --noEmit "${tmpFile}"`, { timeout: 8000 });
+        const timeMs = Date.now() - startTime;
+        return {
+          verdict: 'passed',
+          timeMs,
+          publicMessage: 'All type tests passed!'
+        };
+      } catch (err: any) {
+        const timeMs = Date.now() - startTime;
+        const rawOutput = err.stdout || err.stderr || err.message || '';
+        let verdict: any = 'failed';
+        if (err.killed || err.signal === 'SIGTERM') {
+          verdict = 'timeout';
+        } else if (rawOutput.includes('error TS')) {
+          verdict = 'compile_error';
+        }
+
+        const publicMessage = sanitizeOutput({
+          verdict,
+          rawOutput,
+          playerCodeLines,
+          language: 'typescript'
+        });
+
+        return {
+          verdict,
+          timeMs,
+          publicMessage
+        };
+      } finally {
+        if (fs.existsSync(tmpFile)) fs.unlinkSync(tmpFile);
+      }
+    }
+
     if (language === 'java') {
       const classDir = path.join(tmpDir, `java_${randId}`);
       fs.mkdirSync(classDir, { recursive: true });

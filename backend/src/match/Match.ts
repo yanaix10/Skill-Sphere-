@@ -35,15 +35,17 @@ export class Match implements MatchContext {
   public finishReason: FinishReason | null = null;
 
   public pendingWinnerCheck: { candidateId: string; expiresAt: number } | null = null;
+  public gameMode?: string;
   private scoringMode: ScoringMode;
   public config: MatchConfig;
   private listeners: MatchListener[] = [];
 
-  constructor(id: string, questions: MatchQuestion[], config: MatchConfig, roomCode?: string) {
+  constructor(id: string, questions: MatchQuestion[], config: MatchConfig, roomCode?: string, gameMode?: string) {
     this.id = id;
     this.roomCode = roomCode;
     this.questions = questions;
     this.config = config;
+    this.gameMode = gameMode;
     this.scoringMode = getScoringMode(config.scoringMode);
   }
 
@@ -252,7 +254,8 @@ export class Match implements MatchContext {
 
   public tick(): void {
     if (this.state === 'countdown') {
-      if (Date.now() - this.countdownStartsAt >= 3000) {
+      const countdownMs = parseInt(process.env.COUNTDOWN_SEC || '60', 10) * 1000;
+      if (Date.now() - this.countdownStartsAt >= countdownMs) {
         this.startMatch();
       }
       return;
@@ -316,6 +319,9 @@ export class Match implements MatchContext {
   }
 
   public getPublicQuestions(): PublicMatchQuestion[] {
+    if (this.state === 'waiting' || this.state === 'countdown') {
+      return [];
+    }
     return this.questions.map(sanitizeQuestionForClient);
   }
 

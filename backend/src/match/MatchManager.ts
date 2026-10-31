@@ -119,19 +119,22 @@ export class MatchManager {
 
   public createRoom(
     hostPlayer: { playerId: string; nickname: string; language: string; socketId: string },
-    customCode?: string
+    customCode?: string,
+    gameMode?: string
   ): { match: Match; roomCode: string } {
     const roomCode = (customCode || crypto.randomBytes(3).toString('hex')).toUpperCase();
     const matchId = `match_${crypto.randomBytes(4).toString('hex')}`;
 
     // Select questions supporting the host's language
-    const normalizedLang = hostPlayer.language.toLowerCase().trim();
+    const isWebdev = gameMode === 'webdev_arena';
+    const normalizedLang = isWebdev ? 'javascript' : hostPlayer.language.toLowerCase().trim();
     const questions = selectMatchQuestions({
       languages: [normalizedLang],
-      count: this.defaultConfig.questionCount
+      count: this.defaultConfig.questionCount,
+      gameMode
     });
 
-    const match = new Match(matchId, questions, { ...this.defaultConfig }, roomCode);
+    const match = new Match(matchId, questions, { ...this.defaultConfig }, roomCode, gameMode);
     match.addListener({
       onFinished: (m) => persistMatch(m)
     });

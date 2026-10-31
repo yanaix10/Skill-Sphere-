@@ -59,12 +59,13 @@ const Sidebar: React.FC<SidebarProps> = ({
 
   const handleLaunchChallenge = () => {
     if (selectedGameMode === "fullstack_blitz") {
-      alert("Full-Stack Blitz is locked & coming soon! Defaulting to active mode.");
+      alert("FullStack Blitz is currently under development. Please choose an active mode.");
+      return;
     }
     if (onLaunchChallenge) {
       onLaunchChallenge({
         gameMode: selectedGameMode,
-        language: selectedLanguage,
+        language: selectedGameMode === "webdev_arena" ? "javascript" : "python",
         action: "create"
       });
     } else {
@@ -80,7 +81,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     if (onLaunchChallenge) {
       onLaunchChallenge({
         gameMode: selectedGameMode,
-        language: selectedLanguage,
+        language: selectedGameMode === "webdev_arena" ? "javascript" : selectedLanguage,
         roomCode: joinCodeInput.trim().toUpperCase(),
         action: "join"
       });
@@ -181,7 +182,9 @@ const Sidebar: React.FC<SidebarProps> = ({
                         Active Session
                       </div>
                       <div className="text-sm font-bold text-foreground">
-                        {mode === "challenge" ? "1v1 Duel: DSA Sprint" : `Practice Quiz: ${quizConfig.category}`}
+                        {mode === "challenge"
+                          ? (selectedGameMode === "webdev_arena" ? "1v1 Duel: Web Dev Arena" : "1v1 Duel: DSA Sprint")
+                          : `Practice Quiz: ${quizConfig.category}`}
                       </div>
 
                       {mode === "challenge" && activeRoomCode && (
@@ -256,25 +259,8 @@ const Sidebar: React.FC<SidebarProps> = ({
                               className="w-full py-2 px-3 bg-secondary text-foreground border border-border rounded-lg text-xs font-medium focus:ring-1 focus:ring-primary outline-none cursor-pointer"
                             >
                               <option value="dsa_sprint">DSA Sprint (Active)</option>
-                              <option value="webdev_arena">WebDev Arena (Active)</option>
-                              <option value="fullstack_blitz">Full-Stack Blitz (Coming Soon)</option>
-                            </select>
-                          </div>
-
-                          {/* Language Picker */}
-                          <div className="space-y-1">
-                            <label className="text-[11px] font-semibold text-muted-foreground uppercase font-mono">
-                              Preferred Language
-                            </label>
-                            <select
-                              value={selectedLanguage}
-                              onChange={(e) => setSelectedLanguage(e.target.value)}
-                              className="w-full py-2 px-3 bg-secondary text-foreground border border-border rounded-lg text-xs font-medium focus:ring-1 focus:ring-primary outline-none cursor-pointer"
-                            >
-                              <option value="python">Python 3</option>
-                              <option value="cpp">C++ (GCC)</option>
-                              <option value="javascript">JavaScript (Node.js)</option>
-                              <option value="java">Java (OpenJDK)</option>
+                              <option value="webdev_arena">Web Dev Arena (Active)</option>
+                              <option value="fullstack_blitz">FullStack Blitz (Coming Soon)</option>
                             </select>
                           </div>
 

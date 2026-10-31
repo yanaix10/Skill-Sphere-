@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { createBrowserRouter, RouterProvider, Outlet } from 'react-router-dom';
+import { createBrowserRouter, RouterProvider, Outlet, Navigate } from 'react-router-dom';
 import { app } from './firebase';
 import { getAuth, onAuthStateChanged, User } from 'firebase/auth';
 import SignupCard from './components/SignupCard';
@@ -7,11 +7,25 @@ import HomePage from './pages/HomePage';
 import Profile from './components/Profile';
 import Navbar from './components/Navbar';
 import Friends from './pages/Friends';
-import Games from './pages/Games';
 import Quizzes from './pages/Quizzes';
 import { ThemeProvider } from './context/ThemeContext';
 
 const auth = getAuth(app);
+
+function RootErrorBoundary() {
+  return (
+    <div className="flex flex-col items-center justify-center h-screen w-screen bg-background text-foreground select-none p-6 text-center space-y-4">
+      <h1 className="text-2xl font-extrabold text-foreground">Page Not Found</h1>
+      <p className="text-xs text-muted-foreground font-mono">The requested route does not exist.</p>
+      <a
+        href="/quizzes"
+        className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-xs font-bold uppercase tracking-wider hover:bg-primary/90 transition-colors"
+      >
+        Go to Quizzes & Duels
+      </a>
+    </div>
+  );
+}
 
 function Layout() {
   return (
@@ -28,12 +42,14 @@ const router = createBrowserRouter([
   {
     path: "/",
     element: <Layout />,
+    errorElement: <RootErrorBoundary />,
     children: [
       { path: "/", element: <HomePage /> },
       { path: "/profile", element: <Profile /> },
       { path: "/friends", element: <Friends /> },
       { path: "/quizzes", element: <Quizzes /> },
-      { path: "/games", element: <Games /> },
+      { path: "/games", element: <Navigate to="/quizzes" replace /> },
+      { path: "*", element: <Navigate to="/quizzes" replace /> },
     ]
   }
 ]);

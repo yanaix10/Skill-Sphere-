@@ -18,6 +18,7 @@ const joinChallengeSchema = z.object({
     name: z.string().optional()
   }).optional(),
   language: z.string().optional(),
+  gameMode: z.string().optional(),
   playerId: z.string().optional()
 });
 
@@ -94,20 +95,31 @@ export function setupSocketGateway(io: Server): void {
     io.to(roomKey).emit('match:state', publicState);
 
     // 2. Frontend Native format for Challenge.tsx
+    const countdownSec = parseInt(process.env.COUNTDOWN_SEC || '60', 10);
     const nativeState = {
       challengeId: roomKey,
       status: match.state === 'in_progress' ? 'started' : match.state,
       serverTime: Date.now(),
+      countdownStartsAt: match.countdownStartsAt,
+      countdownSec,
       players: [...match.players.values()].map((p) => ({
         socketId: p.socketId,
         userDetails: { name: p.nickname },
         score: p.score,
         currentIndex: p.currentIndex
       })),
+      gameMode: match.gameMode || 'dsa_sprint',
       questions: match.getPublicQuestions()
     };
 
     io.to(roomKey).emit('challenge_state', nativeState);
+
+    if (match.state === 'countdown') {
+      io.to(roomKey).emit('challenge_countdown', {
+        startsAt: match.countdownStartsAt,
+        duration: countdownSec
+      });
+    }
 
     if (match.state === 'waiting' && match.players.size === 2) {
       io.to(roomKey).emit('challenge_ready');
@@ -177,7 +189,8 @@ export function setupSocketGateway(io: Server): void {
               language,
               socketId: socket.id
             },
-            code
+            code,
+            payload.gameMode || 'dsa_sprint'
           );
           match = created.match;
           match.addListener({
@@ -214,6 +227,10 @@ export function setupSocketGateway(io: Server): void {
                 language,
                 socketId: socket.id
               });
+            }
+
+            if (match.state === 'waiting' && match.players.size === 2) {
+              match.startCountdown();
             }
           } else {
             // Room is full or match is countdown / in_progress / finished
@@ -331,11 +348,15 @@ export function setupSocketGateway(io: Server): void {
         // --- CASE 1: Sample Test Execution (!isSubmit) ---
         if (!payload.isSubmit) {
           let sampleHarness = variant.harness;
-          if (variant.example) {
+          if (adapter.id === 'typescript') {
+            sampleHarness = variant.harness;
+          } else if (variant.example) {
             if (adapter.id === 'cpp') {
               const candidateMatch = variant.harness.match(/auto candidate\s*=\s*[^;]+;/);
               const candidateLine = candidateMatch ? candidateMatch[0] : '';
               sampleHarness = `\nint main() {\n    ${candidateLine}\n    ${variant.example}\n    return 0;\n}\n`;
+            } else if (adapter.id === 'javascript' && variant.harness.includes('expect(')) {
+              sampleHarness = variant.harness;
             } else {
               sampleHarness = `\n\n${variant.example}\n`;
             }

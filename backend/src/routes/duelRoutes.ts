@@ -5,6 +5,7 @@ import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
 import { getCodeRunner } from '../runner/index.js';
+import DsaQuestion from '../models/DsaQuestion.js';
 
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'skillsphere-coding-duel-secret-2026';
@@ -86,10 +87,43 @@ router.get('/languages', (_req: Request, res: Response) => {
 
 /**
  * GET /api/duel/questions
- * Returns all public questions for sandboxing and offline practice.
+ * Returns all public questions directly from the MongoDB database with boilerplate starter code only.
  */
 router.get('/questions', async (_req: Request, res: Response): Promise<any> => {
   try {
+    let dbQuestions = await DsaQuestion.find({ enabled: { $ne: false } }).lean();
+
+    if (dbQuestions && dbQuestions.length > 0) {
+      const questions = dbQuestions.map((q: any) => {
+        const variants: Record<string, { starterCode: string; example?: string }> = {};
+        const supportedLangs = ['python', 'cpp', 'javascript', 'java'];
+
+        for (const lang of supportedLangs) {
+          const spec = q.languages?.[lang] || (q.languages instanceof Map ? q.languages.get(lang) : undefined);
+          const starter = spec?.starterCode || q.initialCode?.[lang] || '';
+          if (starter) {
+            variants[lang] = {
+              starterCode: starter,
+              example: spec?.sampleTests || spec?.example || ''
+            };
+          }
+        }
+
+        return {
+          id: String(q._id || q.taskId || q.id),
+          title: q.title || q.name,
+          statement: q.description || q.statement,
+          difficulty: q.difficulty || 'MEDIUM',
+          tags: q.tags || ['algorithms'],
+          category: q.category || 'Algorithms',
+          variants
+        };
+      });
+
+      return res.json({ success: true, count: questions.length, questions });
+    }
+
+    // Fallback if database is empty or not yet seeded
     const { loadAllQuestions } = await import('../match/questionSelector.js');
     const all = loadAllQuestions().filter((q) => q.enabled);
     const questions = all.map((q) => ({
@@ -109,33 +143,7 @@ router.get('/questions', async (_req: Request, res: Response): Promise<any> => {
         ])
       )
     }));
-    return res.json({ success: true, questions });
-  } catch (err: any) {
-    return res.status(500).json({ success: false, message: err.message });
-  }
-});
-
-/**
- * GET /api/webdev/challenges (and /api/duel/webdev/challenges)
- * Returns curated WebDev challenges from challenge_questions.json
- */
-router.get('/webdev/challenges', async (_req: Request, res: Response): Promise<any> => {
-  try {
-    const possiblePaths = [
-      path.resolve(process.cwd(), 'backend/data/challenge_questions.json'),
-      path.resolve(process.cwd(), 'data/challenge_questions.json')
-    ];
-
-    for (const p of possiblePaths) {
-      if (fs.existsSync(p)) {
-        const raw = fs.readFileSync(p, 'utf-8');
-        const allQuestions = JSON.parse(raw);
-        const webdevQuestions = allQuestions.filter((q: any) => q.challengeCategory === 'webdev');
-        return res.json({ success: true, count: webdevQuestions.length, challenges: webdevQuestions });
-      }
-    }
-
-    return res.json({ success: true, count: 0, challenges: [] });
+    return res.json({ success: true, count: questions.length, questions });
   } catch (err: any) {
     return res.status(500).json({ success: false, message: err.message });
   }

@@ -91,6 +91,33 @@ export function sanitizeOutput(options: SanitizeOptions): string {
         return 'Syntax error in JavaScript submission.';
       }
 
+      if (language === 'typescript' || language === 'ts') {
+        const lines = text.split('\n');
+        const allowedLines: string[] = [];
+        let hasAssertionFailure = false;
+
+        for (const line of lines) {
+          const match = line.match(/(?:\((\d+),\d+\):|:(\d+):(?:\d+)?:)\s*(error TS\d+:\s*.*)/i);
+          if (match) {
+            const lineNum = parseInt(match[1] || match[2], 10);
+            const msg = match[3];
+            if (lineNum <= playerCodeLines) {
+              allowedLines.push(`Line ${lineNum}: ${msg}`);
+            } else if (msg.includes('Type') && (msg.includes('does not satisfy the constraint') || msg.includes('false'))) {
+              hasAssertionFailure = true;
+            }
+          }
+        }
+
+        if (allowedLines.length > 0) {
+          return allowedLines.slice(0, 3).join('\n');
+        }
+        if (hasAssertionFailure) {
+          return 'Type test assertion failed: Output type does not satisfy the expected case constraint.';
+        }
+        return 'TypeScript type check failed. Verify generic parameter constraints and return types.';
+      }
+
       if (language === 'java') {
         const errorLineMatch = text.match(/Solution\.java:(\d+):\s*error:\s*(.*)/i);
         if (errorLineMatch) {

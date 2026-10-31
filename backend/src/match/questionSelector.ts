@@ -31,46 +31,158 @@ export function loadAllQuestions(): MatchQuestion[] {
   return [];
 }
 
+let cachedWebdevQuestions: MatchQuestion[] | null = null;
+
+export function loadWebdevQuestions(): MatchQuestion[] {
+  if (cachedWebdevQuestions) {
+    return cachedWebdevQuestions;
+  }
+
+  const possiblePaths = [
+    path.resolve(process.cwd(), 'backend/data/challenge_questions.json'),
+    path.resolve(process.cwd(), 'data/challenge_questions.json'),
+    path.resolve(process.cwd(), 'server/data/challenge_questions.json')
+  ];
+
+  for (const p of possiblePaths) {
+    if (fs.existsSync(p)) {
+      try {
+        const raw = fs.readFileSync(p, 'utf-8');
+        const items = JSON.parse(raw);
+        const webdevItems = items.filter((q: any) =>
+          q.challengeCategory === 'webdev' &&
+          q.executionEngine !== 'sandpack' &&
+          q.subCategory !== 'react' &&
+          q.testSuite &&
+          !q.testSuite.trim().startsWith('//')
+        );
+        cachedWebdevQuestions = webdevItems.map((q: any) => {
+          const isTs = q.subCategory === 'ts' || (q.tags && q.tags.includes('typescript')) || q.executionEngine === 'ts-compiler';
+          const starter = q.starterCode || (isTs ? `type Solution = any;` : `function solution() {\n  // Write your code here\n}`);
+          const suite = q.testSuite || '';
+          const langKey = isTs ? 'typescript' : 'javascript';
+
+          let harness = '';
+          if (isTs) {
+            const cleanSuite = suite
+              .replace(/import\s+type\s*\{[^}]*\}\s*from\s*['"]@type-challenges\/utils['"];?/g, '')
+              .trim();
+            harness = `
+type Expect<T extends true> = T;
+type ExpectTrue<T extends true> = T;
+type ExpectFalse<T extends false> = T;
+type Equal<X, Y> =
+  (<T>() => T extends X ? 1 : 2) extends
+  (<T>() => T extends Y ? 1 : 2) ? true : false;
+type NotEqual<X, Y> = true extends Equal<X, Y> ? false : true;
+
+${cleanSuite}
+`;
+          } else {
+            harness = `
+function expect(actual) {
+  return {
+    to: {
+      equal: (expected) => {
+        if (JSON.stringify(actual) !== JSON.stringify(expected)) {
+          throw new Error("AssertionError: Expected " + JSON.stringify(expected) + " but got " + JSON.stringify(actual));
+        }
+      },
+      deep: {
+        equal: (expected) => {
+          if (JSON.stringify(actual) !== JSON.stringify(expected)) {
+            throw new Error("AssertionError: Expected " + JSON.stringify(expected) + " but got " + JSON.stringify(actual));
+          }
+        }
+      },
+      be: {
+        true: () => { if (actual !== true) throw new Error("AssertionError: Expected true but got " + actual); },
+        false: () => { if (actual !== false) throw new Error("AssertionError: Expected false but got " + actual); }
+      }
+    }
+  };
+}
+function assert(condition, message) {
+  if (!condition) throw new Error(message || "AssertionError: assertion failed");
+}
+try {
+  ${suite}
+  console.log("All tests passed!");
+} catch (err) {
+  console.error(err.message || err);
+  process.exit(1);
+}
+`;
+          }
+
+          return {
+            id: q.id,
+            title: q.title,
+            statement: q.description,
+            estMinutes: q.difficultyLevel === 1 ? 2 : q.difficultyLevel === 2 ? 3 : 4,
+            tags: q.tags || (isTs ? ['webdev', 'typescript'] : ['webdev', 'javascript']),
+            enabled: true,
+            variants: {
+              [langKey]: {
+                starterCode: starter,
+                harness: harness,
+                example: q.sampleTests || ''
+              }
+            }
+          };
+        });
+        return cachedWebdevQuestions!;
+      } catch (err: any) {
+        console.error(`Error reading webdev questions from ${p}:`, err.message);
+      }
+    }
+  }
+
+  return [];
+}
+
 export function selectMatchQuestions(options: {
   languages: string[];
   count?: number;
   recentQuestionIds?: Set<string>;
   allQuestions?: MatchQuestion[];
+  gameMode?: string;
 }): MatchQuestion[] {
-  const { languages, count = 8, recentQuestionIds = new Set(), allQuestions = loadAllQuestions() } = options;
+  const isWebDev = options.gameMode === 'webdev_arena';
+  const allQuestions = options.allQuestions || (isWebDev ? loadWebdevQuestions() : loadAllQuestions());
+  const languages = isWebDev ? ['javascript', 'typescript'] : options.languages;
+  const count = options.count || 8;
+  const recentQuestionIds = options.recentQuestionIds || new Set();
 
   // 1. Filter enabled and available for all requested languages
   let available = allQuestions.filter((q) => {
     if (!q.enabled) return false;
+    if (isWebDev) return true;
     for (const lang of languages) {
       if (!q.variants || !q.variants[lang]) return false;
     }
     return true;
   });
 
-  // Fallback: If requested languages are not supported in the question bank, fallback to python & cpp
-  if (available.length < count) {
-    const fallbackLangs = ['python', 'cpp'];
-    available = allQuestions.filter((q) => {
-      if (!q.enabled) return false;
-      return Boolean(q.variants?.python && q.variants?.cpp);
-    });
+  // Fallback if requested languages are not available
+  if (available.length === 0) {
+    available = isWebDev ? loadWebdevQuestions() : loadAllQuestions().filter((q) => q.enabled);
   }
 
-  // Last-resort fallback: any enabled questions
-  if (available.length < count) {
-    available = allQuestions.filter((q) => q.enabled);
+  if (available.length === 0) {
+    throw new Error(`Insufficient enabled questions in bank.`);
   }
 
-  if (available.length < count) {
-    throw new Error(`Insufficient enabled questions (${available.length}) in bank. Required: ${count}`);
-  }
-
-  // 2. Separate by recent history (prioritize unseen questions)
+  const effectiveCount = Math.min(count, available.length);
   const unseen = available.filter((q) => !recentQuestionIds.has(q.id));
-  const pool = unseen.length >= count ? unseen : available;
+  const pool = unseen.length >= effectiveCount ? unseen : available;
+  const shuffle = <T>(arr: T[]): T[] => [...arr].sort(() => Math.random() - 0.5);
 
-  // 3. Partition by difficulty
+  if (isWebDev) {
+    return shuffle(pool).slice(0, effectiveCount);
+  }
+
+  // 2. Partition by difficulty
   const easyPool = pool.filter((q) => q.estMinutes <= 2);
   const medPool = pool.filter((q) => q.estMinutes === 3);
   const hardPool = pool.filter((q) => q.estMinutes >= 4);
@@ -80,9 +192,6 @@ export function selectMatchQuestions(options: {
   const easyTarget = Math.max(1, Math.round(count * 0.25));
   const hardTarget = Math.max(1, Math.round(count * 0.125));
   const medTarget = count - easyTarget - hardTarget;
-
-  const shuffle = <T>(arr: T[]): T[] => [...arr].sort(() => Math.random() - 0.5);
-
   const selectedEasy = shuffle(easyPool).slice(0, easyTarget);
   const selectedMed = shuffle(medPool).slice(0, medTarget);
   const selectedHard = shuffle(hardPool).slice(0, hardTarget);

@@ -42,6 +42,19 @@ export const javascriptAdapter: LanguageAdapter = {
   }
 };
 
+export const typescriptAdapter: LanguageAdapter = {
+  id: 'typescript',
+  displayName: 'TypeScript',
+  editorMode: 'typescript',
+  judge0NamePattern: /TypeScript/i,
+  buildStarter(variant: LanguageVariant): string {
+    return variant.starterCode;
+  },
+  buildProgram(playerCode: string, variant: LanguageVariant): string {
+    return `${playerCode.trimEnd()}\n\n${variant.harness.trimStart()}`;
+  }
+};
+
 export const javaAdapter: LanguageAdapter = {
   id: 'java',
   displayName: 'Java (OpenJDK)',
@@ -61,6 +74,8 @@ export const languageAdapters: Record<string, LanguageAdapter> = {
   c: cppAdapter,
   javascript: javascriptAdapter,
   js: javascriptAdapter,
+  typescript: typescriptAdapter,
+  ts: typescriptAdapter,
   java: javaAdapter
 };
 
@@ -68,7 +83,7 @@ export function getLanguageAdapter(lang: string): LanguageAdapter {
   const normalized = lang.toLowerCase().trim();
   const adapter = languageAdapters[normalized];
   if (!adapter) {
-    throw new Error(`Unsupported programming language: "${lang}". Supported: python, cpp, javascript, java`);
+    throw new Error(`Unsupported programming language: "${lang}". Supported: python, cpp, javascript, typescript, java`);
   }
   return adapter;
 }

@@ -15,6 +15,7 @@ describe('Coding Duel Socket Integration Test', () => {
   beforeAll(async () => {
     process.env.RUNNER = 'mock';
     process.env.MATCH_QUESTION_COUNT = '2'; // Fast 2-question test match
+    process.env.COUNTDOWN_SEC = '1'; // Fast 1s countdown in test
 
     const app = express();
     server = http.createServer(app);

@@ -16,7 +16,16 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
   onLanguageChange,
   hideHeader = false
 }) => {
-  const monacoLanguage = language === 'cpp' ? 'cpp' : language === 'javascript' ? 'javascript' : language === 'java' ? 'java' : 'python';
+  const monacoLanguage =
+    language === 'cpp'
+      ? 'cpp'
+      : language === 'javascript' || language === 'js'
+        ? 'javascript'
+        : language === 'typescript' || language === 'ts'
+          ? 'typescript'
+          : language === 'java'
+            ? 'java'
+            : 'python';
 
   const handleEditorChange = (value: string | undefined) => {
     if (onChange) onChange(value || '');
