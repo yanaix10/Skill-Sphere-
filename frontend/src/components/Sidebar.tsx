@@ -15,6 +15,7 @@ export interface ChallengeConfig {
   language: string;
   roomCode?: string;
   action?: "create" | "join" | "quick";
+  questionCount?: number;
 }
 
 interface SidebarProps {
@@ -46,8 +47,9 @@ const Sidebar: React.FC<SidebarProps> = ({
   const [isChallengeDropdownOpen, setIsChallengeDropdownOpen] = useState<boolean>(false);
 
   // 1v1 Challenge Config State
-  const [selectedGameMode, setSelectedGameMode] = useState<"dsa_sprint" | "webdev_arena" | "fullstack_blitz">("dsa_sprint");
-  const [selectedLanguage, setSelectedLanguage] = useState<string>("python");
+  const [selectedGameMode, setSelectedGameMode] = useState<"dsa_sprint" | "webdev_arena" | "fullstack_blitz">("webdev_arena");
+  const [selectedLanguage, setSelectedLanguage] = useState<string>("javascript");
+  const [selectedQuestionCount, setSelectedQuestionCount] = useState<number>(5);
   const [joinCodeInput, setJoinCodeInput] = useState<string>("");
   const [copiedCode, setCopiedCode] = useState<boolean>(false);
 
@@ -66,6 +68,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       onLaunchChallenge({
         gameMode: selectedGameMode,
         language: selectedGameMode === "webdev_arena" ? "javascript" : "python",
+        questionCount: selectedQuestionCount,
         action: "create"
       });
     } else {
@@ -255,13 +258,44 @@ const Sidebar: React.FC<SidebarProps> = ({
                             </label>
                             <select
                               value={selectedGameMode}
-                              onChange={(e) => setSelectedGameMode(e.target.value as any)}
+                              onChange={(e) => {
+                                const mode = e.target.value as any;
+                                setSelectedGameMode(mode);
+                                if (mode === "webdev_arena") setSelectedLanguage("javascript");
+                                else if (mode === "dsa_sprint") setSelectedLanguage("python");
+                              }}
                               className="w-full py-2 px-3 bg-secondary text-foreground border border-border rounded-lg text-xs font-medium focus:ring-1 focus:ring-primary outline-none cursor-pointer"
                             >
-                              <option value="dsa_sprint">DSA Sprint (Active)</option>
                               <option value="webdev_arena">Web Dev Arena (Active)</option>
+                              <option value="dsa_sprint">DSA Sprint (Active)</option>
                               <option value="fullstack_blitz">FullStack Blitz (Coming Soon)</option>
                             </select>
+                          </div>
+
+                          {/* No. of Questions Selector */}
+                          <div className="space-y-1.5">
+                            <div className="flex justify-between items-center">
+                              <label className="text-[11px] font-semibold text-muted-foreground uppercase font-mono">
+                                No. of Questions
+                              </label>
+                              <span className="text-[11px] font-bold text-primary">{selectedQuestionCount} Questions</span>
+                            </div>
+                            <div className="grid grid-cols-3 gap-1.5">
+                              {[3, 5, 8].map((count) => (
+                                <button
+                                  key={count}
+                                  type="button"
+                                  onClick={() => setSelectedQuestionCount(count)}
+                                  className={`py-1.5 rounded-lg text-xs font-bold border transition-all cursor-pointer ${
+                                    selectedQuestionCount === count
+                                      ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                                      : "bg-secondary text-secondary-foreground border-border hover:bg-secondary/80"
+                                  }`}
+                                >
+                                  {count} Qs
+                                </button>
+                              ))}
+                            </div>
                           </div>
 
                           {/* Action Buttons: Host or Join */}

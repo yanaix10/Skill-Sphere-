@@ -58,14 +58,33 @@ interface QuizQuestion {
 
 const OPTION_LETTERS = ["A", "B", "C", "D", "E", "F"];
 
+const STORAGE_KEY = "skillsphere_practice_state";
+
 export const Practice: React.FC<PracticeProps> = ({ setMode, quizConfig }) => {
-  const [questions, setQuestions] = useState<QuizQuestion[]>([]);
-  const [userAnswers, setUserAnswers] = useState<Record<string, string>>({});
-  const [currentIndex, setCurrentIndex] = useState<number>(0);
-  const [score, setScore] = useState<number>(0);
-  const [showResult, setShowResult] = useState<boolean>(false);
-  const [timeLeft, setTimeLeft] = useState<number>(600);
-  const [sessionId, setSessionId] = useState<string | null>(null);
+  const getSavedPractice = () => {
+    if (typeof window === "undefined") return null;
+    try {
+      const saved = sessionStorage.getItem(STORAGE_KEY);
+      if (saved) return JSON.parse(saved);
+    } catch (e) {}
+    return null;
+  };
+
+  const savedInitial = getSavedPractice();
+
+  const [questions, setQuestions] = useState<QuizQuestion[]>(() => savedInitial?.questions || []);
+  const [userAnswers, setUserAnswers] = useState<Record<string, string>>(() => savedInitial?.userAnswers || {});
+  const [currentIndex, setCurrentIndex] = useState<number>(() => savedInitial?.currentIndex || 0);
+  const [score, setScore] = useState<number>(() => savedInitial?.score || 0);
+  const [showResult, setShowResult] = useState<boolean>(() => savedInitial?.showResult || false);
+  const [timeLeft, setTimeLeft] = useState<number>(() => {
+    if (savedInitial && !savedInitial.showResult) {
+      const elapsed = Math.floor((Date.now() - (savedInitial.lastSavedAt || Date.now())) / 1000);
+      return Math.max(0, (savedInitial.timeLeft || 600) - elapsed);
+    }
+    return 600;
+  });
+  const [sessionId, setSessionId] = useState<string | null>(() => savedInitial?.sessionId || null);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
@@ -84,7 +103,24 @@ export const Practice: React.FC<PracticeProps> = ({ setMode, quizConfig }) => {
       if (data.success && data.questions) {
         setQuestions(data.questions);
         setSessionId(data.sessionId);
-        setTimeLeft(parseInt(String(quizConfig?.limit || 10)) * 60); // 1 min per question
+        setUserAnswers({});
+        setCurrentIndex(0);
+        setShowResult(false);
+        const initialSeconds = parseInt(String(quizConfig?.limit || 10)) * 60;
+        setTimeLeft(initialSeconds);
+        sessionStorage.setItem(
+          STORAGE_KEY,
+          JSON.stringify({
+            sessionId: data.sessionId,
+            questions: data.questions,
+            userAnswers: {},
+            currentIndex: 0,
+            score: 0,
+            showResult: false,
+            timeLeft: initialSeconds,
+            lastSavedAt: Date.now()
+          })
+        );
       } else {
         setError(data.message || "Failed to load questions");
       }
@@ -95,8 +131,30 @@ export const Practice: React.FC<PracticeProps> = ({ setMode, quizConfig }) => {
   };
 
   useEffect(() => {
-    fetchQuestions();
+    // Only fetch new questions if we do not already have an active session loaded from sessionStorage
+    if (!sessionId || questions.length === 0) {
+      fetchQuestions();
+    }
   }, []);
+
+  // Persist state updates to sessionStorage
+  useEffect(() => {
+    if (sessionId && questions.length > 0 && typeof window !== "undefined") {
+      sessionStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({
+          sessionId,
+          questions,
+          userAnswers,
+          currentIndex,
+          score,
+          showResult,
+          timeLeft,
+          lastSavedAt: Date.now()
+        })
+      );
+    }
+  }, [sessionId, questions, userAnswers, currentIndex, score, showResult, timeLeft]);
 
   const handleFinish = async (finalAnswers = userAnswers) => {
     if (!sessionId) return;
@@ -117,6 +175,9 @@ export const Practice: React.FC<PracticeProps> = ({ setMode, quizConfig }) => {
       if (data.success) {
         setScore(data.score);
         setShowResult(true);
+        if (typeof window !== "undefined") {
+          sessionStorage.removeItem(STORAGE_KEY);
+        }
       }
     } catch (err) {
       console.error("Failed to submit answers", err);
@@ -228,6 +289,7 @@ export const Practice: React.FC<PracticeProps> = ({ setMode, quizConfig }) => {
               variant="outline"
               className="flex-1 gap-2 rounded-xl h-11"
               onClick={() => {
+                sessionStorage.removeItem(STORAGE_KEY);
                 setShowResult(false);
                 setUserAnswers({});
                 setCurrentIndex(0);

@@ -19,10 +19,10 @@ import { BACKEND_URL } from "../utils/api";
 
 function getPersistentPlayerId(): string {
   if (typeof window === "undefined") return "guest";
-  let id = sessionStorage.getItem("skillsphere_player_id");
+  let id = localStorage.getItem("skillsphere_player_id");
   if (!id) {
     id = "p_" + Math.random().toString(36).substring(2, 10);
-    sessionStorage.setItem("skillsphere_player_id", id);
+    localStorage.setItem("skillsphere_player_id", id);
   }
   const uid = auth.currentUser?.uid;
   return uid ? `${uid}_${id}` : id;
@@ -88,6 +88,7 @@ export interface ChallengeConfig {
   language?: string;
   roomCode?: string;
   action?: "create" | "join" | "quick";
+  questionCount?: number;
 }
 
 interface ChallengeProps {
@@ -107,7 +108,7 @@ export default function Challenge({
 }: ChallengeProps) {
   // Mode selection & configuration (managed exclusively via Sidebar)
   const [gameMode, setGameMode] = useState<"dsa_sprint" | "webdev_arena" | "fullstack_blitz">(
-    challengeConfig?.gameMode || "dsa_sprint"
+    challengeConfig?.gameMode || "webdev_arena"
   );
 
   // Language selection is inside the sandbox for DSA questions
@@ -120,9 +121,14 @@ export default function Challenge({
   const [output, setOutput] = useState<string>("");
   const [isRunning, setIsRunning] = useState<boolean>(false);
 
-  // 1v1 Room & Matchmaking state
-  const [roomCode, setRoomCode] = useState<string>(challengeConfig?.roomCode || "");
-  const [inRoom, setInRoom] = useState<boolean>(isDuelActive);
+  // 1v1 Room & Matchmaking state (restores from sessionStorage if page refreshed)
+  const [roomCode, setRoomCode] = useState<string>(() => {
+    return challengeConfig?.roomCode || (typeof window !== "undefined" ? sessionStorage.getItem("skillsphere_active_room") || "" : "");
+  });
+  const [inRoom, setInRoom] = useState<boolean>(() => {
+    const saved = typeof window !== "undefined" ? sessionStorage.getItem("skillsphere_active_room") : null;
+    return isDuelActive || Boolean(saved);
+  });
   const [isReady, setIsReady] = useState<boolean>(false);
   const [isStarted, setIsStarted] = useState<boolean>(false);
   const [isHost, setIsHost] = useState<boolean>(false);
@@ -182,6 +188,9 @@ export default function Challenge({
         setInRoom(true);
         setIsStarted(false);
         setCountdown(null);
+        if (typeof window !== "undefined") {
+          sessionStorage.setItem("skillsphere_active_room", newCode);
+        }
         if (onRoomCreated) onRoomCreated(newCode);
 
         socket.emit("join_challenge", {
@@ -189,7 +198,8 @@ export default function Challenge({
           userDetails: { name: getUserName() },
           gameMode: modeToUse,
           language: langToUse,
-          playerId: getPersistentPlayerId()
+          playerId: getPersistentPlayerId(),
+          questionCount: challengeConfig.questionCount || 5
         });
       } else if (challengeConfig.action === "join" && challengeConfig.roomCode) {
         const cleanCode = challengeConfig.roomCode.trim().toUpperCase();
@@ -198,6 +208,9 @@ export default function Challenge({
         setInRoom(true);
         setIsStarted(false);
         setCountdown(null);
+        if (typeof window !== "undefined") {
+          sessionStorage.setItem("skillsphere_active_room", cleanCode);
+        }
 
         socket.emit("join_challenge", {
           challengeId: cleanCode,
@@ -208,7 +221,23 @@ export default function Challenge({
         });
       }
     }
-  }, [isDuelActive, challengeConfig?.action, challengeConfig?.roomCode, challengeConfig?.gameMode]);
+  }, [isDuelActive, challengeConfig?.action, challengeConfig?.roomCode, challengeConfig?.gameMode, challengeConfig?.questionCount]);
+
+  // Auto-reconnect to existing active match session on page reload or component mount
+  useEffect(() => {
+    const savedRoom = roomCode || (typeof window !== "undefined" ? sessionStorage.getItem("skillsphere_active_room") : null);
+    if (savedRoom && isDuelActive) {
+      setInRoom(true);
+      setRoomCode(savedRoom);
+      socket.emit("join_challenge", {
+        challengeId: savedRoom,
+        userDetails: { name: getUserName() },
+        gameMode,
+        language: gameMode === "webdev_arena" ? "javascript" : langRef.current,
+        playerId: getPersistentPlayerId()
+      });
+    }
+  }, [isDuelActive]);
 
   // 1-minute countdown interval
   useEffect(() => {
@@ -298,13 +327,20 @@ export default function Challenge({
           }
           if (!codeRef.current || prevIndexRef.current !== currentIndex) {
             prevIndexRef.current = currentIndex;
-            const starter =
-              currentQ?.languages?.[activeLang]?.starterCode ||
-              currentQ?.variants?.[activeLang]?.starterCode ||
-              currentQ?.initialCode?.[activeLang] ||
-              (currentQ as any)?.starterCode;
-            if (starter) {
-              setCode(starter);
+            const savedDraft = currentQ?.id
+              ? sessionStorage.getItem(`skillsphere_code_${roomCode || state.challengeId}_${currentQ.id}`)
+              : null;
+            if (savedDraft) {
+              setCode(savedDraft);
+            } else {
+              const starter =
+                currentQ?.languages?.[activeLang]?.starterCode ||
+                currentQ?.variants?.[activeLang]?.starterCode ||
+                currentQ?.initialCode?.[activeLang] ||
+                (currentQ as any)?.starterCode;
+              if (starter) {
+                setCode(starter);
+              }
             }
           }
         }
@@ -338,6 +374,11 @@ export default function Challenge({
       setOutput(message);
       if (success && isSubmit) {
         setCode("");
+        const curCode = roomCode || stateRef.current.roomCode;
+        const curQ = challengeState?.questions?.[prevIndexRef.current];
+        if (curCode && curQ?.id && typeof window !== "undefined") {
+          sessionStorage.removeItem(`skillsphere_code_${curCode}_${curQ.id}`);
+        }
       }
     });
 
@@ -375,6 +416,11 @@ export default function Challenge({
   }, [gameMode]);
 
   const handleLeaveRoom = () => {
+    if (typeof window !== "undefined") {
+      sessionStorage.removeItem("skillsphere_active_room");
+      sessionStorage.removeItem("skillsphere_quiz_mode");
+      sessionStorage.removeItem("skillsphere_challenge_config");
+    }
     setInRoom(false);
     setIsStarted(false);
     setRoomCode("");
@@ -396,6 +442,10 @@ export default function Challenge({
     setCode(newCode);
     if (inRoom && roomCode) {
       socket.emit("typing", { challengeId: roomCode });
+      const currentQ = challengeState?.questions?.[prevIndexRef.current];
+      if (currentQ?.id && typeof window !== "undefined") {
+        sessionStorage.setItem(`skillsphere_code_${roomCode}_${currentQ.id}`, newCode);
+      }
     }
   };
 
@@ -621,6 +671,33 @@ export default function Challenge({
           {/* Left Pane: Question Specs & Execution Console */}
           <div className="w-[44%] max-w-[550px] min-w-[340px] h-full flex flex-col border-r border-border bg-card overflow-hidden">
             <div className="flex-1 overflow-y-auto p-6 space-y-4">
+              {/* Question Count & Progress Indicator */}
+              <div className="flex items-center justify-between pb-3 border-b border-border">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-mono font-bold text-primary tracking-wide">
+                    Question {Math.min(p1Index + 1, totalQuestions)} of {totalQuestions}
+                  </span>
+                  <span className="text-[10px] text-muted-foreground font-mono">
+                    ({Math.max(0, totalQuestions - p1Score)} left)
+                  </span>
+                </div>
+                <div className="flex gap-1.5 items-center">
+                  {challengeState?.questions?.map((_, qIdx) => (
+                    <div
+                      key={qIdx}
+                      title={`Question ${qIdx + 1}`}
+                      className={`w-2.5 h-2.5 rounded-full transition-all ${
+                        qIdx < p1Score
+                          ? "bg-emerald-500 shadow-sm shadow-emerald-500/50"
+                          : qIdx === p1Index
+                            ? "bg-primary ring-2 ring-primary/40 scale-110"
+                            : "bg-secondary border border-border"
+                      }`}
+                    />
+                  ))}
+                </div>
+              </div>
+
               <div className="flex items-center gap-2 flex-wrap">
                 <span
                   className={`text-[11px] font-bold px-2 py-0.5 rounded uppercase font-mono ${

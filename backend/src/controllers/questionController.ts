@@ -51,10 +51,15 @@ export const startPracticeSession = async (req: Request, res: Response): Promise
 
 		const params: any = {};
 		if (category) {
-			params.category = category;
+			if (category.toLowerCase() === 'web dev' || category.toLowerCase() === 'webdev') {
+				params.category = 'Code';
+				params.tags = 'JavaScript';
+			} else {
+				params.category = category;
+			}
 		}
 		if (difficulty) params.difficulty = difficulty.toLowerCase();
-		if (tags) params.tags = tags;
+		if (tags && !params.tags) params.tags = tags;
 		if (limit) params.limit = limit;
 
 		let rawQuestions: any[] = [];
@@ -64,7 +69,14 @@ export const startPracticeSession = async (req: Request, res: Response): Promise
 		} catch (apiError: any) {
 			console.warn("QuizAPI request failed, falling back to local quiz questions:", apiError.message);
 			rawQuestions = localQuestions.filter(q => {
-				if (category && q.category.toLowerCase() !== (category as string).toLowerCase()) return false;
+				if (category) {
+					const cat = category.toLowerCase();
+					if (cat === 'web dev' || cat === 'webdev') {
+						const qTags = (q as any).tags;
+						return q.category.toLowerCase() === 'code' || (Array.isArray(qTags) && qTags.some((t: any) => String(t).toLowerCase().includes('javascript') || String(t).toLowerCase().includes('web')));
+					}
+					return q.category.toLowerCase() === cat;
+				}
 				return true;
 			});
 			if (rawQuestions.length === 0) {

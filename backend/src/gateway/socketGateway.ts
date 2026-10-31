@@ -19,7 +19,8 @@ const joinChallengeSchema = z.object({
   }).optional(),
   language: z.string().optional(),
   gameMode: z.string().optional(),
-  playerId: z.string().optional()
+  playerId: z.string().optional(),
+  questionCount: z.number().min(1).max(20).optional()
 });
 
 const codeSubmittedSchema = z.object({
@@ -190,26 +191,29 @@ export function setupSocketGateway(io: Server): void {
               socketId: socket.id
             },
             code,
-            payload.gameMode || 'dsa_sprint'
+            payload.gameMode || 'dsa_sprint',
+            payload.questionCount
           );
           match = created.match;
           match.addListener({
             onStateChange: (m) => broadcastMatchState(m)
           });
         } else {
-          // Check if this socket or playerId is already recognized in the room
+          // Check if this socket or playerId or nickname is already recognized in the room
           const existingBySocket = [...match.players.values()].find((p) => p.socketId === socket.id);
-          const existingById = match.players.get(clientPlayerId);
+          const existingPlayer = match.players.get(clientPlayerId) ||
+            [...match.players.values()].find((p) => !p.connected && p.nickname === nickname) ||
+            (match.players.size <= 2 ? [...match.players.values()].find((p) => p.playerId === clientPlayerId) : undefined);
 
           if (match.state === 'waiting' && match.players.size < 2) {
             if (existingBySocket) {
               // Same socket re-sending join, update metadata
               existingBySocket.nickname = nickname;
               existingBySocket.language = language;
-            } else if (existingById && !existingById.connected) {
+            } else if (existingPlayer && !existingPlayer.connected) {
               // Disconnected player reconnecting
-              manager.handleReconnect(match.id, existingById.playerId, socket.id);
-            } else if (existingById && existingById.connected) {
+              manager.handleReconnect(match.id, existingPlayer.playerId, socket.id);
+            } else if (existingPlayer && existingPlayer.connected) {
               // Collision: client has same ID while existing player is actively connected (e.g. 2 tabs in same browser session)
               // Generate unique player ID so 2nd player joins properly as Player 2
               const uniquePlayerId = `${clientPlayerId}_${socket.id.substring(0, 6)}`;
@@ -235,9 +239,10 @@ export function setupSocketGateway(io: Server): void {
           } else {
             // Room is full or match is countdown / in_progress / finished
             if (existingBySocket) {
-              // Already connected
-            } else if (existingById) {
-              manager.handleReconnect(match.id, existingById.playerId, socket.id);
+              // Already connected on this socket
+            } else if (existingPlayer) {
+              // Disconnected player rejoining mid-session
+              manager.handleReconnect(match.id, existingPlayer.playerId, socket.id);
             } else {
               socket.emit('error', { message: 'Room is already full or match in progress.' });
               return;

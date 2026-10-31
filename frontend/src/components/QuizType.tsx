@@ -49,7 +49,7 @@ const QuizType: React.FC<QuizTypeProps> = ({ quizConfig, setQuizConfig, disabled
 
       {renderSection('Difficulty', ['Easy', 'Medium', 'Hard'], quizConfig?.difficulty || 'Easy', 'difficulty')}
       {renderSection('No. Questions', ['5', '10', '20'], quizConfig?.limit || '10', 'limit')}
-      {renderSection('Category', ['Linux', 'DevOps', 'Code', 'SQL', 'Cloud', 'Docker'], quizConfig?.category || 'Linux', 'category')}
+      {renderSection('Category', ['Web Dev', 'Linux', 'DevOps', 'Code', 'SQL', 'Cloud'], quizConfig?.category || 'Web Dev', 'category')}
     </div>
   );
 };

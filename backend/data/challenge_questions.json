@@ -467,5 +467,120 @@
     "testSuite": "\n      // Tests destination city matches end city of the chain\n    ",
     "sampleTests": "paths = [[\"London\",\"New York\"],[\"New York\",\"Lima\"],[\"Lima\",\"Sao Paulo\"]] -> \"Sao Paulo\"",
     "points": 20
+  },
+  {
+    "id": "js_curry",
+    "name": "js_curry",
+    "title": "JavaScript: Function Currying",
+    "description": "Implement a `curry` function that transforms a function of multiple arguments into a sequence of functions, each taking arguments until all required arguments are provided.",
+    "challengeCategory": "webdev",
+    "subCategory": "js",
+    "difficultyLevel": 2,
+    "difficulty": "MEDIUM",
+    "tags": [
+      "javascript",
+      "functions",
+      "currying",
+      "webdev"
+    ],
+    "source": "interview",
+    "executionEngine": "mock",
+    "starterCode": "function curry(fn) {\n  // Return a curried version of fn\n}",
+    "solution": "function curry(fn) {\n  return function curried(...args) {\n    if (args.length >= fn.length) {\n      return fn.apply(this, args);\n    }\n    return function(...moreArgs) {\n      return curried.apply(this, args.concat(moreArgs));\n    };\n  };\n}",
+    "testSuite": "const add = (a, b, c) => a + b + c;\nconst curriedAdd = curry(add);\nexpect(curriedAdd(1)(2)(3)).to.equal(6);\nexpect(curriedAdd(1, 2)(3)).to.equal(6);\nexpect(curriedAdd(1)(2, 3)).to.equal(6);\nexpect(curriedAdd(1, 2, 3)).to.equal(6);",
+    "sampleTests": "const add = (a, b, c) => a + b + c;\nconst curried = curry(add);\ncurried(1)(2)(3) === 6",
+    "points": 20
+  },
+  {
+    "id": "js_group_by",
+    "name": "js_group_by",
+    "title": "JavaScript: Group By Callback",
+    "description": "Implement a `groupBy(array, iteratee)` function that groups array elements according to the result of calling `iteratee` on each element. Returns an object where keys are group names and values are arrays of grouped items.",
+    "challengeCategory": "webdev",
+    "subCategory": "js",
+    "difficultyLevel": 2,
+    "difficulty": "MEDIUM",
+    "tags": [
+      "javascript",
+      "arrays",
+      "objects",
+      "webdev"
+    ],
+    "source": "interview",
+    "executionEngine": "mock",
+    "starterCode": "function groupBy(arr, iteratee) {\n  // Return object with grouped items\n}",
+    "solution": "function groupBy(arr, iteratee) {\n  return arr.reduce((acc, item) => {\n    const key = typeof iteratee === 'function' ? iteratee(item) : item[iteratee];\n    if (!acc[key]) acc[key] = [];\n    acc[key].push(item);\n    return acc;\n  }, {});\n}",
+    "testSuite": "const byFloor = groupBy([6.1, 4.2, 6.3], Math.floor);\nexpect(byFloor['4']).to.deep.equal([4.2]);\nexpect(byFloor['6']).to.deep.equal([6.1, 6.3]);\nconst byLen = groupBy(['one', 'two', 'three'], 'length');\nexpect(byLen['3']).to.deep.equal(['one', 'two']);\nexpect(byLen['5']).to.deep.equal(['three']);",
+    "sampleTests": "groupBy([6.1, 4.2, 6.3], Math.floor) -> {'4': [4.2], '6': [6.1, 6.3]}",
+    "points": 20
+  },
+  {
+    "id": "js_promisify",
+    "name": "js_promisify",
+    "title": "JavaScript: Promisify Node Callback",
+    "description": "Implement a `promisify(fn)` function that takes a standard Node.js error-first callback function `(arg1, ..., callback)` and returns a function returning a Promise.",
+    "challengeCategory": "webdev",
+    "subCategory": "js",
+    "difficultyLevel": 2,
+    "difficulty": "MEDIUM",
+    "tags": [
+      "javascript",
+      "async",
+      "promises",
+      "webdev"
+    ],
+    "source": "interview",
+    "executionEngine": "mock",
+    "starterCode": "function promisify(fn) {\n  // Return function that returns a Promise\n}",
+    "solution": "function promisify(fn) {\n  return function(...args) {\n    return new Promise((resolve, reject) => {\n      fn.call(this, ...args, (err, result) => {\n        if (err) return reject(err);\n        resolve(result);\n      });\n    });\n  };\n}",
+    "testSuite": "const sampleAsync = (val, cb) => cb(null, val * 2);\nconst asyncAdd = promisify(sampleAsync);\nasyncAdd(5).then(res => {\n  expect(res).to.equal(10);\n});",
+    "sampleTests": "promisify(fn) -> returns a function returning a Promise",
+    "points": 20
+  },
+  {
+    "id": "tc_exclude",
+    "name": "tc_exclude",
+    "title": "TypeScript: Implement Exclude<T, U>",
+    "description": "Implement the built-in TypeScript utility `Exclude<T, U>`: exclude from union type `T` those types that are assignable to `U`.",
+    "challengeCategory": "webdev",
+    "subCategory": "ts",
+    "difficultyLevel": 1,
+    "difficulty": "EASY",
+    "tags": [
+      "typescript",
+      "generics",
+      "type-challenges",
+      "webdev"
+    ],
+    "source": "type-challenges",
+    "executionEngine": "ts-compiler",
+    "starterCode": "type MyExclude<T, U> = any;",
+    "solution": "type MyExclude<T, U> = T extends U ? never : T;",
+    "testSuite": "type cases = [\n  Expect<Equal<MyExclude<'a' | 'b' | 'c', 'a'>, 'b' | 'c'>>,\n  Expect<Equal<MyExclude<'a' | 'b' | 'c', 'a' | 'b'>, 'c'>>,\n  Expect<Equal<MyExclude<string | number | (() => void), Function>, string | number>>\n];",
+    "sampleTests": "type T0 = MyExclude<'a' | 'b' | 'c', 'a'> // 'b' | 'c'",
+    "points": 15
+  },
+  {
+    "id": "tc_concat",
+    "name": "tc_concat",
+    "title": "TypeScript: Implement Concat<T, U>",
+    "description": "Implement the JavaScript `Array.concat` function in the TypeScript type system. A type takes two tuple arguments and returns a new tuple including inputs in left-to-right order.",
+    "challengeCategory": "webdev",
+    "subCategory": "ts",
+    "difficultyLevel": 1,
+    "difficulty": "EASY",
+    "tags": [
+      "typescript",
+      "tuples",
+      "type-challenges",
+      "webdev"
+    ],
+    "source": "type-challenges",
+    "executionEngine": "ts-compiler",
+    "starterCode": "type Concat<T extends readonly any[], U extends readonly any[]> = any;",
+    "solution": "type Concat<T extends readonly any[], U extends readonly any[]> = [...T, ...U];",
+    "testSuite": "type cases = [\n  Expect<Equal<Concat<[], []>, []>>,\n  Expect<Equal<Concat<[], ['hello']>, ['hello']>>,\n  Expect<Equal<Concat<[1], [2]>, [1, 2]>>,\n  Expect<Equal<Concat<['1', 2, '3'], [false, boolean, '4']>, ['1', 2, '3', false, boolean, '4']>>\n];",
+    "sampleTests": "type Result = Concat<[1], [2]> // [1, 2]",
+    "points": 15
   }
 ]
