@@ -81,6 +81,14 @@ const Profile: React.FC = () => {
       return;
     }
 
+    if (user.uid === "test-user-123") {
+      localStorage.setItem("skillsphere_dev_profile", JSON.stringify(formData));
+      setIsExistingUser(true);
+      setIsEditing(false);
+      alert("Profile Saved (Dev Mode)!");
+      return;
+    }
+
     try {
       await setDoc(doc(db, "users", user.uid), formData);
       setIsExistingUser(true);
