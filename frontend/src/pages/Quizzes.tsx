@@ -81,6 +81,7 @@ export default function Quizzes(): React.ReactElement {
       sessionStorage.setItem(STORAGE_MODE_KEY, newMode);
       if (newMode === "main") {
         sessionStorage.removeItem(STORAGE_ROOM_KEY);
+        sessionStorage.removeItem("skillsphere_active_room");
         sessionStorage.removeItem(STORAGE_CHALLENGE_KEY);
         sessionStorage.removeItem("skillsphere_practice_state");
         setActiveRoomCode("");

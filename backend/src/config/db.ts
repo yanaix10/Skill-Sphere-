@@ -5,7 +5,8 @@ const collections: Record<string, Map<string, any>> = {
   ChallengeSession: new Map(),
   Challenge: new Map(),
   DsaQuestion: new Map(),
-  Question: new Map()
+  Question: new Map(),
+  Session: new Map()
 };
 
 const setupInMemoryMock = () => {

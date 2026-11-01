@@ -56,6 +56,9 @@ const Sidebar: React.FC<SidebarProps> = ({
   const isSessionActive = mode !== "main";
 
   const handleStartPractice = () => {
+    if (typeof window !== "undefined") {
+      sessionStorage.removeItem("skillsphere_practice_state");
+    }
     setMode("practice");
   };
 
@@ -64,11 +67,13 @@ const Sidebar: React.FC<SidebarProps> = ({
       alert("FullStack Blitz is currently under development. Please choose an active mode.");
       return;
     }
+    const createdCode = Math.random().toString(36).substring(2, 8).toUpperCase();
     if (onLaunchChallenge) {
       onLaunchChallenge({
         gameMode: selectedGameMode,
         language: selectedGameMode === "webdev_arena" ? "javascript" : "python",
         questionCount: selectedQuestionCount,
+        roomCode: createdCode,
         action: "create"
       });
     } else {

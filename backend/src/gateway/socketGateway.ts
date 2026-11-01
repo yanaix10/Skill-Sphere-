@@ -87,17 +87,11 @@ export function setupSocketGateway(io: Server): void {
   const manager = getMatchManager();
   const runner = getCodeRunner();
 
-  // Helper to broadcast match state in both native and normalized shapes
-  const broadcastMatchState = (match: Match) => {
+  // Helper to build native frontend state
+  const buildNativeState = (match: Match) => {
     const roomKey = match.roomCode || match.id;
-    const publicState = match.getPublicState();
-
-    // 1. Normalized broadcast
-    io.to(roomKey).emit('match:state', publicState);
-
-    // 2. Frontend Native format for Challenge.tsx
     const countdownSec = parseInt(process.env.COUNTDOWN_SEC || '10', 10);
-    const nativeState = {
+    return {
       challengeId: roomKey,
       status: match.state === 'in_progress' ? 'started' : match.state,
       serverTime: Date.now(),
@@ -112,18 +106,47 @@ export function setupSocketGateway(io: Server): void {
       gameMode: match.gameMode || 'dsa_sprint',
       questions: match.getPublicQuestions()
     };
+  };
 
+  // Helper to broadcast match state in both native and normalized shapes
+  const broadcastMatchState = (match: Match, targetSocket?: Socket) => {
+    const roomKey = match.roomCode || match.id;
+    const publicState = match.getPublicState();
+    const nativeState = buildNativeState(match);
+
+    // 1. Normalized broadcast
+    io.to(roomKey).emit('match:state', publicState);
+
+    // 2. Frontend Native format for Challenge.tsx
+    const countdownSec = parseInt(process.env.COUNTDOWN_SEC || '10', 10);
     io.to(roomKey).emit('challenge_state', nativeState);
+
+    // 3. If a target caller socket is provided, also send direct acknowledgment
+    if (targetSocket) {
+      targetSocket.emit('challenge_state', nativeState);
+      if (match.state === 'in_progress') {
+        targetSocket.emit('challenge_started', nativeState);
+      }
+    }
 
     if (match.state === 'countdown') {
       io.to(roomKey).emit('challenge_countdown', {
         startsAt: match.countdownStartsAt,
         duration: countdownSec
       });
+      if (targetSocket) {
+        targetSocket.emit('challenge_countdown', {
+          startsAt: match.countdownStartsAt,
+          duration: countdownSec
+        });
+      }
     }
 
     if (match.state === 'waiting' && match.players.size === 2) {
       io.to(roomKey).emit('challenge_ready');
+      if (targetSocket) {
+        targetSocket.emit('challenge_ready');
+      }
     }
 
     if (match.state === 'in_progress') {
@@ -199,12 +222,14 @@ export function setupSocketGateway(io: Server): void {
             onStateChange: (m) => broadcastMatchState(m)
           });
         } else {
-          // Check if this player already belongs to the room by ID or nickname
+          // Check if this player already belongs to the room by ID, socket, or nickname
           const normalizedNick = nickname.trim().toLowerCase();
           const existingPlayer =
             match.players.get(clientPlayerId) ||
             [...match.players.values()].find((p) => p.playerId === clientPlayerId) ||
-            [...match.players.values()].find((p) => p.nickname.trim().toLowerCase() === normalizedNick);
+            [...match.players.values()].find((p) => p.socketId === socket.id) ||
+            [...match.players.values()].find((p) => p.nickname.trim().toLowerCase() === normalizedNick) ||
+            [...match.players.values()].find((p) => clientPlayerId.includes(p.playerId) || p.playerId.includes(clientPlayerId));
 
           if (existingPlayer) {
             // Reconnect player to their active room session
@@ -229,13 +254,44 @@ export function setupSocketGateway(io: Server): void {
             if (disconnectedPlayer) {
               manager.handleReconnect(match.id, disconnectedPlayer.playerId, socket.id);
               disconnectedPlayer.nickname = nickname;
+            } else {
+              // Both marked connected: check if this socket was registered to a player
+              const bySocket = [...match.players.values()].find((p) => p.socketId === socket.id);
+              if (bySocket) {
+                manager.handleReconnect(match.id, bySocket.playerId, socket.id);
+              }
             }
           }
         }
 
-        broadcastMatchState(match);
+        const roomKey = match.roomCode || match.id;
+        socket.join(roomKey);
+
+        // Always broadcast and guarantee direct delivery to this requesting socket
+        broadcastMatchState(match, socket);
       } catch (err: any) {
         socket.emit('error', { message: err.message });
+      }
+    });
+
+    // =========================================================================
+    // Native Protocol: sync_arena (Immediate direct state synchronization)
+    // =========================================================================
+    socket.on('sync_arena', ({ challengeId }) => {
+      const code = (challengeId || '').toUpperCase().trim();
+      const match = manager.getMatchByRoomCode(code) || manager.getMatchBySocket(socket.id);
+      if (match) {
+        const roomKey = match.roomCode || match.id;
+        socket.join(roomKey);
+
+        // Check if player needs reconnect association
+        const existingPlayer = [...match.players.values()].find((p) => p.socketId === socket.id) ||
+          [...match.players.values()].find((p) => p.playerId === auth.playerId);
+        if (existingPlayer) {
+          manager.handleReconnect(match.id, existingPlayer.playerId, socket.id);
+        }
+
+        broadcastMatchState(match, socket);
       }
     });
 

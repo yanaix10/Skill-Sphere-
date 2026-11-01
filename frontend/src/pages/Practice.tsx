@@ -72,11 +72,11 @@ export const Practice: React.FC<PracticeProps> = ({ setMode, quizConfig }) => {
 
   const savedInitial = getSavedPractice();
 
-  const [questions, setQuestions] = useState<QuizQuestion[]>(() => savedInitial?.questions || []);
-  const [userAnswers, setUserAnswers] = useState<Record<string, string>>(() => savedInitial?.userAnswers || {});
-  const [currentIndex, setCurrentIndex] = useState<number>(() => savedInitial?.currentIndex || 0);
-  const [score, setScore] = useState<number>(() => savedInitial?.score || 0);
-  const [showResult, setShowResult] = useState<boolean>(() => savedInitial?.showResult || false);
+  const [questions, setQuestions] = useState<QuizQuestion[]>(() => (savedInitial?.showResult ? [] : savedInitial?.questions || []));
+  const [userAnswers, setUserAnswers] = useState<Record<string, string>>(() => (savedInitial?.showResult ? {} : savedInitial?.userAnswers || {}));
+  const [currentIndex, setCurrentIndex] = useState<number>(() => (savedInitial?.showResult ? 0 : savedInitial?.currentIndex || 0));
+  const [score, setScore] = useState<number>(() => (savedInitial?.showResult ? 0 : savedInitial?.score || 0));
+  const [showResult, setShowResult] = useState<boolean>(false);
   const [timeLeft, setTimeLeft] = useState<number>(() => {
     if (savedInitial && !savedInitial.showResult) {
       const elapsed = Math.floor((Date.now() - (savedInitial.lastSavedAt || Date.now())) / 1000);
@@ -84,7 +84,7 @@ export const Practice: React.FC<PracticeProps> = ({ setMode, quizConfig }) => {
     }
     return 600;
   });
-  const [sessionId, setSessionId] = useState<string | null>(() => savedInitial?.sessionId || null);
+  const [sessionId, setSessionId] = useState<string | null>(() => (savedInitial?.showResult ? null : savedInitial?.sessionId || null));
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
@@ -132,14 +132,14 @@ export const Practice: React.FC<PracticeProps> = ({ setMode, quizConfig }) => {
 
   useEffect(() => {
     // Only fetch new questions if we do not already have an active session loaded from sessionStorage
-    if (!sessionId || questions.length === 0) {
+    if (!sessionId || questions.length === 0 || showResult) {
       fetchQuestions();
     }
-  }, []);
+  }, [quizConfig?.category, quizConfig?.difficulty, quizConfig?.limit]);
 
-  // Persist state updates to sessionStorage
+  // Persist state updates to sessionStorage (only while quiz is in progress)
   useEffect(() => {
-    if (sessionId && questions.length > 0 && typeof window !== "undefined") {
+    if (!showResult && sessionId && questions.length > 0 && typeof window !== "undefined") {
       sessionStorage.setItem(
         STORAGE_KEY,
         JSON.stringify({
@@ -148,7 +148,7 @@ export const Practice: React.FC<PracticeProps> = ({ setMode, quizConfig }) => {
           userAnswers,
           currentIndex,
           score,
-          showResult,
+          showResult: false,
           timeLeft,
           lastSavedAt: Date.now()
         })

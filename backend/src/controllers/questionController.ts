@@ -12,6 +12,7 @@ quizApi.interceptors.request.use((config) => {
 	if (key) {
 		config.headers.Authorization = `Bearer ${key}`;
 		config.headers['X-Api-Key'] = key;
+		config.params = { ...(config.params || {}), api_key: key, apiKey: key };
 	}
 	return config;
 });
@@ -51,9 +52,22 @@ export const startPracticeSession = async (req: Request, res: Response): Promise
 
 		const params: any = {};
 		if (category) {
-			if (category.toLowerCase() === 'web dev' || category.toLowerCase() === 'webdev') {
-				params.category = 'Code';
+			const rawCat = String(category).toLowerCase().trim();
+			if (rawCat === 'web dev' || rawCat === 'webdev') {
+				params.category = 'Programming';
 				params.tags = 'JavaScript';
+			} else if (rawCat === 'code' || rawCat === 'programming') {
+				params.category = 'Programming';
+			} else if (rawCat === 'linux') {
+				params.category = 'Linux';
+			} else if (rawCat === 'sql') {
+				params.category = 'SQL';
+			} else if (rawCat === 'devops') {
+				params.category = 'DevOps';
+			} else if (rawCat === 'cloud') {
+				params.category = 'Cloud';
+			} else if (rawCat === 'docker') {
+				params.category = 'Docker';
 			} else {
 				params.category = category;
 			}
@@ -65,24 +79,33 @@ export const startPracticeSession = async (req: Request, res: Response): Promise
 		let rawQuestions: any[] = [];
 		try {
 			const response = await quizApi.get('/questions', { params });
-			rawQuestions = Array.isArray(response.data) ? response.data : (response.data.data || []);
+			rawQuestions = Array.isArray(response.data) ? response.data : (response.data?.data || []);
 		} catch (apiError: any) {
-			console.warn("QuizAPI request failed, falling back to local quiz questions:", apiError.message);
-			rawQuestions = localQuestions.filter(q => {
+			console.warn("QuizAPI request failed, will use local fallback:", apiError.message);
+		}
+
+		// Fallback to local questions if QuizAPI returned empty or failed
+		if (!rawQuestions || rawQuestions.length === 0) {
+			let filtered = localQuestions.filter(q => {
 				if (category) {
-					const cat = category.toLowerCase();
+					const cat = String(category).toLowerCase().trim();
 					if (cat === 'web dev' || cat === 'webdev') {
 						const qTags = (q as any).tags;
 						return q.category.toLowerCase() === 'code' || (Array.isArray(qTags) && qTags.some((t: any) => String(t).toLowerCase().includes('javascript') || String(t).toLowerCase().includes('web')));
 					}
-					return q.category.toLowerCase() === cat;
+					return q.category.toLowerCase().includes(cat) || cat.includes(q.category.toLowerCase());
 				}
 				return true;
 			});
-			if (rawQuestions.length === 0) {
-				rawQuestions = localQuestions;
+			if (difficulty) {
+				const diffFiltered = filtered.filter(q => q.difficulty?.toLowerCase() === String(difficulty).toLowerCase());
+				if (diffFiltered.length > 0) filtered = diffFiltered;
 			}
-			rawQuestions = rawQuestions.slice(0, limit);
+			if (filtered.length === 0) {
+				filtered = [...localQuestions];
+			}
+			// Randomize selection
+			rawQuestions = [...filtered].sort(() => Math.random() - 0.5).slice(0, limit);
 		}
 
 		if (!rawQuestions || rawQuestions.length === 0) {

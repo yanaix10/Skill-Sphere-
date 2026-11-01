@@ -135,6 +135,17 @@ export default function Challenge({
   const [isHost, setIsHost] = useState<boolean>(false);
   const [winner, setWinner] = useState<Player | null>(null);
   const [challengeState, setChallengeState] = useState<ChallengeState | null>(null);
+  const [cachedQuestions, setCachedQuestions] = useState<Question[]>(() => {
+    if (typeof window === "undefined") return [];
+    const curRoom = challengeConfig?.roomCode || sessionStorage.getItem("skillsphere_active_room");
+    if (curRoom) {
+      try {
+        const saved = sessionStorage.getItem(`skillsphere_match_questions_${curRoom}`);
+        if (saved) return JSON.parse(saved);
+      } catch {}
+    }
+    return [];
+  });
   const [opponentStatus, setOpponentStatus] = useState<string>("");
 
   // Copy code UI
@@ -149,6 +160,7 @@ export default function Challenge({
   const stateRef = useRef({ inRoom, isStarted, winner, roomCode });
   const codeRef = useRef(code);
   const langRef = useRef(language);
+  const gameModeRef = useRef(gameMode);
 
   const getUserName = () => auth.currentUser?.displayName || auth.currentUser?.email?.split("@")[0] || "Player";
 
@@ -159,14 +171,18 @@ export default function Challenge({
   useEffect(() => {
     codeRef.current = code;
     langRef.current = language;
-  }, [code, language]);
+    gameModeRef.current = gameMode;
+  }, [code, language, gameMode]);
 
-  // Sync mode with parent config from Sidebar
+  // Sync mode and roomCode with parent config from Sidebar
   useEffect(() => {
     if (challengeConfig?.gameMode) {
       setGameMode(challengeConfig.gameMode);
     }
-  }, [challengeConfig?.gameMode]);
+    if (challengeConfig?.roomCode && challengeConfig.roomCode !== roomCode) {
+      setRoomCode(challengeConfig.roomCode);
+    }
+  }, [challengeConfig?.gameMode, challengeConfig?.roomCode]);
 
   // Handle incoming challenge actions from Sidebar
   useEffect(() => {
@@ -183,7 +199,7 @@ export default function Challenge({
       }
 
       if (challengeConfig.action === "create") {
-        const newCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+        const newCode = challengeConfig.roomCode || Math.random().toString(36).substring(2, 8).toUpperCase();
         setRoomCode(newCode);
         setIsHost(true);
         setInRoom(true);
@@ -226,6 +242,8 @@ export default function Challenge({
 
   // Auto-reconnect to existing active match session on page reload or component mount
   useEffect(() => {
+    // Only auto-reconnect if no explicit new action was triggered
+    if (challengeConfig?.action) return;
     const savedRoom = roomCode || (typeof window !== "undefined" ? sessionStorage.getItem("skillsphere_active_room") : null);
     if (savedRoom && isDuelActive) {
       setInRoom(true);
@@ -233,17 +251,17 @@ export default function Challenge({
       socket.emit("join_challenge", {
         challengeId: savedRoom,
         userDetails: { name: getUserName() },
-        gameMode,
-        language: gameMode === "webdev_arena" ? "javascript" : langRef.current,
+        gameMode: gameModeRef.current,
+        language: gameModeRef.current === "webdev_arena" ? "javascript" : langRef.current,
         playerId: getPersistentPlayerId()
       });
+      socket.emit("sync_arena", { challengeId: savedRoom });
     }
-  }, [isDuelActive]);
+  }, [isDuelActive, challengeConfig?.action]);
 
   // Countdown interval — purely visual ticker
   // isStarted is set authoritatively by challenge_state (status: started) from the server
-  // When the timer hits 0 we just optimistically mark started; the server's own
-  // tick loop will fire challenge_started ~simultaneously with the questions payload.
+  // When the timer hits 0 we optimistically mark started and request immediate server arena sync.
   useEffect(() => {
     if (countdown !== null && countdown > 0) {
       const timer = setTimeout(() => {
@@ -252,33 +270,62 @@ export default function Challenge({
       return () => clearTimeout(timer);
     } else if (countdown === 0) {
       setCountdown(null);
-      // Optimistically mark started so we don't stay on the waiting screen
-      // The real challenge_state (with questions) from the server will arrive
-      // within ms from the backend tick loop — this just prevents a blank flash.
       setIsStarted(true);
+
+      const curCode = roomCode || stateRef.current.roomCode;
+      if (curCode) {
+        socket.emit("sync_arena", { challengeId: curCode });
+        socket.emit("join_challenge", {
+          challengeId: curCode,
+          userDetails: { name: getUserName() },
+          gameMode: gameModeRef.current,
+          language: gameModeRef.current === "webdev_arena" ? "javascript" : langRef.current,
+          playerId: getPersistentPlayerId()
+        });
+      }
     }
   }, [countdown]);
 
-  // Socket Connection and Event Listeners
+  // Socket Connection and Event Listeners (mounted once for stable socket lifecycle)
   useEffect(() => {
     const handleConnect = () => {
       socketIdRef.current = socket.id || "";
-      const { roomCode, inRoom } = stateRef.current;
-      if (inRoom && roomCode) {
+      const { roomCode: curRoom, inRoom: isIn } = stateRef.current;
+      if (isIn && curRoom) {
         socket.emit("join_challenge", {
-          challengeId: roomCode,
+          challengeId: curRoom,
           userDetails: { name: getUserName() },
-          gameMode,
-          language: gameMode === "webdev_arena" ? "javascript" : langRef.current,
+          gameMode: gameModeRef.current,
+          language: gameModeRef.current === "webdev_arena" ? "javascript" : langRef.current,
           playerId: getPersistentPlayerId()
         });
+        socket.emit("sync_arena", { challengeId: curRoom });
       }
     };
 
     socket.on("connect", handleConnect);
+    if (socket.connected) {
+      handleConnect();
+    }
 
     socket.on("challenge_state", (state: ChallengeState) => {
       setChallengeState(state);
+
+      if (state.questions && state.questions.length > 0) {
+        setCachedQuestions(state.questions);
+        const curCode = state.challengeId || roomCode || stateRef.current.roomCode;
+        if (curCode && typeof window !== "undefined") {
+          sessionStorage.setItem(`skillsphere_match_questions_${curCode}`, JSON.stringify(state.questions));
+        }
+      }
+
+      if (state.challengeId && state.challengeId !== stateRef.current.roomCode) {
+        setRoomCode(state.challengeId);
+        if (typeof window !== "undefined") {
+          sessionStorage.setItem("skillsphere_active_room", state.challengeId);
+        }
+        if (onRoomCreated) onRoomCreated(state.challengeId);
+      }
 
       if (state.gameMode) {
         setGameMode(state.gameMode);
@@ -290,7 +337,7 @@ export default function Challenge({
       const hasTwoPlayers = (state?.players && state.players.length >= 2) || false;
       setIsReady(hasTwoPlayers);
 
-      // Start 1-minute countdown when 2 players are present
+      // Start countdown when 2 players are present
       if (hasTwoPlayers && !stateRef.current.isStarted) {
         if (state.countdownStartsAt) {
           const duration = state.countdownSec || 10;
@@ -311,18 +358,19 @@ export default function Challenge({
         (p) => (socket.id && p.socketId === socket.id) || (p.userDetails?.name && p.userDetails.name === getUserName())
       );
       const opponentPlayer = state?.players?.find((p) => p !== myPlayer);
-      if (onOpponentChange) {
-        onOpponentChange(opponentPlayer?.userDetails?.name || "", hasTwoPlayers);
+      if (onOpponentChange && opponentPlayer?.userDetails?.name) {
+        onOpponentChange(opponentPlayer.userDetails.name, hasTwoPlayers);
       }
 
       // Populate starter code from server session questions once match is active
-      if (myPlayer && state.questions && state.questions.length > 0) {
+      const availableQuestions = state.questions && state.questions.length > 0 ? state.questions : cachedQuestions;
+      if (myPlayer && availableQuestions && availableQuestions.length > 0) {
         const currentIndex = myPlayer.currentIndex ?? myPlayer.score ?? 0;
-        if (state.questions.length > currentIndex) {
-          const currentQ = state.questions[currentIndex];
+        if (availableQuestions.length > currentIndex) {
+          const currentQ = availableQuestions[currentIndex];
           const qLangs = Object.keys(currentQ?.languages || currentQ?.variants || {});
           let activeLang = langRef.current;
-          if (state.gameMode === "webdev_arena" || gameMode === "webdev_arena") {
+          if (state.gameMode === "webdev_arena" || gameModeRef.current === "webdev_arena") {
             if (qLangs.includes("typescript") || currentQ?.tags?.includes("typescript")) {
               activeLang = "typescript";
             } else if (qLangs.includes("javascript")) {
@@ -361,19 +409,33 @@ export default function Challenge({
     });
 
     socket.on("challenge_countdown", ({ startsAt, duration }: { startsAt: number; duration: number }) => {
-      if (stateRef.current.isStarted) return; // don't reset if match already started
+      if (stateRef.current.isStarted) return;
       const elapsed = Math.floor((Date.now() - startsAt) / 1000);
       const remaining = Math.max(0, duration - elapsed);
       if (remaining > 0) {
-        setCountdown(remaining); // only set a real remaining value, never reset to duration
+        setCountdown(remaining);
       }
     });
 
     socket.on("challenge_started", (startedState?: ChallengeState) => {
       setIsStarted(true);
       setCountdown(null);
-      if (startedState && startedState.questions && startedState.questions.length > 0) {
-        setChallengeState(startedState);
+      if (startedState) {
+        if (startedState.challengeId && startedState.challengeId !== stateRef.current.roomCode) {
+          setRoomCode(startedState.challengeId);
+          if (typeof window !== "undefined") {
+            sessionStorage.setItem("skillsphere_active_room", startedState.challengeId);
+          }
+          if (onRoomCreated) onRoomCreated(startedState.challengeId);
+        }
+        if (startedState.questions && startedState.questions.length > 0) {
+          setChallengeState(startedState);
+          setCachedQuestions(startedState.questions);
+          const curCode = startedState.challengeId || stateRef.current.roomCode;
+          if (curCode && typeof window !== "undefined") {
+            sessionStorage.setItem(`skillsphere_match_questions_${curCode}`, JSON.stringify(startedState.questions));
+          }
+        }
       }
     });
 
@@ -388,7 +450,7 @@ export default function Challenge({
       if (success && isSubmit) {
         setCode("");
         const curCode = roomCode || stateRef.current.roomCode;
-        const curQ = challengeState?.questions?.[prevIndexRef.current];
+        const curQ = challengeState?.questions?.[prevIndexRef.current] || cachedQuestions?.[prevIndexRef.current];
         if (curCode && curQ?.id && typeof window !== "undefined") {
           sessionStorage.removeItem(`skillsphere_code_${curCode}_${curQ.id}`);
         }
@@ -426,7 +488,7 @@ export default function Challenge({
       socket.off("opponent_running");
       socket.off("error");
     };
-  }, [gameMode]);
+  }, []);
 
   const handleLeaveRoom = () => {
     if (typeof window !== "undefined") {
@@ -507,13 +569,55 @@ export default function Challenge({
     }
   };
 
+  // Score & active question computations for DSA / WebDev
+  const myName = getUserName();
+  const myPlayer = challengeState?.players?.find(
+    (p) =>
+      (socketIdRef.current && p.socketId === socketIdRef.current) ||
+      (socket.id && p.socketId === socket.id) ||
+      (p.userDetails?.name && p.userDetails.name === myName)
+  );
+  const opponent = challengeState?.players?.find((p) => p !== myPlayer);
+  const p1Score = myPlayer?.score || 0;
+  const p2Score = opponent?.score || 0;
+
+  const activeQuestions: Question[] =
+    (challengeState?.questions && challengeState.questions.length > 0)
+      ? challengeState.questions
+      : (cachedQuestions.length > 0
+          ? cachedQuestions
+          : (() => {
+              if (typeof window === "undefined") return [];
+              const cur = roomCode || stateRef.current.roomCode;
+              try {
+                const s = sessionStorage.getItem(`skillsphere_match_questions_${cur}`);
+                return s ? JSON.parse(s) : [];
+              } catch {
+                return [];
+              }
+            })());
+
+  const totalQuestions = activeQuestions.length > 0 ? activeQuestions.length : (challengeState?.questions?.length || 3);
+  const maxIdx = Math.max(0, (activeQuestions.length || 1) - 1);
+  const p1Index = Math.min(myPlayer?.currentIndex ?? p1Score ?? 0, maxIdx);
+
+  const currentMatchQuestion = activeQuestions[p1Index] || activeQuestions[0];
+  const activeQuestionTitle = currentMatchQuestion?.title || "Problem Statement";
+  const activeQuestionStatement = currentMatchQuestion?.description || currentMatchQuestion?.statement || "";
+  const activeQuestionDifficulty = currentMatchQuestion?.difficulty || "MEDIUM";
+  const activeQuestionTags = currentMatchQuestion?.tags || ["algorithms", "dsa"];
+  const availableLangs = Object.keys(currentMatchQuestion?.languages || currentMatchQuestion?.variants || {});
+  const activeLang =
+    gameMode === "webdev_arena"
+      ? (availableLangs.includes(language)
+          ? language
+          : (availableLangs.includes("typescript") || currentMatchQuestion?.tags?.includes("typescript") ? "typescript" : "javascript"))
+      : language;
+
   const resetCurrentCode = () => {
-    if (isStarted && challengeState?.questions) {
-      const myPlayer = challengeState.players?.find(
-        (p) => (socket.id && p.socketId === socket.id) || (p.userDetails?.name && p.userDetails.name === getUserName())
-      );
+    if (isStarted && activeQuestions.length > 0) {
       const currentIndex = myPlayer?.currentIndex ?? myPlayer?.score ?? 0;
-      const currentQ = challengeState.questions[currentIndex];
+      const currentQ = activeQuestions[currentIndex] || activeQuestions[0];
       const qLangs = Object.keys(currentQ?.languages || currentQ?.variants || {});
       const qLang =
         gameMode === "webdev_arena"
@@ -528,33 +632,6 @@ export default function Challenge({
     }
     setOutput("");
   };
-
-  // Score & active question computations for DSA / WebDev
-  const myName = getUserName();
-  const myPlayer = challengeState?.players?.find(
-    (p) =>
-      (socketIdRef.current && p.socketId === socketIdRef.current) ||
-      (socket.id && p.socketId === socket.id) ||
-      (p.userDetails?.name && p.userDetails.name === myName)
-  );
-  const opponent = challengeState?.players?.find((p) => p !== myPlayer);
-  const p1Score = myPlayer?.score || 0;
-  const p2Score = opponent?.score || 0;
-  const p1Index = myPlayer?.currentIndex ?? p1Score;
-  const totalQuestions = challengeState?.questions?.length || 3;
-
-  const currentMatchQuestion = challengeState?.questions?.[p1Index];
-  const activeQuestionTitle = currentMatchQuestion?.title || "Problem Statement";
-  const activeQuestionStatement = currentMatchQuestion?.description || currentMatchQuestion?.statement || "";
-  const activeQuestionDifficulty = currentMatchQuestion?.difficulty || "MEDIUM";
-  const activeQuestionTags = currentMatchQuestion?.tags || ["algorithms", "dsa"];
-  const availableLangs = Object.keys(currentMatchQuestion?.languages || currentMatchQuestion?.variants || {});
-  const activeLang =
-    gameMode === "webdev_arena"
-      ? (availableLangs.includes(language)
-          ? language
-          : (availableLangs.includes("typescript") || currentMatchQuestion?.tags?.includes("typescript") ? "typescript" : "javascript"))
-      : language;
 
   // Sync active language and starter code when question changes in WebDev arena or DSA sprint
   useEffect(() => {
@@ -603,7 +680,8 @@ export default function Challenge({
 
   // Re-sync with room if match is started but questions haven't arrived yet
   useEffect(() => {
-    if (inRoom && roomCode && isStarted && (!challengeState?.questions || challengeState.questions.length === 0)) {
+    if (inRoom && roomCode && isStarted && activeQuestions.length === 0) {
+      socket.emit("sync_arena", { challengeId: roomCode });
       socket.emit("join_challenge", {
         challengeId: roomCode,
         userDetails: { name: getUserName() },
@@ -612,7 +690,7 @@ export default function Challenge({
         playerId: getPersistentPlayerId()
       });
     }
-  }, [inRoom, roomCode, isStarted, challengeState?.questions, gameMode]);
+  }, [inRoom, roomCode, isStarted, activeQuestions.length, gameMode]);
 
   // Format countdown timer (e.g. 00:05, 00:45)
   const formatTimer = (sec: number | null) => {
@@ -639,6 +717,7 @@ export default function Challenge({
             </p>
             <button
               onClick={() => {
+                socket.emit("sync_arena", { challengeId: roomCode });
                 socket.emit("join_challenge", {
                   challengeId: roomCode,
                   userDetails: { name: getUserName() },
@@ -1000,18 +1079,18 @@ export default function Challenge({
             </div>
           </div>
 
-          {/* 1-Minute Timer (Starts when other player joins) */}
+          {/* 10-Second Countdown (Starts when 2 players connect) */}
           {isReady ? (
-            <div className="p-4 rounded-xl bg-primary/5 border border-primary/20 flex flex-col items-center text-center space-y-1.5">
-              <div className="flex items-center gap-1.5 text-xs font-mono uppercase font-bold text-primary">
-                <Clock className="w-3.5 h-3.5" />
-                <span>Match Starting In</span>
+            <div className="p-5 rounded-2xl bg-primary/10 border border-primary/20 flex flex-col items-center text-center space-y-2 shadow-xs">
+              <div className="flex items-center gap-2 text-xs font-mono uppercase font-bold text-primary tracking-wider">
+                <Clock className="w-4 h-4 animate-spin" />
+                <span>Game starts in</span>
               </div>
-              <div className="text-4xl font-mono font-extrabold tracking-wider text-foreground">
-                {formatTimer(countdown)}
+              <div className="text-5xl font-mono font-black tracking-tight text-foreground">
+                {countdown !== null ? `${countdown}s` : "10s"}
               </div>
-              <div className="text-[11px] text-muted-foreground font-mono">
-                Duel launches automatically when timer concludes
+              <div className="text-xs text-muted-foreground font-medium">
+                Both coders ready. Arena launching in {countdown ?? 10} seconds...
               </div>
             </div>
           ) : (
