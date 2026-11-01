@@ -17,6 +17,8 @@ import {
 import CodeEditor from "./CodeEditor";
 import { auth } from "../firebase";
 import { BACKEND_URL } from "../utils/api";
+import defaultWebdevQuestions from "../data/defaultWebdevQuestions.json";
+import defaultDsaQuestions from "../data/defaultDsaQuestions.json";
 
 function getPersistentPlayerId(): string {
   if (typeof window === "undefined") return "guest";
@@ -440,6 +442,24 @@ export default function Challenge({
       }
     });
 
+    socket.on("match:state", (publicState: any) => {
+      if (publicState?.questions && publicState.questions.length > 0) {
+        setCachedQuestions(publicState.questions);
+        setChallengeState((prev) => ({
+          ...(prev || {}),
+          questions: publicState.questions,
+          status: publicState.status,
+          challengeId: publicState.roomCode || publicState.matchId,
+          players: publicState.players?.map((p: any) => ({
+            socketId: p.socketId,
+            userDetails: { name: p.nickname },
+            score: p.score,
+            currentIndex: p.currentIndex
+          })) || prev?.players || []
+        } as ChallengeState));
+      }
+    });
+
     socket.on("challenge_end", ({ winner }: { winner: Player }) => {
       setWinner(winner);
       setIsRunning(false);
@@ -483,6 +503,7 @@ export default function Challenge({
       socket.off("challenge_ready");
       socket.off("challenge_countdown");
       socket.off("challenge_started");
+      socket.off("match:state");
       socket.off("challenge_end");
       socket.off("code_result");
       socket.off("opponent_typing");
@@ -582,20 +603,28 @@ export default function Challenge({
   const p1Score = myPlayer?.score || 0;
   const p2Score = opponent?.score || 0;
 
+  const fallbackQuestions = (gameMode === "webdev_arena" || gameModeRef.current === "webdev_arena")
+    ? (defaultWebdevQuestions as unknown as Question[])
+    : (defaultDsaQuestions as unknown as Question[]);
+
   const activeQuestions: Question[] =
     (challengeState?.questions && challengeState.questions.length > 0)
       ? challengeState.questions
       : (cachedQuestions.length > 0
           ? cachedQuestions
           : (() => {
-              if (typeof window === "undefined") return [];
-              const cur = roomCode || stateRef.current.roomCode;
-              try {
-                const s = sessionStorage.getItem(`skillsphere_match_questions_${cur}`);
-                return s ? JSON.parse(s) : [];
-              } catch {
-                return [];
+              if (typeof window !== "undefined") {
+                const cur = roomCode || stateRef.current.roomCode;
+                try {
+                  const s = sessionStorage.getItem(`skillsphere_match_questions_${cur}`);
+                  if (s) {
+                    const parsed = JSON.parse(s);
+                    if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+                  }
+                } catch {}
               }
+              // Immediate fallback so players are never stuck on a loading screen
+              return fallbackQuestions;
             })());
 
   const totalQuestions = activeQuestions.length > 0 ? activeQuestions.length : (challengeState?.questions?.length || 3);

@@ -1,0 +1,287 @@
+[
+  {
+    "id": "js_flatten_array",
+    "title": "JavaScript: Deep Flatten Array",
+    "statement": "Implement a function flatten(arr) that recursively flattens an array of arbitrarily nested arrays into a single 1-dimensional array.",
+    "description": "Implement a function flatten(arr) that recursively flattens an array of arbitrarily nested arrays into a single 1-dimensional array.",
+    "difficulty": "EASY",
+    "category": "JAVASCRIPT",
+    "tags": [
+      "javascript",
+      "arrays",
+      "recursion",
+      "webdev"
+    ],
+    "estMinutes": 2,
+    "starterCode": "function flatten(arr) {\n  // Write your code here\n  return arr;\n}",
+    "sampleTests": "flatten([1, [2, [3]], 4]) -> [1, 2, 3, 4]",
+    "languages": {
+      "javascript": {
+        "starterCode": "function flatten(arr) {\n  // Write your code here\n  return arr;\n}",
+        "example": "flatten([1, [2, [3]], 4]) -> [1, 2, 3, 4]",
+        "sampleTests": "flatten([1, [2, [3]], 4]) -> [1, 2, 3, 4]"
+      },
+      "typescript": {
+        "starterCode": "function flatten(arr) {\n  // Write your code here\n  return arr;\n}",
+        "example": "flatten([1, [2, [3]], 4]) -> [1, 2, 3, 4]",
+        "sampleTests": "flatten([1, [2, [3]], 4]) -> [1, 2, 3, 4]"
+      }
+    }
+  },
+  {
+    "id": "js_promisify",
+    "title": "JavaScript: Promisify Node Callback",
+    "statement": "Implement a `promisify(fn)` function that takes a standard Node.js error-first callback function `(arg1, ..., callback)` and returns a function returning a Promise.",
+    "description": "Implement a `promisify(fn)` function that takes a standard Node.js error-first callback function `(arg1, ..., callback)` and returns a function returning a Promise.",
+    "difficulty": "MEDIUM",
+    "category": "JAVASCRIPT",
+    "tags": [
+      "javascript",
+      "async",
+      "promises",
+      "webdev"
+    ],
+    "estMinutes": 3,
+    "starterCode": "function promisify(fn) {\n  // Return function that returns a Promise\n}",
+    "sampleTests": "promisify(fn) -> returns a function returning a Promise",
+    "languages": {
+      "javascript": {
+        "starterCode": "function promisify(fn) {\n  // Return function that returns a Promise\n}",
+        "example": "promisify(fn) -> returns a function returning a Promise",
+        "sampleTests": "promisify(fn) -> returns a function returning a Promise"
+      },
+      "typescript": {
+        "starterCode": "function promisify(fn) {\n  // Return function that returns a Promise\n}",
+        "example": "promisify(fn) -> returns a function returning a Promise",
+        "sampleTests": "promisify(fn) -> returns a function returning a Promise"
+      }
+    }
+  },
+  {
+    "id": "fcc_reverse_string",
+    "title": "Reverse a String",
+    "statement": "Reverse the provided string and return the reversed string. For example, 'hello' should become 'olleh'.",
+    "description": "Reverse the provided string and return the reversed string. For example, 'hello' should become 'olleh'.",
+    "difficulty": "EASY",
+    "category": "JAVASCRIPT",
+    "tags": [
+      "javascript",
+      "string",
+      "algorithms",
+      "webdev"
+    ],
+    "estMinutes": 2,
+    "starterCode": "function reverseString(str) {\n  // Write your code here\n  return str;\n}\n\n// Example test call\nconsole.log(reverseString(\"hello\"));",
+    "sampleTests": "reverseString(\"hello\") === \"olleh\"",
+    "languages": {
+      "javascript": {
+        "starterCode": "function reverseString(str) {\n  // Write your code here\n  return str;\n}\n\n// Example test call\nconsole.log(reverseString(\"hello\"));",
+        "example": "reverseString(\"hello\") === \"olleh\"",
+        "sampleTests": "reverseString(\"hello\") === \"olleh\""
+      },
+      "typescript": {
+        "starterCode": "function reverseString(str) {\n  // Write your code here\n  return str;\n}\n\n// Example test call\nconsole.log(reverseString(\"hello\"));",
+        "example": "reverseString(\"hello\") === \"olleh\"",
+        "sampleTests": "reverseString(\"hello\") === \"olleh\""
+      }
+    }
+  },
+  {
+    "id": "fcc_diff_two_arrays",
+    "title": "Diff Two Arrays (Symmetric Difference)",
+    "statement": "Compare two arrays and return a new array with any items only found in one of the two given arrays, but not both. In other words, return the symmetric difference of the two arrays.",
+    "description": "Compare two arrays and return a new array with any items only found in one of the two given arrays, but not both. In other words, return the symmetric difference of the two arrays.",
+    "difficulty": "HARD",
+    "category": "JAVASCRIPT",
+    "tags": [
+      "javascript",
+      "arrays",
+      "functional-programming",
+      "webdev"
+    ],
+    "estMinutes": 4,
+    "starterCode": "function diffArray(arr1, arr2) {\n  // Write your code here\n  return [];\n}\n\nconsole.log(diffArray([1, 2, 3, 5], [1, 2, 3, 4, 5]));",
+    "sampleTests": "diffArray([1, 2, 3, 5], [1, 2, 3, 4, 5]) -> [4]",
+    "languages": {
+      "javascript": {
+        "starterCode": "function diffArray(arr1, arr2) {\n  // Write your code here\n  return [];\n}\n\nconsole.log(diffArray([1, 2, 3, 5], [1, 2, 3, 4, 5]));",
+        "example": "diffArray([1, 2, 3, 5], [1, 2, 3, 4, 5]) -> [4]",
+        "sampleTests": "diffArray([1, 2, 3, 5], [1, 2, 3, 4, 5]) -> [4]"
+      },
+      "typescript": {
+        "starterCode": "function diffArray(arr1, arr2) {\n  // Write your code here\n  return [];\n}\n\nconsole.log(diffArray([1, 2, 3, 5], [1, 2, 3, 4, 5]));",
+        "example": "diffArray([1, 2, 3, 5], [1, 2, 3, 4, 5]) -> [4]",
+        "sampleTests": "diffArray([1, 2, 3, 5], [1, 2, 3, 4, 5]) -> [4]"
+      }
+    }
+  },
+  {
+    "id": "tc_concat",
+    "title": "TypeScript: Implement Concat<T, U>",
+    "statement": "Implement the JavaScript `Array.concat` function in the TypeScript type system. A type takes two tuple arguments and returns a new tuple including inputs in left-to-right order.",
+    "description": "Implement the JavaScript `Array.concat` function in the TypeScript type system. A type takes two tuple arguments and returns a new tuple including inputs in left-to-right order.",
+    "difficulty": "EASY",
+    "category": "TYPESCRIPT",
+    "tags": [
+      "typescript",
+      "tuples",
+      "type-challenges",
+      "webdev"
+    ],
+    "estMinutes": 2,
+    "starterCode": "type Concat<T extends readonly any[], U extends readonly any[]> = any;",
+    "sampleTests": "type Result = Concat<[1], [2]> // [1, 2]",
+    "languages": {
+      "typescript": {
+        "starterCode": "type Concat<T extends readonly any[], U extends readonly any[]> = any;",
+        "example": "type Result = Concat<[1], [2]> // [1, 2]",
+        "sampleTests": "type Result = Concat<[1], [2]> // [1, 2]"
+      }
+    }
+  },
+  {
+    "id": "js_curry",
+    "title": "JavaScript: Function Currying",
+    "statement": "Implement a `curry` function that transforms a function of multiple arguments into a sequence of functions, each taking arguments until all required arguments are provided.",
+    "description": "Implement a `curry` function that transforms a function of multiple arguments into a sequence of functions, each taking arguments until all required arguments are provided.",
+    "difficulty": "MEDIUM",
+    "category": "JAVASCRIPT",
+    "tags": [
+      "javascript",
+      "functions",
+      "currying",
+      "webdev"
+    ],
+    "estMinutes": 3,
+    "starterCode": "function curry(fn) {\n  // Return a curried version of fn\n}",
+    "sampleTests": "const add = (a, b, c) => a + b + c;\nconst curried = curry(add);\ncurried(1)(2)(3) === 6",
+    "languages": {
+      "javascript": {
+        "starterCode": "function curry(fn) {\n  // Return a curried version of fn\n}",
+        "example": "const add = (a, b, c) => a + b + c;\nconst curried = curry(add);\ncurried(1)(2)(3) === 6",
+        "sampleTests": "const add = (a, b, c) => a + b + c;\nconst curried = curry(add);\ncurried(1)(2)(3) === 6"
+      },
+      "typescript": {
+        "starterCode": "function curry(fn) {\n  // Return a curried version of fn\n}",
+        "example": "const add = (a, b, c) => a + b + c;\nconst curried = curry(add);\ncurried(1)(2)(3) === 6",
+        "sampleTests": "const add = (a, b, c) => a + b + c;\nconst curried = curry(add);\ncurried(1)(2)(3) === 6"
+      }
+    }
+  },
+  {
+    "id": "js_deep_clone",
+    "title": "JavaScript: Deep Clone Object",
+    "statement": "Implement a function deepClone(value) that creates a deep copy of an object or array. Modifying the cloned copy should never mutate the original object.",
+    "description": "Implement a function deepClone(value) that creates a deep copy of an object or array. Modifying the cloned copy should never mutate the original object.",
+    "difficulty": "MEDIUM",
+    "category": "JAVASCRIPT",
+    "tags": [
+      "javascript",
+      "objects",
+      "recursion",
+      "webdev"
+    ],
+    "estMinutes": 3,
+    "starterCode": "function deepClone(value) {\n  // Write your code here\n  return value;\n}",
+    "sampleTests": "deepClone({ a: 1, b: [2] }) returns an independent clone",
+    "languages": {
+      "javascript": {
+        "starterCode": "function deepClone(value) {\n  // Write your code here\n  return value;\n}",
+        "example": "deepClone({ a: 1, b: [2] }) returns an independent clone",
+        "sampleTests": "deepClone({ a: 1, b: [2] }) returns an independent clone"
+      },
+      "typescript": {
+        "starterCode": "function deepClone(value) {\n  // Write your code here\n  return value;\n}",
+        "example": "deepClone({ a: 1, b: [2] }) returns an independent clone",
+        "sampleTests": "deepClone({ a: 1, b: [2] }) returns an independent clone"
+      }
+    }
+  },
+  {
+    "id": "js_memoize",
+    "title": "JavaScript: Memoize Function",
+    "statement": "Write a function memoize(fn) that returns a memoized version of fn. Subsequent calls with identical arguments should return the cached result without re-executing fn.",
+    "description": "Write a function memoize(fn) that returns a memoized version of fn. Subsequent calls with identical arguments should return the cached result without re-executing fn.",
+    "difficulty": "MEDIUM",
+    "category": "JAVASCRIPT",
+    "tags": [
+      "javascript",
+      "closures",
+      "caching",
+      "webdev"
+    ],
+    "estMinutes": 3,
+    "starterCode": "function memoize(fn) {\n  // Write your code here\n  return fn;\n}",
+    "sampleTests": "const fn = memoize((x) => x * 2); fn(4); fn(4); // computed once",
+    "languages": {
+      "javascript": {
+        "starterCode": "function memoize(fn) {\n  // Write your code here\n  return fn;\n}",
+        "example": "const fn = memoize((x) => x * 2); fn(4); fn(4); // computed once",
+        "sampleTests": "const fn = memoize((x) => x * 2); fn(4); fn(4); // computed once"
+      },
+      "typescript": {
+        "starterCode": "function memoize(fn) {\n  // Write your code here\n  return fn;\n}",
+        "example": "const fn = memoize((x) => x * 2); fn(4); fn(4); // computed once",
+        "sampleTests": "const fn = memoize((x) => x * 2); fn(4); fn(4); // computed once"
+      }
+    }
+  },
+  {
+    "id": "fcc_chunky_monkey",
+    "title": "Chunky Monkey (Array Chunks)",
+    "statement": "Write a function that splits an array (first argument) into groups the length of size (second argument) and returns them as a two-dimensional array.",
+    "description": "Write a function that splits an array (first argument) into groups the length of size (second argument) and returns them as a two-dimensional array.",
+    "difficulty": "MEDIUM",
+    "category": "JAVASCRIPT",
+    "tags": [
+      "javascript",
+      "arrays",
+      "algorithms",
+      "webdev"
+    ],
+    "estMinutes": 3,
+    "starterCode": "function chunkArrayInGroups(arr, size) {\n  // Write your code here\n  return arr;\n}\n\nconsole.log(chunkArrayInGroups([\"a\", \"b\", \"c\", \"d\"], 2));",
+    "sampleTests": "chunkArrayInGroups([\"a\", \"b\", \"c\", \"d\"], 2) -> [[\"a\", \"b\"], [\"c\", \"d\"]]",
+    "languages": {
+      "javascript": {
+        "starterCode": "function chunkArrayInGroups(arr, size) {\n  // Write your code here\n  return arr;\n}\n\nconsole.log(chunkArrayInGroups([\"a\", \"b\", \"c\", \"d\"], 2));",
+        "example": "chunkArrayInGroups([\"a\", \"b\", \"c\", \"d\"], 2) -> [[\"a\", \"b\"], [\"c\", \"d\"]]",
+        "sampleTests": "chunkArrayInGroups([\"a\", \"b\", \"c\", \"d\"], 2) -> [[\"a\", \"b\"], [\"c\", \"d\"]]"
+      },
+      "typescript": {
+        "starterCode": "function chunkArrayInGroups(arr, size) {\n  // Write your code here\n  return arr;\n}\n\nconsole.log(chunkArrayInGroups([\"a\", \"b\", \"c\", \"d\"], 2));",
+        "example": "chunkArrayInGroups([\"a\", \"b\", \"c\", \"d\"], 2) -> [[\"a\", \"b\"], [\"c\", \"d\"]]",
+        "sampleTests": "chunkArrayInGroups([\"a\", \"b\", \"c\", \"d\"], 2) -> [[\"a\", \"b\"], [\"c\", \"d\"]]"
+      }
+    }
+  },
+  {
+    "id": "fcc_factorialize",
+    "title": "Factorialize a Number",
+    "statement": "Return the factorial of the provided integer. If the integer is represented with the letter n, a factorial is the product of all positive integers less than or equal to n. 0! is 1.",
+    "description": "Return the factorial of the provided integer. If the integer is represented with the letter n, a factorial is the product of all positive integers less than or equal to n. 0! is 1.",
+    "difficulty": "EASY",
+    "category": "JAVASCRIPT",
+    "tags": [
+      "javascript",
+      "math",
+      "recursion",
+      "webdev"
+    ],
+    "estMinutes": 2,
+    "starterCode": "function factorialize(num) {\n  // Write your code here\n  return num;\n}\n\nconsole.log(factorialize(5));",
+    "sampleTests": "factorialize(5) === 120",
+    "languages": {
+      "javascript": {
+        "starterCode": "function factorialize(num) {\n  // Write your code here\n  return num;\n}\n\nconsole.log(factorialize(5));",
+        "example": "factorialize(5) === 120",
+        "sampleTests": "factorialize(5) === 120"
+      },
+      "typescript": {
+        "starterCode": "function factorialize(num) {\n  // Write your code here\n  return num;\n}\n\nconsole.log(factorialize(5));",
+        "example": "factorialize(5) === 120",
+        "sampleTests": "factorialize(5) === 120"
+      }
+    }
+  }
+]
