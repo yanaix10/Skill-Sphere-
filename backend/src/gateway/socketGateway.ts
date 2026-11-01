@@ -96,7 +96,7 @@ export function setupSocketGateway(io: Server): void {
     io.to(roomKey).emit('match:state', publicState);
 
     // 2. Frontend Native format for Challenge.tsx
-    const countdownSec = parseInt(process.env.COUNTDOWN_SEC || '5', 10);
+    const countdownSec = parseInt(process.env.COUNTDOWN_SEC || '10', 10);
     const nativeState = {
       challengeId: roomKey,
       status: match.state === 'in_progress' ? 'started' : match.state,

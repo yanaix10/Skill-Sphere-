@@ -240,8 +240,10 @@ export default function Challenge({
     }
   }, [isDuelActive]);
 
-  // Countdown interval — when it hits 0, emit join_challenge to force server state sync
-  // instead of blindly setting isStarted (avoids the "Preparing Arena" race condition)
+  // Countdown interval — purely visual ticker
+  // isStarted is set authoritatively by challenge_state (status: started) from the server
+  // When the timer hits 0 we just optimistically mark started; the server's own
+  // tick loop will fire challenge_started ~simultaneously with the questions payload.
   useEffect(() => {
     if (countdown !== null && countdown > 0) {
       const timer = setTimeout(() => {
@@ -250,23 +252,12 @@ export default function Challenge({
       return () => clearTimeout(timer);
     } else if (countdown === 0) {
       setCountdown(null);
-      // Re-sync with server so we get the latest challenge_state (with questions)
-      // rather than guessing isStarted locally
-      const curRoom = roomCode || stateRef.current.roomCode;
-      if (curRoom) {
-        socket.emit("join_challenge", {
-          challengeId: curRoom,
-          userDetails: { name: getUserName() },
-          gameMode,
-          language: gameMode === "webdev_arena" ? "javascript" : langRef.current,
-          playerId: getPersistentPlayerId()
-        });
-      } else {
-        // No room to sync — just mark started
-        setIsStarted(true);
-      }
+      // Optimistically mark started so we don't stay on the waiting screen
+      // The real challenge_state (with questions) from the server will arrive
+      // within ms from the backend tick loop — this just prevents a blank flash.
+      setIsStarted(true);
     }
-  }, [countdown, roomCode, gameMode]);
+  }, [countdown]);
 
   // Socket Connection and Event Listeners
   useEffect(() => {
@@ -302,12 +293,12 @@ export default function Challenge({
       // Start 1-minute countdown when 2 players are present
       if (hasTwoPlayers && !stateRef.current.isStarted) {
         if (state.countdownStartsAt) {
-          const duration = state.countdownSec || 5;
+          const duration = state.countdownSec || 10;
           const elapsed = Math.floor((Date.now() - state.countdownStartsAt) / 1000);
           const remaining = Math.max(0, duration - elapsed);
           setCountdown((prev) => (prev === null ? remaining : prev));
         } else {
-          setCountdown((prev) => (prev === null ? (state.countdownSec || 5) : prev));
+          setCountdown((prev) => (prev === null ? (state.countdownSec || 10) : prev));
         }
       }
 
@@ -365,14 +356,17 @@ export default function Challenge({
 
     socket.on("challenge_ready", () => {
       setIsReady(true);
-      setCountdown((prev) => (prev === null ? 5 : prev));
+      setCountdown((prev) => (prev === null ? 10 : prev));
       if (onOpponentChange) onOpponentChange("Opponent Ready", true);
     });
 
     socket.on("challenge_countdown", ({ startsAt, duration }: { startsAt: number; duration: number }) => {
+      if (stateRef.current.isStarted) return; // don't reset if match already started
       const elapsed = Math.floor((Date.now() - startsAt) / 1000);
       const remaining = Math.max(0, duration - elapsed);
-      setCountdown(remaining > 0 ? remaining : duration);
+      if (remaining > 0) {
+        setCountdown(remaining); // only set a real remaining value, never reset to duration
+      }
     });
 
     socket.on("challenge_started", (startedState?: ChallengeState) => {

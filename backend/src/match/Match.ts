@@ -254,7 +254,7 @@ export class Match implements MatchContext {
 
   public tick(): void {
     if (this.state === 'countdown') {
-      const countdownMs = parseInt(process.env.COUNTDOWN_SEC || '5', 10) * 1000;
+      const countdownMs = parseInt(process.env.COUNTDOWN_SEC || '10', 10) * 1000;
       if (Date.now() - this.countdownStartsAt >= countdownMs) {
         this.startMatch();
       }
