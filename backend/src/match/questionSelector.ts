@@ -1,6 +1,10 @@
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
 import { MatchQuestion, PublicMatchQuestion } from './types.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 let cachedQuestions: MatchQuestion[] | null = null;
 
@@ -10,6 +14,8 @@ export function loadAllQuestions(): MatchQuestion[] {
   }
 
   const possiblePaths = [
+    path.resolve(__dirname, '../../data/questions.json'),
+    path.resolve(__dirname, '../../../backend/data/questions.json'),
     path.resolve(process.cwd(), 'backend/data/questions.json'),
     path.resolve(process.cwd(), 'data/questions.json'),
     path.resolve(process.cwd(), 'server/data/questions.json')
@@ -39,6 +45,8 @@ export function loadWebdevQuestions(): MatchQuestion[] {
   }
 
   const possiblePaths = [
+    path.resolve(__dirname, '../../data/challenge_questions.json'),
+    path.resolve(__dirname, '../../../backend/data/challenge_questions.json'),
     path.resolve(process.cwd(), 'backend/data/challenge_questions.json'),
     path.resolve(process.cwd(), 'data/challenge_questions.json'),
     path.resolve(process.cwd(), 'server/data/challenge_questions.json')

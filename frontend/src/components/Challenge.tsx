@@ -714,7 +714,7 @@ export default function Challenge({
   }, []);
 
   useEffect(() => {
-    if (!inRoom || !roomCode || !isStarted) return;
+    if (!inRoom || !roomCode) return;
     if (activeQuestions.length > 0) {
       // Questions already loaded — clear any pending poll
       clearTimeout(httpPollTimerRef.current);
@@ -722,18 +722,28 @@ export default function Challenge({
       return;
     }
 
-    // Start HTTP polling (every 2s, up to 10 attempts = 20s)
-    if (httpPollAttemptsRef.current < 10) {
+    // If match is active or ready, fetch immediately if not done yet
+    if (isStarted && httpPollAttemptsRef.current === 0) {
+      fetchMatchStateHTTP(roomCode);
+      socket.emit("sync_arena", { challengeId: roomCode });
+    }
+
+    // Prefetch during countdown as soon as 2 players are present
+    if (isReady && !isStarted && httpPollAttemptsRef.current === 0) {
+      fetchMatchStateHTTP(roomCode);
+    }
+
+    // HTTP polling loop (every 2s, up to 10 attempts = 20s)
+    if (isStarted && httpPollAttemptsRef.current < 10) {
       httpPollTimerRef.current = setTimeout(async () => {
         httpPollAttemptsRef.current += 1;
         await fetchMatchStateHTTP(roomCode);
-        // Also emit socket sync in parallel
         socket.emit("sync_arena", { challengeId: roomCode });
       }, 2000);
     }
 
     return () => clearTimeout(httpPollTimerRef.current);
-  }, [inRoom, roomCode, isStarted, activeQuestions.length, fetchMatchStateHTTP]);
+  }, [inRoom, roomCode, isStarted, isReady, activeQuestions.length, fetchMatchStateHTTP]);
 
   // Format countdown timer (e.g. 00:05, 00:45)
   const formatTimer = (sec: number | null) => {

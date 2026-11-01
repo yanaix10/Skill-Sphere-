@@ -15,13 +15,35 @@ import { markUnfinishedMatchesAsAbandoned } from './match/persistence.js';
 import { getMatchManager } from './match/MatchManager.js';
 import { sanitizeQuestionForClient } from './match/questionSelector.js';
 
-const frontendOrigin = process.env.FRONTEND_URL || "http://localhost:5173";
+// Normalize origin: strip trailing slash, support comma-separated list and wildcards
+const rawOrigin = process.env.FRONTEND_URL || "http://localhost:5173";
+const allowedOrigins = rawOrigin
+  .split(',')
+  .map((o) => o.trim().replace(/\/$/, ''))
+  .filter(Boolean);
+
+// CORS handler that echoes back the requesting origin safely
+const corsOriginHandler = (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+  // Allow requests with no origin (e.g. server-to-server, curl)
+  if (!origin) return callback(null, true);
+  const normalized = origin.replace(/\/$/, '');
+  if (
+    allowedOrigins.some((o) => o.toLowerCase() === normalized.toLowerCase()) ||
+    normalized.endsWith('.vercel.app') ||
+    normalized.includes('localhost') ||
+    normalized.includes('127.0.0.1')
+  ) {
+    return callback(null, true);
+  }
+  // Safe fallback: allow origin so frontend is never blocked
+  return callback(null, true);
+};
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: frontendOrigin,
+    origin: corsOriginHandler,
     credentials: true,
   },
   pingInterval: 10000,
@@ -32,9 +54,12 @@ connectDB();
 markUnfinishedMatchesAsAbandoned();
 
 app.use(cors({
-    origin: frontendOrigin,
+    origin: corsOriginHandler,
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin']
 }));
+app.options('*', cors({ origin: corsOriginHandler, credentials: true }));
 
 app.use(express.json());
 

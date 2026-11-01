@@ -1,6 +1,6 @@
 import crypto from 'crypto';
 import { Match } from './Match.js';
-import { selectMatchQuestions } from './questionSelector.js';
+import { selectMatchQuestions, loadWebdevQuestions, loadAllQuestions } from './questionSelector.js';
 import { MatchConfig } from './types.js';
 import { persistMatch } from './persistence.js';
 
@@ -29,6 +29,14 @@ export class MatchManager {
 
   constructor() {
     this.startTickLoop();
+    // Log question bank sizes on startup so Render logs confirm data files are accessible
+    try {
+      const webdevQ = loadWebdevQuestions();
+      const dsaQ = loadAllQuestions();
+      console.log(`[MatchManager] Question bank: webdev=${webdevQ.length} DSA=${dsaQ.length}`);
+    } catch (e: any) {
+      console.error('[MatchManager] Failed to load question bank on startup:', e.message);
+    }
   }
 
   public destroy(): void {
@@ -135,6 +143,7 @@ export class MatchManager {
       count,
       gameMode
     });
+    console.log(`[createRoom] Room ${roomCode} | gameMode=${gameMode} | requested=${count} | selected=${questions.length}`);
 
     const matchConfig: MatchConfig = {
       ...this.defaultConfig,
