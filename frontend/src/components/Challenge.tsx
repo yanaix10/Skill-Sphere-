@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { io, Socket } from "socket.io-client";
 import {
   RotateCcw,
@@ -11,7 +11,8 @@ import {
   Timer,
   Clock,
   ArrowRight,
-  ShieldAlert
+  ShieldAlert,
+  RefreshCw
 } from "lucide-react";
 import CodeEditor from "./CodeEditor";
 import { auth } from "../firebase";
@@ -678,19 +679,61 @@ export default function Challenge({
     (currentMatchQuestion as any)?.sampleTests ||
     "";
 
-  // Re-sync with room if match is started but questions haven't arrived yet
-  useEffect(() => {
-    if (inRoom && roomCode && isStarted && activeQuestions.length === 0) {
-      socket.emit("sync_arena", { challengeId: roomCode });
-      socket.emit("join_challenge", {
-        challengeId: roomCode,
-        userDetails: { name: getUserName() },
-        gameMode,
-        language: gameMode === "webdev_arena" ? "javascript" : langRef.current,
-        playerId: getPersistentPlayerId()
-      });
+  // HTTP polling fallback: when arena is started but questions haven't arrived via socket
+  const httpPollAttemptsRef = useRef(0);
+  const httpPollTimerRef = useRef<any>(null);
+
+  const fetchMatchStateHTTP = useCallback(async (code: string) => {
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/match/${code.toUpperCase()}`);
+      if (!res.ok) return;
+      const data = await res.json();
+      if (data.success && data.questions && data.questions.length > 0) {
+        // Hydrate all question state from HTTP response
+        setCachedQuestions(data.questions);
+        setChallengeState((prev) => ({
+          ...(prev || {}),
+          players: data.players || prev?.players || [],
+          questions: data.questions,
+          status: data.status,
+          gameMode: data.gameMode,
+          countdownStartsAt: data.countdownStartsAt,
+          countdownSec: data.countdownSec,
+          challengeId: data.challengeId
+        } as ChallengeState));
+        if (typeof window !== "undefined") {
+          sessionStorage.setItem(`skillsphere_match_questions_${code}`, JSON.stringify(data.questions));
+        }
+        // Clear poll timer on success
+        clearTimeout(httpPollTimerRef.current);
+        httpPollAttemptsRef.current = 0;
+      }
+    } catch {
+      // Network error — will retry on next tick
     }
-  }, [inRoom, roomCode, isStarted, activeQuestions.length, gameMode]);
+  }, []);
+
+  useEffect(() => {
+    if (!inRoom || !roomCode || !isStarted) return;
+    if (activeQuestions.length > 0) {
+      // Questions already loaded — clear any pending poll
+      clearTimeout(httpPollTimerRef.current);
+      httpPollAttemptsRef.current = 0;
+      return;
+    }
+
+    // Start HTTP polling (every 2s, up to 10 attempts = 20s)
+    if (httpPollAttemptsRef.current < 10) {
+      httpPollTimerRef.current = setTimeout(async () => {
+        httpPollAttemptsRef.current += 1;
+        await fetchMatchStateHTTP(roomCode);
+        // Also emit socket sync in parallel
+        socket.emit("sync_arena", { challengeId: roomCode });
+      }, 2000);
+    }
+
+    return () => clearTimeout(httpPollTimerRef.current);
+  }, [inRoom, roomCode, isStarted, activeQuestions.length, fetchMatchStateHTTP]);
 
   // Format countdown timer (e.g. 00:05, 00:45)
   const formatTimer = (sec: number | null) => {
@@ -709,14 +752,19 @@ export default function Challenge({
         <div className="h-full w-full flex flex-col items-center justify-center p-6 bg-background font-sans text-foreground select-none">
           <div className="max-w-md w-full bg-card border border-border rounded-xl p-8 text-center space-y-4 shadow-lg">
             <div className="w-12 h-12 rounded-full bg-primary/10 border border-primary/20 text-primary flex items-center justify-center mx-auto animate-spin">
-              <RotateCcw className="w-5 h-5" />
+              <RefreshCw className="w-5 h-5" />
             </div>
-            <h2 className="text-base font-bold text-foreground">Preparing Challenge Arena...</h2>
+            <h2 className="text-base font-bold text-foreground">Loading Challenge Questions...</h2>
             <p className="text-xs text-muted-foreground leading-relaxed">
-              Synchronizing room <span className="font-mono font-bold text-foreground">{roomCode}</span> specifications and test harness with the server.
+              Fetching questions for room <span className="font-mono font-bold text-foreground">{roomCode}</span>. This may take a moment.
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Attempt {Math.min(httpPollAttemptsRef.current + 1, 10)}/10 — retrying automatically every 2 seconds…
             </p>
             <button
               onClick={() => {
+                httpPollAttemptsRef.current = 0;
+                fetchMatchStateHTTP(roomCode);
                 socket.emit("sync_arena", { challengeId: roomCode });
                 socket.emit("join_challenge", {
                   challengeId: roomCode,
@@ -728,7 +776,7 @@ export default function Challenge({
               }}
               className="px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground font-bold rounded-lg text-xs uppercase tracking-wider cursor-pointer transition-colors shadow-xs"
             >
-              Sync Arena State
+              Retry Now
             </button>
           </div>
         </div>

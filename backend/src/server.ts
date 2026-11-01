@@ -12,6 +12,8 @@ import challengeRoutes from './routes/challengeRoutes.js';
 import duelRoutes from './routes/duelRoutes.js';
 import { setupSocketGateway } from './gateway/socketGateway.js';
 import { markUnfinishedMatchesAsAbandoned } from './match/persistence.js';
+import { getMatchManager } from './match/MatchManager.js';
+import { sanitizeQuestionForClient } from './match/questionSelector.js';
 
 const frontendOrigin = process.env.FRONTEND_URL || "http://localhost:5173";
 
@@ -43,6 +45,40 @@ app.use('/api/challenge', challengeRoutes);
 
 app.get("/", (req, res) => {
   res.send("Server working");
+});
+
+/**
+ * GET /api/match/:roomCode
+ * Returns live match state including sanitized questions for the given room.
+ * Used as an HTTP fallback when Socket.io events are missed by the client.
+ */
+app.get("/api/match/:roomCode", (req, res): any => {
+  const code = (req.params.roomCode || '').toUpperCase().trim();
+  if (!code) return res.status(400).json({ success: false, message: 'Missing room code' });
+
+  const manager = getMatchManager();
+  const match = manager.getMatchByRoomCode(code);
+  if (!match) {
+    return res.status(404).json({ success: false, message: 'Match not found or expired' });
+  }
+
+  const countdownSec = parseInt(process.env.COUNTDOWN_SEC || '10', 10);
+  return res.json({
+    success: true,
+    challengeId: match.roomCode || match.id,
+    status: match.state === 'in_progress' ? 'started' : match.state,
+    gameMode: match.gameMode || 'dsa_sprint',
+    countdownStartsAt: match.countdownStartsAt,
+    countdownSec,
+    serverTime: Date.now(),
+    players: [...match.players.values()].map((p) => ({
+      socketId: p.socketId,
+      userDetails: { name: p.nickname },
+      score: p.score,
+      currentIndex: p.currentIndex
+    })),
+    questions: match.questions.map(sanitizeQuestionForClient)
+  });
 });
 
 app.get("/api/sessions", async (req, res): Promise<any> => {
