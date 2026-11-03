@@ -12,13 +12,40 @@ import {
   Clock,
   ArrowRight,
   ShieldAlert,
-  RefreshCw
+  RefreshCw,
+  Play,
+  Zap,
+  Sparkles,
+  Trophy,
+  ChevronDown,
+  CheckCircle2,
+  XCircle,
+  Flag,
+  Share2
 } from "lucide-react";
 import CodeEditor from "./CodeEditor";
 import { auth } from "../firebase";
 import { BACKEND_URL } from "../utils/api";
 import defaultWebdevQuestions from "../data/defaultWebdevQuestions.json";
 import defaultDsaQuestions from "../data/defaultDsaQuestions.json";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { BorderBeam } from "@/components/ui/border-beam";
+import { Confetti } from "@/components/ui/confetti";
+import { TugOfWarBar } from "@/components/ui/tug-of-war-bar";
+import { RoomCodeBadge } from "@/components/ui/room-code-badge";
+import { Button } from "@/components/ui/button";
+import { SegmentedControl } from "@/components/ui/segmented-control";
+import { OtpInput } from "@/components/ui/otp-input";
+import { cn } from "@/lib/utils";
 
 function getPersistentPlayerId(): string {
   if (typeof window === "undefined") return "guest";
@@ -124,6 +151,7 @@ export default function Challenge({
   const [code, setCode] = useState<string>("");
   const [output, setOutput] = useState<string>("");
   const [isRunning, setIsRunning] = useState<boolean>(false);
+  const [specTab, setSpecTab] = useState<string>("spec");
 
   // 1v1 Room & Matchmaking state (restores from sessionStorage if page refreshed)
   const [roomCode, setRoomCode] = useState<string>(() => {
@@ -468,6 +496,7 @@ export default function Challenge({
     socket.on("code_result", ({ success, message, isSubmit }: { success: boolean; message: string; isSubmit: boolean }) => {
       setIsRunning(false);
       setOutput(message);
+      setSpecTab("console");
       if (success && isSubmit) {
         setCode("");
         const curCode = roomCode || stateRef.current.roomCode;
@@ -568,6 +597,7 @@ export default function Challenge({
     if (!code.trim() || isRunning) return;
     setIsRunning(true);
     setOutput(isSubmit ? "Evaluating against test suite..." : "Executing sample test assertion...");
+    setSpecTab("console");
 
     if (inRoom && isStarted) {
       socket.emit("code_submitted", {
@@ -789,18 +819,21 @@ export default function Challenge({
     if (!currentMatchQuestion) {
       return (
         <div className="h-full w-full flex flex-col items-center justify-center p-6 bg-background font-sans text-foreground select-none">
-          <div className="max-w-md w-full bg-card border border-border rounded-xl p-8 text-center space-y-4 shadow-lg">
-            <div className="w-12 h-12 rounded-full bg-primary/10 border border-primary/20 text-primary flex items-center justify-center mx-auto animate-spin">
-              <RefreshCw className="w-5 h-5" />
+          <div className="relative max-w-md w-full bg-card border border-border rounded-2xl p-8 text-center space-y-4 shadow-lg overflow-hidden">
+            <BorderBeam size={180} duration={8} />
+            <div className="w-14 h-14 rounded-full bg-primary/10 border border-primary/20 text-primary flex items-center justify-center mx-auto animate-spin">
+              <RefreshCw className="w-6 h-6" />
             </div>
-            <h2 className="text-base font-bold text-foreground">Loading Challenge Questions...</h2>
+            <h2 className="text-base font-bold text-foreground">Preparing Duel Arena...</h2>
             <p className="text-xs text-muted-foreground leading-relaxed">
-              Fetching questions for room <span className="font-mono font-bold text-foreground">{roomCode}</span>. This may take a moment.
+              Fetching and synchronizing challenge problems for room <span className="font-mono font-bold text-foreground">{roomCode}</span>.
             </p>
-            <p className="text-xs text-muted-foreground">
-              Attempt {Math.min(httpPollAttemptsRef.current + 1, 10)}/10 — retrying automatically every 2 seconds…
-            </p>
-            <button
+            <div className="flex items-center justify-center gap-2 pt-1">
+              <Badge variant="outline" className="font-mono text-[11px]">
+                Attempt {Math.min(httpPollAttemptsRef.current + 1, 10)}/10
+              </Badge>
+            </div>
+            <Button
               onClick={() => {
                 httpPollAttemptsRef.current = 0;
                 fetchMatchStateHTTP(roomCode);
@@ -813,277 +846,415 @@ export default function Challenge({
                   playerId: getPersistentPlayerId()
                 });
               }}
-              className="px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground font-bold rounded-lg text-xs uppercase tracking-wider cursor-pointer transition-colors shadow-xs"
+              size="sm"
+              className="mt-2 font-bold uppercase tracking-wider text-xs"
             >
-              Retry Now
-            </button>
+              Retry Connection
+            </Button>
           </div>
         </div>
       );
     }
 
+    const isMeWinner = Boolean(
+      winner &&
+        ((winner.socketId && (winner.socketId === socket.id || winner.socketId === socketIdRef.current)) ||
+          (winner.userDetails?.name && winner.userDetails.name === getUserName()) ||
+          p1Score > p2Score)
+    );
+
     return (
       <div className="h-full w-full flex flex-col overflow-hidden bg-background font-sans text-foreground select-none">
-        {/* Top Header: Professional Arena Status & Scoreboard */}
-        <div className="h-14 px-6 border-b border-border bg-card flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-3">
-            <span className="text-xs font-mono font-bold tracking-wider uppercase px-2.5 py-1 rounded bg-primary/10 text-primary border border-primary/20">
-              {gameMode === "webdev_arena" ? "Web Dev Arena" : "DSA Sprint Duel"}
-            </span>
-            <span className="text-xs font-mono text-muted-foreground">
-              Room: <span className="font-bold text-foreground">{roomCode}</span>
-            </span>
+        {/* Top Arena Header: Scores & Controls */}
+        <div className="h-14 px-4 sm:px-6 border-b border-border bg-card/95 backdrop-blur-xs flex items-center justify-between gap-4 shrink-0">
+          {/* Left: Mode Badge & Room Code */}
+          <div className="flex items-center gap-2.5">
+            <Badge
+              variant="secondary"
+              className="font-sans font-semibold text-xs tracking-wider uppercase py-1 px-3 border border-border"
+            >
+              {gameMode === "webdev_arena" ? "Web Dev" : "DSA"}
+            </Badge>
+
+            <RoomCodeBadge code={roomCode} className="hidden sm:inline-flex" />
           </div>
 
-          {/* Synchronized Live Scoreboard */}
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-foreground">You</span>
-              <span className="px-2 py-0.5 rounded bg-primary/15 text-primary text-xs font-mono font-bold">
-                {p1Score}/{totalQuestions}
-              </span>
-            </div>
-
-            <span className="text-xs font-mono text-muted-foreground font-bold">VS</span>
-
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-foreground">
-                {opponent?.userDetails?.name || "Opponent"}
-              </span>
-              <span className="px-2 py-0.5 rounded bg-destructive/15 text-destructive text-xs font-mono font-bold">
-                {p2Score}/{totalQuestions}
-              </span>
-              {opponentStatus && (
-                <span className="text-[11px] text-amber-500 font-mono italic animate-pulse">
-                  ({opponentStatus})
-                </span>
-              )}
-            </div>
+          {/* Center: Live Tug-of-War Scoreboard */}
+          <div className="flex-1 max-w-md mx-auto hidden md:block">
+            <TugOfWarBar
+              p1Name={getUserName()}
+              p1Score={p1Score}
+              p2Name={opponent?.userDetails?.name || "Opponent"}
+              p2Score={p2Score}
+              totalQuestions={totalQuestions}
+              p2Status={opponentStatus}
+            />
           </div>
 
-          {/* Right: Language selection INSIDE the sandbox header + reset button */}
+          {/* Right: Language Dropdown & Code Reset */}
           <div className="flex items-center gap-2">
-            <span className="text-[11px] font-mono text-muted-foreground uppercase font-semibold">
-              Lang:
-            </span>
             {gameMode === "webdev_arena" ? (
-              <span className="text-xs font-mono font-bold px-2.5 py-1 bg-secondary text-primary border border-border rounded capitalize">
-                {activeLang === "typescript" ? "TypeScript" : "JavaScript (Node.js)"}
-              </span>
+              <Badge variant="secondary" className="font-sans font-semibold text-xs uppercase py-1 px-3 border border-border">
+                {activeLang === "typescript" ? "TypeScript" : "JavaScript"}
+              </Badge>
             ) : (
-              <select
-                value={language}
-                onChange={(e) => handleLanguageChange(e.target.value)}
-                className="bg-secondary text-foreground border border-border text-xs rounded px-2.5 py-1 focus:ring-1 focus:ring-primary outline-none cursor-pointer font-medium"
-              >
-                <option value="python">Python 3</option>
-                <option value="cpp">C++ (GCC)</option>
-                <option value="javascript">JavaScript (Node.js)</option>
-                <option value="java">Java (OpenJDK)</option>
-              </select>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-secondary hover:bg-secondary/80 border border-border text-xs font-sans font-semibold text-foreground cursor-pointer transition-colors shadow-2xs">
+                    <span>
+                      {language === "python"
+                        ? "Python 3"
+                        : language === "cpp"
+                        ? "C++ (GCC)"
+                        : language === "javascript"
+                        ? "JavaScript"
+                        : language === "java"
+                        ? "Java"
+                        : language}
+                    </span>
+                    <ChevronDown className="w-3 h-3 text-muted-foreground" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-40 bg-card border-border">
+                  {[
+                    { id: "python", label: "Python 3" },
+                    { id: "cpp", label: "C++ (GCC)" },
+                    { id: "javascript", label: "JavaScript (Node.js)" },
+                    { id: "java", label: "Java (OpenJDK)" }
+                  ].map((lang) => (
+                    <DropdownMenuItem
+                      key={lang.id}
+                      onClick={() => handleLanguageChange(lang.id)}
+                      className={cn(
+                        "flex items-center justify-between text-xs font-sans font-medium py-1.5 cursor-pointer",
+                        language === lang.id ? "text-primary font-bold bg-primary/10" : ""
+                      )}
+                    >
+                      <span>{lang.label}</span>
+                      {language === lang.id && <Check className="w-3.5 h-3.5 text-primary" />}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
             )}
-            <button
+
+            <Button
+              variant="outline"
+              size="icon"
               onClick={resetCurrentCode}
               title="Reset code template"
-              className="p-1.5 rounded bg-secondary hover:bg-secondary/80 text-muted-foreground hover:text-foreground transition-colors cursor-pointer border border-border"
+              className="h-8 w-8 rounded-lg cursor-pointer text-muted-foreground hover:text-foreground border-border"
             >
               <RotateCcw className="w-3.5 h-3.5" />
-            </button>
+            </Button>
           </div>
         </div>
 
-        {/* Duel Area: Split Spec & Monaco Editor */}
-        <div className="flex-1 flex flex-row min-h-0 overflow-hidden relative">
-          {/* Winner Result Modal */}
+        {/* Duel Area: Resizable Split Spec & Monaco Editor */}
+        <div className="flex-1 min-h-0 relative overflow-hidden">
+          {/* Winner Result Modal with Confetti & BorderBeam */}
           {winner && (
-            <div className="absolute inset-0 z-40 bg-background/85 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center">
-              <div className="max-w-md w-full bg-card border border-border rounded-xl p-6 shadow-lg">
-                <h2 className="text-2xl font-extrabold text-foreground mb-2">Match Finished</h2>
-                <p className="text-sm text-foreground mb-2">
-                  Winner: <span className="text-primary font-bold">{winner.userDetails?.name || "Player"}</span>
-                </p>
-                <p className="text-xs font-mono text-muted-foreground mb-6">
-                  Final Score: {p1Score} - {p2Score}
-                </p>
-                <button
+            <div className="absolute inset-0 z-40 bg-background/85 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center animate-in fade-in duration-200">
+              {isMeWinner && <Confetti />}
+              <div className="relative max-w-md w-full bg-card border border-border rounded-2xl p-7 shadow-2xl space-y-5 overflow-hidden">
+                <BorderBeam
+                  size={220}
+                  duration={7}
+                  colorFrom={isMeWinner ? "#fbbf24" : "#f43f5e"}
+                  colorTo={isMeWinner ? "#10b981" : "#a855f7"}
+                />
+
+                <div
+                  className={cn(
+                    "w-16 h-16 rounded-full flex items-center justify-center mx-auto shadow-md",
+                    isMeWinner
+                      ? "bg-amber-500/15 border-2 border-amber-500/30 text-amber-500"
+                      : "bg-destructive/15 border-2 border-destructive/30 text-destructive"
+                  )}
+                >
+                  <Trophy className="w-8 h-8" />
+                </div>
+
+                <div className="space-y-1">
+                  <h2 className="font-display font-bold text-3xl tracking-tight text-foreground">
+                    {isMeWinner ? "VICTORY ACHIEVED!" : "MATCH CONCLUDED"}
+                  </h2>
+                  <p className="font-sans text-sm text-muted-foreground">
+                    Winner: <span className="font-semibold text-foreground">{winner.userDetails?.name || "Player"}</span>
+                  </p>
+                </div>
+
+                {/* Score Comparison Display */}
+                <div className="grid grid-cols-3 items-center gap-2 p-4 bg-secondary/60 rounded-xl border border-border/80">
+                  <div className="text-center">
+                    <span className="text-xs font-sans text-muted-foreground block uppercase font-medium">You</span>
+                    <span className="font-display font-bold text-3xl text-emerald-500 tabular-nums">{p1Score}</span>
+                  </div>
+                  <div className="text-center font-display font-bold text-lg text-muted-foreground">
+                    VS
+                  </div>
+                  <div className="text-center">
+                    <span className="text-xs font-sans text-muted-foreground block uppercase font-medium truncate">
+                      {opponent?.userDetails?.name || "Rival"}
+                    </span>
+                    <span className="font-display font-bold text-3xl text-rose-500 tabular-nums">{p2Score}</span>
+                  </div>
+                </div>
+
+                <Button
                   onClick={handleLeaveRoom}
-                  className="w-full py-2.5 bg-primary hover:bg-primary/90 text-primary-foreground font-bold rounded-lg cursor-pointer transition-colors text-xs tracking-wider uppercase"
+                  className="w-full h-11 font-sans font-semibold text-sm uppercase tracking-wide bg-primary text-primary-foreground shadow-sm hover:bg-primary/90"
                 >
                   Return to Lobby
-                </button>
+                </Button>
               </div>
             </div>
           )}
 
-          {/* Left Pane: Question Specs & Execution Console */}
-          <div className="w-[44%] max-w-[550px] min-w-[340px] h-full flex flex-col border-r border-border bg-card overflow-hidden">
-            <div className="flex-1 overflow-y-auto p-6 space-y-4">
-              {/* Question Count & Progress Indicator */}
-              <div className="flex items-center justify-between pb-3 border-b border-border">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-mono font-bold text-primary tracking-wide">
-                    Question {Math.min(p1Index + 1, totalQuestions)} of {totalQuestions}
-                  </span>
-                  <span className="text-[10px] text-muted-foreground font-mono">
-                    ({Math.max(0, totalQuestions - p1Score)} left)
-                  </span>
-                </div>
-                <div className="flex gap-1.5 items-center">
-                  {challengeState?.questions?.map((_, qIdx) => (
-                    <div
-                      key={qIdx}
-                      title={`Question ${qIdx + 1}`}
-                      className={`w-2.5 h-2.5 rounded-full transition-all ${
-                        qIdx < p1Score
-                          ? "bg-emerald-500 shadow-sm shadow-emerald-500/50"
-                          : qIdx === p1Index
-                            ? "bg-primary ring-2 ring-primary/40 scale-110"
-                            : "bg-secondary border border-border"
-                      }`}
-                    />
-                  ))}
-                </div>
-              </div>
+          <ResizablePanelGroup direction="horizontal" className="h-full w-full">
+            {/* Left Pane: Spec, Tests, Console with Shadcn Tabs */}
+            <ResizablePanel defaultSize={45} minSize={32} maxSize={65} className="h-full bg-card flex flex-col overflow-hidden">
+              <Tabs value={specTab} onValueChange={setSpecTab} className="h-full flex flex-col">
+                {/* Spec Pane Header */}
+                <div className="px-5 py-3 border-b border-border bg-card flex items-center justify-between shrink-0 gap-3">
+                  {/* Question Count & Status Dots */}
+                  <div className="flex items-center gap-2.5">
+                    <span className="font-sans font-semibold text-xs uppercase tracking-wider text-primary">
+                      Question {Math.min(p1Index + 1, totalQuestions)} of {totalQuestions}
+                    </span>
 
-              <div className="flex items-center gap-2 flex-wrap">
-                <span
-                  className={`text-[11px] font-bold px-2 py-0.5 rounded uppercase font-mono ${
-                    activeQuestionDifficulty === "HARD"
-                      ? "bg-destructive/15 text-destructive border border-destructive/25"
-                      : activeQuestionDifficulty === "MEDIUM"
-                        ? "bg-amber-500/15 text-amber-500 border border-amber-500/25"
-                        : "bg-primary/15 text-primary border border-primary/25"
-                  }`}
-                >
-                  {activeQuestionDifficulty}
+                    <div className="flex gap-1.5 items-center">
+                      {challengeState?.questions?.map((_, qIdx) => (
+                        <div
+                          key={qIdx}
+                          title={`Question ${qIdx + 1}`}
+                          className={cn(
+                            "w-2.5 h-2.5 rounded-full transition-all duration-300",
+                            qIdx < p1Score
+                              ? "bg-emerald-500 shadow-xs shadow-emerald-500/50"
+                              : qIdx === p1Index
+                              ? "bg-primary ring-2 ring-primary/40 scale-110"
+                              : "bg-secondary border border-border"
+                          )}
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Tabs Trigger List */}
+                  <TabsList className="h-8 bg-secondary/80 p-0.5">
+                    <TabsTrigger value="spec" className="font-sans text-xs px-3 py-1 font-semibold">
+                      Problem
+                    </TabsTrigger>
+                    <TabsTrigger value="tests" className="font-sans text-xs px-3 py-1 font-semibold">
+                      Sample Tests
+                    </TabsTrigger>
+                    <TabsTrigger value="console" className="font-sans text-xs px-3 py-1 font-semibold flex items-center gap-1.5">
+                      <span>Console</span>
+                      {output && <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />}
+                    </TabsTrigger>
+                  </TabsList>
+                </div>
+
+                {/* Spec Tabs Content */}
+                <div className="flex-1 overflow-y-auto p-5 space-y-4 min-h-0">
+                  <TabsContent value="spec" className="m-0 space-y-4">
+                    {/* Difficulty and Tag Badges */}
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <Badge
+                        variant={
+                          activeQuestionDifficulty === "HARD"
+                            ? "destructive"
+                            : activeQuestionDifficulty === "MEDIUM"
+                            ? "warning"
+                            : "success"
+                        }
+                        className="font-sans font-bold text-xs uppercase tracking-wide px-2.5 py-0.5"
+                      >
+                        {activeQuestionDifficulty}
+                      </Badge>
+
+                      {activeQuestionTags.map((t, idx) => (
+                        <Badge key={idx} variant="secondary" className="font-sans text-xs font-medium">
+                          #{t}
+                        </Badge>
+                      ))}
+                    </div>
+
+                    {/* Question Title */}
+                    <h1 className="font-display font-bold text-xl leading-snug text-foreground tracking-tight">
+                      {activeQuestionTitle}
+                    </h1>
+
+                    {/* Body Text / Description */}
+                    <div className="font-sans font-normal text-sm sm:text-base leading-relaxed text-foreground/90 whitespace-pre-line">
+                      {activeQuestionStatement || "Question specifications loaded."}
+                    </div>
+
+                    {activeSampleAssertion && (
+                      <div className="pt-2 space-y-1.5">
+                        <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider font-sans block">
+                          Assertion Preview
+                        </label>
+                        <pre className="p-3.5 bg-secondary/70 border border-border rounded-xl font-mono text-sm leading-normal text-primary overflow-x-auto whitespace-pre-wrap">
+                          {activeSampleAssertion}
+                        </pre>
+                      </div>
+                    )}
+                  </TabsContent>
+
+                  <TabsContent value="tests" className="m-0 space-y-3">
+                    <div className="flex items-center justify-between pb-1">
+                      <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider font-sans block">
+                        Sample Assertions ({language})
+                      </label>
+                      {activeSampleAssertion && (
+                        <button
+                          onClick={() => {
+                            navigator.clipboard.writeText(activeSampleAssertion);
+                            setOutput("Sample assertion copied.");
+                          }}
+                          className="text-xs font-sans font-medium text-muted-foreground hover:text-foreground flex items-center gap-1 cursor-pointer"
+                        >
+                          <Copy className="w-3.5 h-3.5" /> Copy
+                        </button>
+                      )}
+                    </div>
+
+                    <pre className="p-4 bg-zinc-950 text-cyan-300 border border-zinc-800 rounded-xl font-mono text-sm leading-normal overflow-x-auto whitespace-pre-wrap">
+                      {activeSampleAssertion || "// No explicit sample assertion provided for this challenge."}
+                    </pre>
+                  </TabsContent>
+
+                  <TabsContent value="console" className="m-0 space-y-3">
+                    <div className="rounded-xl border border-border bg-zinc-950 overflow-hidden shadow-xs">
+                      {/* Terminal Header */}
+                      <div className="h-8 px-3 bg-zinc-900/90 border-b border-zinc-800 flex items-center justify-between font-sans text-xs">
+                        <div className="flex items-center gap-1.5">
+                          <span className="w-2.5 h-2.5 rounded-full bg-rose-500/80" />
+                          <span className="w-2.5 h-2.5 rounded-full bg-amber-500/80" />
+                          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500/80" />
+                          <span className="text-xs font-mono text-zinc-400 ml-2 font-medium">terminal.out</span>
+                        </div>
+
+                        {output && (
+                          <button
+                            onClick={() => setOutput("")}
+                            className="text-xs font-sans text-zinc-400 hover:text-zinc-200 cursor-pointer font-medium"
+                          >
+                            Clear
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Terminal Body */}
+                      <div className="p-4 min-h-[140px] max-h-[260px] overflow-y-auto font-mono text-sm leading-normal">
+                        {output ? (
+                          output.includes("Evaluating") || output.includes("Executing") ? (
+                            <div className="flex items-center gap-2 text-amber-400 font-mono text-sm leading-normal">
+                              <RefreshCw className="w-3.5 h-3.5 animate-spin shrink-0" />
+                              <span>{output}</span>
+                            </div>
+                          ) : output.includes("failed") || output.includes("Error") || output.includes("error") ? (
+                            <div className="flex items-start gap-2 text-rose-400 font-mono text-sm leading-normal">
+                              <XCircle className="w-4 h-4 shrink-0 mt-0.5 text-rose-500" />
+                              <span className="whitespace-pre-wrap font-mono text-sm leading-normal">{output}</span>
+                            </div>
+                          ) : (
+                            <div className="flex items-start gap-2 text-emerald-400 font-mono text-sm leading-normal">
+                              <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5 text-emerald-500" />
+                              <span className="whitespace-pre-wrap font-mono text-sm leading-normal">{output}</span>
+                            </div>
+                          )
+                        ) : (
+                          <span className="text-zinc-500 italic font-mono text-sm leading-normal">
+                            Run tests or submit solution to inspect real-time execution results.
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </TabsContent>
+                </div>
+
+                {/* Bottom Spec Actions Bar */}
+                <div className="p-3.5 border-t border-border bg-card/95 backdrop-blur-xs flex items-center gap-2 shrink-0">
+                  <Button
+                    variant="secondary"
+                    onClick={() => runCode(false)}
+                    disabled={isRunning}
+                    className="flex-1 font-sans text-xs font-semibold uppercase tracking-wider gap-1.5 h-9 cursor-pointer"
+                  >
+                    <Play className="w-3.5 h-3.5 text-primary" />
+                    <span>Run Tests</span>
+                  </Button>
+
+                  <Button
+                    onClick={() => runCode(true)}
+                    disabled={isRunning}
+                    className="flex-1 font-sans text-xs font-semibold uppercase tracking-wider gap-1.5 h-9 cursor-pointer bg-primary text-primary-foreground shadow-sm hover:bg-primary/90"
+                  >
+                    <Check className="w-3.5 h-3.5" />
+                    <span>Submit</span>
+                  </Button>
+
+                  <Button
+                    variant="outline"
+                    onClick={skipQuestion}
+                    disabled={isRunning}
+                    className="font-sans text-xs font-semibold uppercase tracking-wider px-3 h-9 cursor-pointer text-muted-foreground hover:text-foreground"
+                  >
+                    Skip
+                  </Button>
+
+                  <Button
+                    variant="destructive"
+                    onClick={() => {
+                      if (window.confirm("Surrender this duel? Your opponent will receive the victory.")) {
+                        surrender();
+                      }
+                    }}
+                    disabled={isRunning}
+                    className="font-sans text-xs font-semibold uppercase tracking-wider px-3 h-9 cursor-pointer gap-1"
+                  >
+                    <Flag className="w-3 h-3" />
+                    <span className="hidden sm:inline">Surrender</span>
+                  </Button>
+                </div>
+              </Tabs>
+            </ResizablePanel>
+
+            <ResizableHandle withHandle className="bg-border hover:bg-primary/50 transition-colors" />
+
+            {/* Right Pane: Monaco Editor */}
+            <ResizablePanel defaultSize={55} minSize={35} className="h-full bg-[#1e1e1e] flex flex-col overflow-hidden">
+              <div className="h-9 px-4 bg-[#252526] border-b border-[#333333] flex items-center justify-between shrink-0">
+                <span className="font-mono text-xs font-semibold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
+                  <Code className="w-3.5 h-3.5 text-primary" />
+                  <span>Solution Editor &bull; {language.toUpperCase()}</span>
                 </span>
 
-                {activeQuestionTags.map((t, idx) => (
-                  <span
-                    key={idx}
-                    className="text-[11px] font-mono text-muted-foreground px-2 py-0.5 rounded bg-secondary border border-border"
-                  >
-                    {t}
-                  </span>
-                ))}
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(code);
+                    setOutput("Code copied to clipboard.");
+                  }}
+                  className="font-mono text-xs text-gray-400 hover:text-white flex items-center gap-1 cursor-pointer transition-colors"
+                >
+                  <Copy className="w-3 h-3" /> Copy
+                </button>
               </div>
 
-              <h1 className="text-lg font-bold text-foreground tracking-tight">{activeQuestionTitle}</h1>
-
-              <div className="text-xs text-foreground/80 leading-relaxed whitespace-pre-line font-sans">
-                {activeQuestionStatement || "Question specifications loaded."}
+              <div className="flex-1 min-h-0 relative">
+                <CodeEditor
+                  code={code}
+                  language={language}
+                  onChange={handleCodeChange}
+                  onLanguageChange={handleLanguageChange}
+                  hideHeader={true}
+                />
               </div>
-
-              {activeSampleAssertion && (
-                <div className="mt-3 pt-2">
-                  <div className="text-[11px] font-mono font-bold text-muted-foreground uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-                    <Terminal className="w-3.5 h-3.5 text-primary" /> Sample Assertion ({language})
-                  </div>
-                  <pre className="p-3 bg-secondary/60 border border-border rounded-lg text-xs font-mono text-primary overflow-x-auto whitespace-pre-wrap">
-                    {activeSampleAssertion}
-                  </pre>
-                </div>
-              )}
-
-              {/* Console Output */}
-              <div className="mt-3 pt-2">
-                <div className="flex items-center justify-between mb-1.5">
-                  <div className="text-[11px] font-mono font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-                    <Code className="w-3.5 h-3.5 text-primary" /> Execution Console
-                  </div>
-                  {output && (
-                    <button
-                      onClick={() => setOutput("")}
-                      className="text-[10px] text-muted-foreground hover:text-foreground cursor-pointer font-mono"
-                    >
-                      Clear
-                    </button>
-                  )}
-                </div>
-                <div className="p-3 bg-secondary/70 border border-border rounded-lg text-xs font-mono min-h-[80px] max-h-[140px] overflow-y-auto whitespace-pre-wrap">
-                  {output ? (
-                    <span
-                      className={
-                        output.includes("Evaluating") || output.includes("Executing")
-                          ? "text-amber-500"
-                          : output.includes("failed") || output.includes("Error") || output.includes("error")
-                            ? "text-destructive font-semibold"
-                            : "text-emerald-500 font-semibold"
-                      }
-                    >
-                      {output}
-                    </span>
-                  ) : (
-                    <span className="text-muted-foreground italic">
-                      Run tests or submit solution to inspect execution result.
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Bottom Actions */}
-            <div className="p-4 border-t border-border bg-card flex items-center gap-2.5 shrink-0">
-              <button
-                onClick={() => runCode(false)}
-                disabled={isRunning}
-                className="flex-1 py-2.5 px-3 rounded-lg text-xs font-bold uppercase tracking-wider bg-secondary hover:bg-secondary/80 text-foreground border border-border transition-colors cursor-pointer text-center"
-              >
-                Run Tests
-              </button>
-
-              <button
-                onClick={() => runCode(true)}
-                disabled={isRunning}
-                className="flex-1 py-2.5 px-3 rounded-lg text-xs font-bold uppercase tracking-wider bg-primary hover:bg-primary/90 text-primary-foreground transition-all cursor-pointer text-center shadow-sm"
-              >
-                Submit Solution
-              </button>
-
-              <button
-                onClick={skipQuestion}
-                disabled={isRunning}
-                className="py-2.5 px-3 rounded-lg text-xs font-bold uppercase tracking-wider bg-secondary hover:bg-secondary/80 text-muted-foreground hover:text-foreground border border-border transition-colors cursor-pointer"
-              >
-                Skip
-              </button>
-              <button
-                onClick={surrender}
-                disabled={isRunning}
-                className="py-2.5 px-3 rounded-lg text-xs font-bold uppercase tracking-wider bg-destructive/10 text-destructive hover:bg-destructive/20 border border-destructive/20 transition-colors cursor-pointer"
-              >
-                Surrender
-              </button>
-            </div>
-          </div>
-
-          {/* Right Pane: Monaco Editor */}
-          <div className="flex-1 h-full min-w-0 bg-[#1e1e1e] flex flex-col">
-            <div className="h-9 px-4 bg-[#252526] border-b border-[#333333] flex items-center justify-between shrink-0">
-              <span className="text-[11px] font-mono font-semibold text-gray-400 uppercase tracking-wider">
-                Solution Editor &bull; {language.toUpperCase()}
-              </span>
-              <button
-                onClick={() => {
-                  navigator.clipboard.writeText(code);
-                  setOutput("Code copied to clipboard.");
-                }}
-                className="text-xs text-gray-400 hover:text-white flex items-center gap-1 cursor-pointer font-mono"
-              >
-                <Copy className="w-3 h-3" /> Copy
-              </button>
-            </div>
-
-            <div className="flex-1 min-h-0 relative">
-              <CodeEditor
-                code={code}
-                language={language}
-                onChange={handleCodeChange}
-                onLanguageChange={handleLanguageChange}
-                hideHeader={true}
-              />
-            </div>
-          </div>
+            </ResizablePanel>
+          </ResizablePanelGroup>
         </div>
       </div>
     );
@@ -1095,129 +1266,219 @@ export default function Challenge({
   if (inRoom) {
     return (
       <div className="h-full w-full flex flex-col items-center justify-center p-6 bg-background text-foreground select-none font-sans">
-        <div className="w-full max-w-lg bg-card border border-border rounded-2xl p-8 shadow-sm space-y-6">
-          {/* Header & Room Code */}
-          <div className="flex items-center justify-between border-b border-border pb-4">
-            <div>
-              <div className="text-[11px] font-mono text-muted-foreground uppercase tracking-wider font-semibold">
-                Challenge Arena
-              </div>
-              <div className="text-sm font-extrabold text-foreground mt-0.5">
-                {gameMode === "webdev_arena" ? "Web Dev Arena" : "DSA Sprint"}
-              </div>
-            </div>
+        <div className="relative w-full max-w-[360px] bg-card border border-border rounded-2xl p-6 shadow-xl space-y-4 overflow-hidden">
+          <BorderBeam size={180} duration={9} />
 
-            <div className="flex items-center gap-2 bg-secondary px-3 py-1.5 rounded-lg border border-border">
-              <span className="text-xs text-muted-foreground font-mono">Room:</span>
-              <span className="font-mono font-bold tracking-widest text-sm text-foreground">
-                {roomCode}
-              </span>
-              <button
-                onClick={handleCopyCode}
-                title="Copy room code"
-                className="p-1 rounded hover:bg-card text-muted-foreground hover:text-foreground cursor-pointer transition-colors"
-              >
-                {copiedCode ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
-              </button>
+          {/* Lobby Main Title & Track */}
+          <div className="text-center space-y-1 border-b border-border pb-3">
+            <h1 className="font-display font-bold text-2xl tracking-tight text-foreground">
+              {isReady ? "Match Launching" : "Matchmaking Lobby"}
+            </h1>
+            <p className="font-sans text-[11px] text-muted-foreground uppercase tracking-wider font-semibold">
+              {gameMode === "webdev_arena" ? "Web Dev Track" : "DSA Track"}
+            </p>
+          </div>
+
+          {/* Room Code with OTP Display */}
+          <div className="flex flex-col items-center gap-1.5">
+            <label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider font-sans block text-center">
+              ROOM CODE
+            </label>
+            <div className="flex justify-center">
+              <OtpInput
+                length={6}
+                mode="alphanumeric"
+                defaultValue={roomCode}
+                disabled={true}
+                label="Room Code"
+              />
             </div>
           </div>
 
           {/* Opponent VS Me Card */}
-          <div className="grid grid-cols-5 items-center py-4">
-            {/* Player 1: Me */}
-            <div className="col-span-2 flex flex-col items-center text-center p-4 rounded-xl bg-secondary/50 border border-border">
-              <div className="w-12 h-12 rounded-full bg-primary/10 border border-primary/20 text-primary flex items-center justify-center font-bold text-base mb-2">
-                {getUserName().substring(0, 2).toUpperCase()}
-              </div>
-              <div className="text-xs font-bold text-foreground truncate max-w-[120px]">
-                {getUserName()}
-              </div>
-              <div className="text-[10px] text-emerald-500 font-mono font-semibold uppercase mt-0.5">
-                Ready
-              </div>
-            </div>
+          <div className="space-y-1.5">
+            <label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider font-sans block text-center">
+              VERSUS MATCHUP
+            </label>
+            <div className="grid grid-cols-5 items-center p-3 rounded-xl bg-secondary/50 border border-border">
+              {/* Player 1: Me */}
+              <div className="col-span-2 flex flex-col items-center text-center">
+                <Avatar className="w-12 h-12 border-2 border-primary/40 ring-4 ring-primary/10 mb-1.5">
+                  <AvatarFallback className="bg-primary/15 text-primary font-display font-bold text-base">
+                    {getUserName().substring(0, 2).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
 
-            {/* Center VS Indicator */}
-            <div className="col-span-1 flex flex-col items-center justify-center">
-              <div className="w-9 h-9 rounded-full bg-card border border-border text-foreground font-mono font-extrabold text-xs flex items-center justify-center shadow-xs">
-                VS
-              </div>
-            </div>
+                <div className="font-sans font-bold text-xs text-foreground truncate max-w-[100px]">
+                  {getUserName()}
+                </div>
 
-            {/* Player 2: Other Player */}
-            <div className="col-span-2 flex flex-col items-center text-center p-4 rounded-xl bg-secondary/50 border border-border">
-              <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-base mb-2 border ${
-                isReady
-                  ? "bg-destructive/10 border-destructive/20 text-destructive"
-                  : "bg-muted border-border text-muted-foreground"
-              }`}>
-                {isReady && opponent?.userDetails?.name
-                  ? opponent.userDetails.name.substring(0, 2).toUpperCase()
-                  : "?"}
+                <span className="font-sans font-bold text-[10px] uppercase tracking-wide text-emerald-500 mt-0.5">
+                  READY
+                </span>
               </div>
-              <div className="text-xs font-bold text-foreground truncate max-w-[120px]">
-                {isReady && opponent?.userDetails?.name ? opponent.userDetails.name : "Waiting..."}
+
+              {/* Center VS Indicator */}
+              <div className="col-span-1 flex flex-col items-center justify-center">
+                <div className="w-8 h-8 rounded-full bg-card border-2 border-border text-foreground font-display font-bold text-xs flex items-center justify-center shadow-xs">
+                  VS
+                </div>
               </div>
-              <div className={`text-[10px] font-mono font-semibold uppercase mt-0.5 ${
-                isReady ? "text-emerald-500" : "text-amber-500 italic animate-pulse"
-              }`}>
-                {isReady ? "Connected" : "Waiting"}
+
+              {/* Player 2: Other Player */}
+              <div className="col-span-2 flex flex-col items-center text-center">
+                {isReady && opponent?.userDetails?.name ? (
+                  <>
+                    <Avatar className="w-12 h-12 border-2 border-rose-500/40 ring-4 ring-rose-500/10 mb-1.5">
+                      <AvatarFallback className="bg-rose-500/15 text-rose-500 font-display font-bold text-base">
+                        {opponent.userDetails.name.substring(0, 2).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+
+                    <div className="font-sans font-bold text-xs text-foreground truncate max-w-[100px]">
+                      {opponent.userDetails.name}
+                    </div>
+
+                    <span className="font-sans font-bold text-[10px] uppercase tracking-wide text-rose-500 mt-0.5">
+                      LOCKED IN
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <div className="w-12 h-12 rounded-full border-2 border-dashed border-border flex items-center justify-center text-muted-foreground mb-1.5 bg-secondary/40 animate-pulse">
+                      <Users className="w-5 h-5 opacity-60" />
+                    </div>
+
+                    <div className="font-sans font-bold text-xs text-muted-foreground truncate max-w-[100px]">
+                      Waiting...
+                    </div>
+
+                    <span className="font-sans font-bold text-[10px] uppercase tracking-wide text-amber-500 mt-0.5">
+                      SEARCHING
+                    </span>
+                  </>
+                )}
               </div>
             </div>
           </div>
 
           {/* 10-Second Countdown (Starts when 2 players connect) */}
           {isReady ? (
-            <div className="p-5 rounded-2xl bg-primary/10 border border-primary/20 flex flex-col items-center text-center space-y-2 shadow-xs">
-              <div className="flex items-center gap-2 text-xs font-mono uppercase font-bold text-primary tracking-wider">
-                <Clock className="w-4 h-4 animate-spin" />
-                <span>Game starts in</span>
+            <div className="relative p-4 rounded-xl bg-primary/10 border border-primary/25 flex flex-col items-center text-center space-y-1.5 shadow-xs overflow-hidden">
+              <BorderBeam size={140} duration={6} />
+              <div className="font-sans text-[11px] uppercase font-semibold text-primary tracking-wider">
+                MATCH LAUNCHING IN
               </div>
-              <div className="text-5xl font-mono font-black tracking-tight text-foreground">
+              <div className="font-display font-bold text-4xl tracking-tight text-foreground tabular-nums">
                 {countdown !== null ? `${countdown}s` : "10s"}
               </div>
-              <div className="text-xs text-muted-foreground font-medium">
-                Both coders ready. Arena launching in {countdown ?? 10} seconds...
+              <div className="font-sans text-xs text-muted-foreground">
+                Both coders ready. Synchronizing problem suite...
               </div>
             </div>
           ) : (
-            <div className="p-3.5 rounded-xl bg-secondary/50 border border-border text-center text-xs text-muted-foreground font-mono">
-              Share room code <strong className="text-foreground">{roomCode}</strong> with your competitor to begin.
+            <div className="p-3 rounded-xl bg-secondary/60 border border-border text-center font-sans text-xs text-muted-foreground">
+              Share room code <strong className="font-mono text-foreground">{roomCode}</strong> with your competitor to begin.
             </div>
           )}
 
           {/* Cancel Button */}
-          <button
+          <Button
+            variant="outline"
             onClick={handleLeaveRoom}
-            className="w-full py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider bg-destructive/10 text-destructive hover:bg-destructive/20 border border-destructive/20 transition-colors cursor-pointer"
+            className="w-full font-sans text-xs font-semibold uppercase tracking-wider text-destructive hover:bg-destructive/10 border-destructive/20 h-10 cursor-pointer"
           >
             Leave Room
-          </button>
+          </Button>
         </div>
       </div>
     );
   }
 
   // =========================================================================
-  // VIEW 3: IDLE ARENA PLACEHOLDER (No Sandbox, No Open Questions, Clean)
+  // VIEW 3: IDLE ARENA PLACEHOLDER (Configuration Selectors before entering queue)
   // =========================================================================
   return (
-    <div className="h-full w-full flex flex-col items-center justify-center p-8 bg-background text-foreground select-none font-sans">
-      <div className="max-w-md w-full bg-card border border-border rounded-2xl p-8 text-center space-y-4 shadow-xs">
-        <div className="w-14 h-14 rounded-full bg-primary/10 border border-primary/20 text-primary flex items-center justify-center mx-auto">
-          <Swords className="w-6 h-6" />
-        </div>
+    <div className="h-full w-full flex flex-col items-center justify-center p-6 bg-background text-foreground select-none font-sans">
+      <div className="relative max-w-[360px] w-full bg-card border border-border rounded-2xl p-6 space-y-4 shadow-xs overflow-hidden">
+        <BorderBeam size={180} duration={10} />
 
-        <div className="space-y-1">
-          <h2 className="text-lg font-bold text-foreground">1v1 Challenge Arena</h2>
-          <p className="text-xs text-muted-foreground leading-relaxed max-w-sm mx-auto">
-            Select a game mode from the sidebar and click <strong className="text-foreground font-semibold">Create 1v1 Room</strong> or enter a room code to duel a rival in real time.
+        <div className="text-center space-y-1">
+          <h1 className="font-display font-bold text-2xl tracking-tight text-foreground">
+            Create a 1v1 Challenge
+          </h1>
+          <p className="font-sans font-normal text-xs leading-relaxed text-muted-foreground max-w-xs mx-auto">
+            Select your preferred track and number of questions to start a real-time coding duel.
           </p>
         </div>
 
-        <div className="pt-2 text-[11px] text-muted-foreground font-mono">
-          Questions and coding sandbox remain private until both players are locked in.
+        {/* Section: Select Track */}
+        <div className="space-y-1">
+          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider font-sans block">
+            SELECT TRACK
+          </label>
+          <SegmentedControl
+            label="Track"
+            options={[
+              { value: "webdev_arena", label: "Web Dev" },
+              { value: "dsa_sprint", label: "DSA" },
+            ]}
+            value={gameMode}
+            onValueChange={(val) => {
+              const mode = val as any;
+              setGameMode(mode);
+              if (mode === "webdev_arena") setLanguage("javascript");
+              else if (mode === "dsa_sprint") setLanguage("python");
+            }}
+          />
         </div>
+
+        {/* Section: Number of Questions */}
+        <div className="space-y-1">
+          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider font-sans block">
+            NUMBER OF QUESTIONS
+          </label>
+          <SegmentedControl
+            label="Number of Questions"
+            options={[
+              { value: "3", label: "3" },
+              { value: "5", label: "5" },
+              { value: "8", label: "8" },
+            ]}
+            value={String(challengeConfig?.questionCount || 5)}
+            onValueChange={(val) => {
+              if (challengeConfig) challengeConfig.questionCount = parseInt(val);
+            }}
+          />
+        </div>
+
+        {/* Action Button: Create Room */}
+        <Button
+          onClick={() => {
+            const newCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+            setRoomCode(newCode);
+            setIsHost(true);
+            setInRoom(true);
+            setIsStarted(false);
+            setCountdown(null);
+            if (typeof window !== "undefined") {
+              sessionStorage.setItem("skillsphere_active_room", newCode);
+            }
+            if (onRoomCreated) onRoomCreated(newCode);
+
+            socket.emit("join_challenge", {
+              challengeId: newCode,
+              userDetails: { name: getUserName() },
+              gameMode,
+              language: gameMode === "webdev_arena" ? "javascript" : language,
+              playerId: getPersistentPlayerId(),
+              questionCount: challengeConfig?.questionCount || 5,
+            });
+          }}
+          className="w-full h-10 font-sans font-semibold text-xs tracking-wide bg-primary text-primary-foreground hover:bg-primary/90 transition-all uppercase cursor-pointer"
+        >
+          CREATE 1V1 ROOM
+        </Button>
       </div>
     </div>
   );

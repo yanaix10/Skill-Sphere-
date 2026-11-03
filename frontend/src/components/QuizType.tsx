@@ -1,4 +1,5 @@
-import React from 'react';
+import React from "react";
+import SegmentedControl from "@/components/ui/segmented-control";
 
 interface QuizConfig {
   difficulty: string;
@@ -12,44 +13,84 @@ interface QuizTypeProps {
   disabled: boolean;
 }
 
+const DIFFICULTY_OPTIONS = [
+  { value: "Easy", label: "Easy" },
+  { value: "Medium", label: "Medium" },
+  { value: "Hard", label: "Hard" },
+];
+
+const QUESTION_COUNT_OPTIONS = [
+  { value: "5", label: "5" },
+  { value: "10", label: "10" },
+  { value: "20", label: "20" },
+];
+
+const CATEGORY_ROW_1 = [
+  { value: "Web Dev", label: "Web Dev" },
+  { value: "Linux", label: "Linux" },
+  { value: "DevOps", label: "DevOps" },
+];
+
+const CATEGORY_ROW_2 = [
+  { value: "Code", label: "Code" },
+  { value: "SQL", label: "SQL" },
+  { value: "Cloud", label: "Cloud" },
+];
+
 const QuizType: React.FC<QuizTypeProps> = ({ quizConfig, setQuizConfig, disabled }) => {
   const updateConfig = (key: keyof QuizConfig, value: string) => {
     if (disabled) return;
     setQuizConfig({ ...quizConfig, [key]: value });
   };
 
-  const renderSection = (title: string, options: string[], selected: string, setterKey: keyof QuizConfig) => (
-    <div className="mb-4">
-      <h3 className="text-xs text-muted-foreground mb-2 uppercase tracking-wider font-bold">{title}</h3>
-      <div className="grid grid-cols-3 gap-2">
-        {options.map((opt) => (
-          <button
-            key={opt}
-            disabled={disabled}
-            className={`py-2.5 rounded-lg text-xs font-bold border transition-all duration-200 ${
-              selected === opt
-                ? 'bg-primary text-primary-foreground border-primary shadow-sm'
-                : 'bg-secondary text-secondary-foreground border-border hover:bg-secondary/80'
-            } ${disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}
-            onClick={() => updateConfig(setterKey, opt)}
-          >
-            {opt}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-
   return (
-    <div className="bg-card text-card-foreground p-4 rounded-xl border border-border w-full font-sans box-border shadow-sm">
-      <div className="flex items-center justify-center bg-secondary/60 p-3 rounded-lg mb-4 font-bold border border-border">
-        <span className="text-primary mr-2">⚡</span>
-        <h2 className="m-0 text-sm font-semibold">Quiz Settings {disabled && "(Locked)"}</h2>
+    <div className="bg-card text-card-foreground p-4 rounded-xl border border-border w-full font-sans box-border shadow-xs space-y-4">
+      {/* Difficulty Section */}
+      <div className="space-y-1.5">
+        <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider font-sans block">
+          SELECT DIFFICULTY
+        </label>
+        <SegmentedControl
+          label="Difficulty"
+          options={DIFFICULTY_OPTIONS}
+          value={quizConfig?.difficulty || "Easy"}
+          onValueChange={(val) => updateConfig("difficulty", val)}
+        />
       </div>
 
-      {renderSection('Difficulty', ['Easy', 'Medium', 'Hard'], quizConfig?.difficulty || 'Easy', 'difficulty')}
-      {renderSection('No. Questions', ['5', '10', '20'], quizConfig?.limit || '10', 'limit')}
-      {renderSection('Category', ['Web Dev', 'Linux', 'DevOps', 'Code', 'SQL', 'Cloud'], quizConfig?.category || 'Web Dev', 'category')}
+      {/* Number of Questions Section */}
+      <div className="space-y-1.5">
+        <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider font-sans block">
+          NUMBER OF QUESTIONS
+        </label>
+        <SegmentedControl
+          label="Number of Questions"
+          options={QUESTION_COUNT_OPTIONS}
+          value={String(quizConfig?.limit || "10")}
+          onValueChange={(val) => updateConfig("limit", val)}
+        />
+      </div>
+
+      {/* Category Section */}
+      <div className="space-y-1.5">
+        <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider font-sans block">
+          SELECT CATEGORY
+        </label>
+        <div className="flex flex-col gap-1.5">
+          <SegmentedControl
+            label="Category Row 1"
+            options={CATEGORY_ROW_1}
+            value={quizConfig?.category || "Web Dev"}
+            onValueChange={(val) => updateConfig("category", val)}
+          />
+          <SegmentedControl
+            label="Category Row 2"
+            options={CATEGORY_ROW_2}
+            value={quizConfig?.category || "Web Dev"}
+            onValueChange={(val) => updateConfig("category", val)}
+          />
+        </div>
+      </div>
     </div>
   );
 };

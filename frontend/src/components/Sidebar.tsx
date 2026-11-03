@@ -1,8 +1,9 @@
 import React, { useState } from "react";
-import { ChevronDown, Swords, Users, Trophy, Copy, Check } from "lucide-react";
+import { ChevronDown, Users, Trophy, Copy, Check } from "lucide-react";
 import QuizType from "./QuizType";
 import Sessions from "./Sessions";
 import Coders from "./Coders";
+import SegmentedControl from "@/components/ui/segmented-control";
 
 interface QuizConfig {
   category: string;
@@ -107,13 +108,13 @@ const Sidebar: React.FC<SidebarProps> = ({
   };
 
   return (
-    <div className="w-[30vw] min-w-[320px] max-w-[420px] h-full bg-card border-l border-border flex flex-col font-sans text-card-foreground box-border transition-colors duration-200 select-none">
+    <div className="w-[350px] shrink-0 h-full bg-card border-l border-border flex flex-col font-sans text-card-foreground box-border transition-colors duration-200 select-none">
       {/* Top Navigation Tabs */}
       <div className="flex border-b border-border bg-card shrink-0">
         {["+ Code", "Sessions", "Coders"].map((tab) => (
           <button
             key={tab}
-            className={`flex-1 py-4 bg-transparent border-none border-b-2 text-sm font-semibold cursor-pointer transition-all duration-200 ${activeTab === tab
+            className={`flex-1 py-2.5 bg-transparent border-none border-b-2 text-xs sm:text-sm font-semibold cursor-pointer transition-all duration-200 ${activeTab === tab
                 ? "text-primary border-primary"
                 : "text-muted-foreground border-transparent hover:text-foreground hover:bg-secondary/50"
               }`}
@@ -138,10 +139,10 @@ const Sidebar: React.FC<SidebarProps> = ({
 
         {activeTab === "+ Code" && (
           <div className="flex flex-col h-full justify-between">
-            <div className="main-code-view">
+            <div className="main-code-view p-3 flex flex-col gap-2">
               {/* Quiz Config Header Dropdown */}
               <div
-                className={`flex justify-between items-center h-[50px] mx-5 my-[15px] rounded-lg px-4 text-sm font-bold tracking-[0.5px] border border-border transition-all duration-300 ${isSessionActive
+                className={`flex justify-between items-center h-10 rounded-lg px-3.5 text-xs font-bold tracking-[0.5px] border border-border transition-all duration-200 ${isSessionActive
                     ? "bg-secondary/50 opacity-65 cursor-not-allowed text-muted-foreground"
                     : "bg-secondary text-foreground cursor-pointer hover:bg-secondary/80"
                   }`}
@@ -150,17 +151,17 @@ const Sidebar: React.FC<SidebarProps> = ({
                   setIsQuizConfigExpanded(!isQuizConfigExpanded);
                 }}
               >
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5 text-xs">
                   <span>{quizConfig.category}</span>
                   <span className="text-muted-foreground">•</span>
                   <span>{quizConfig.limit} Qs</span>
                   <span className="text-muted-foreground">•</span>
                   <span className="text-primary uppercase font-mono">{quizConfig.difficulty}</span>
-                  {isSessionActive && <span className="text-xs text-muted-foreground italic ml-2">(Locked)</span>}
+                  {isSessionActive && <span className="text-[10px] text-muted-foreground italic ml-1">(Locked)</span>}
                 </div>
                 {!isSessionActive && (
                   <div
-                    className={`transition-transform duration-300 ease-in text-muted-foreground ${isQuizConfigExpanded ? "rotate-180" : ""
+                    className={`transition-transform duration-200 text-muted-foreground text-xs ${isQuizConfigExpanded ? "rotate-180" : ""
                       }`}
                   >
                     ▼
@@ -170,187 +171,175 @@ const Sidebar: React.FC<SidebarProps> = ({
 
               {/* Expandable Quiz Configuration Options */}
               <div
-                className={`grid transition-all duration-300 ease-out overflow-hidden ${isQuizConfigExpanded && !isSessionActive
+                className={`grid transition-all duration-200 ease-out overflow-hidden ${isQuizConfigExpanded && !isSessionActive
                     ? "[grid-template-rows:1fr] opacity-100 visible"
                     : "[grid-template-rows:0fr] opacity-0 invisible"
                   }`}
               >
-                <div className="min-h-0 pb-[15px] px-5">
+                <div className="min-h-0 pb-1">
                   <QuizType quizConfig={quizConfig} setQuizConfig={setQuizConfig} disabled={isSessionActive} />
                 </div>
               </div>
 
-              {/* Action Buttons Container */}
-              <div className="flex flex-col gap-3 p-5 mt-[5px]">
-                {isSessionActive ? (
-                  /* Active Session Status & Quit Button */
-                  <div className="space-y-3">
-                    <div className="p-4 rounded-lg bg-secondary border border-border space-y-2">
-                      <div className="text-xs font-mono uppercase tracking-wider text-muted-foreground">
-                        Active Session
-                      </div>
-                      <div className="text-sm font-bold text-foreground">
-                        {mode === "challenge"
-                          ? (selectedGameMode === "webdev_arena" ? "1v1 Duel: Web Dev Arena" : "1v1 Duel: DSA Sprint")
-                          : `Practice Quiz: ${quizConfig.category}`}
-                      </div>
-
-                      {mode === "challenge" && activeRoomCode && (
-                        <div className="flex items-center justify-between pt-1">
-                          <span className="text-xs text-muted-foreground font-mono">
-                            Room: <span className="text-foreground font-bold">{activeRoomCode}</span>
-                          </span>
-                          <button
-                            onClick={handleCopyCode}
-                            className="p-1 px-2 rounded bg-card hover:bg-card/80 text-xs font-mono text-primary border border-border flex items-center gap-1 cursor-pointer"
-                          >
-                            {copiedCode ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
-                            {copiedCode ? "Copied" : "Copy"}
-                          </button>
-                        </div>
-                      )}
-
-                      {mode === "challenge" && opponentName && (
-                        <div className="text-xs text-muted-foreground">
-                          Rival: <span className="text-primary font-semibold">{opponentName}</span>
-                        </div>
-                      )}
+              {/* Action Buttons: Positioned directly below the dropdown with gap-2 */}
+              {isSessionActive ? (
+                /* Active Session Status & Quit Button */
+                <div className="space-y-2 pt-1">
+                  <div className="p-3 rounded-lg bg-secondary border border-border space-y-1.5">
+                    <div className="text-[11px] font-mono uppercase tracking-wider text-muted-foreground">
+                      Active Session
+                    </div>
+                    <div className="text-xs font-bold text-foreground">
+                      {mode === "challenge"
+                        ? (selectedGameMode === "webdev_arena" ? "1v1 Duel: Web Dev Arena" : "1v1 Duel: DSA Sprint")
+                        : `Practice Quiz: ${quizConfig.category}`}
                     </div>
 
-                    <button
-                      onClick={() => {
-                        if (confirm("Are you sure you want to quit the active session? Your progress will not be saved.")) {
-                          setMode("main");
-                        }
-                      }}
-                      className="w-full p-[14px] rounded-lg text-sm font-bold tracking-[1px] cursor-pointer border-none transition-transform duration-100 ease-in active:scale-[0.98] bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90"
-                    >
-                      QUIT SESSION
-                    </button>
+                    {mode === "challenge" && activeRoomCode && (
+                      <div className="flex items-center justify-between pt-1">
+                        <span className="text-xs text-muted-foreground font-mono">
+                          Room: <span className="text-foreground font-bold">{activeRoomCode}</span>
+                        </span>
+                        <button
+                          onClick={handleCopyCode}
+                          className="p-1 px-2 rounded bg-card hover:bg-card/80 text-[11px] font-mono text-primary border border-border flex items-center gap-1 cursor-pointer"
+                        >
+                          {copiedCode ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
+                          {copiedCode ? "Copied" : "Copy"}
+                        </button>
+                      </div>
+                    )}
+
+                    {mode === "challenge" && opponentName && (
+                      <div className="text-xs text-muted-foreground">
+                        Rival: <span className="text-primary font-semibold">{opponentName}</span>
+                      </div>
+                    )}
                   </div>
-                ) : (
-                  <>
-                    {/* Primary Button: START PRACTICE (equivalent to Start Game in Chess.com) */}
+
+                  <button
+                    onClick={() => {
+                      if (confirm("Are you sure you want to quit the active session? Your progress will not be saved.")) {
+                        setMode("main");
+                      }
+                    }}
+                    className="w-full h-10 rounded-lg text-xs font-bold tracking-[1px] cursor-pointer border-none transition-transform duration-100 ease-in active:scale-[0.98] bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90 uppercase"
+                  >
+                    QUIT SESSION
+                  </button>
+                </div>
+              ) : (
+                <>
+                  {/* Primary Button: START PRACTICE */}
+                  <button
+                    onClick={handleStartPractice}
+                    className="w-full h-10 rounded-lg text-xs font-bold tracking-[1px] cursor-pointer border-none transition-all duration-100 ease-in active:scale-[0.98] bg-primary text-primary-foreground shadow-sm hover:bg-primary/90 uppercase"
+                  >
+                    START PRACTICE
+                  </button>
+
+                  {/* 1V1 CHALLENGE */}
+                  <div className="rounded-lg border border-border bg-card overflow-hidden transition-all duration-200">
                     <button
-                      onClick={handleStartPractice}
-                      className="w-full p-[14px] rounded-lg text-sm font-bold tracking-[1px] cursor-pointer border-none transition-all duration-100 ease-in active:scale-[0.98] bg-primary text-primary-foreground shadow-sm hover:bg-primary/90"
+                      onClick={() => setIsChallengeDropdownOpen(!isChallengeDropdownOpen)}
+                      className="w-full h-10 px-3.5 flex items-center justify-between text-xs font-bold tracking-[1px] cursor-pointer bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-colors"
                     >
-                      START PRACTICE
+                      <span>1V1 CHALLENGE</span>
+                      <ChevronDown
+                        className={`w-4 h-4 text-muted-foreground transition-transform duration-200 ${
+                          isChallengeDropdownOpen ? "rotate-180" : ""
+                        }`}
+                      />
                     </button>
 
-                    {/* 1V1 CHALLENGE: Dropdown / Expandable Options choosing between DSA Sprint, WebDev, FullStack */}
-                    <div className="rounded-lg border border-border bg-card overflow-hidden transition-all duration-200">
-                      <button
-                        onClick={() => setIsChallengeDropdownOpen(!isChallengeDropdownOpen)}
-                        className="w-full p-[14px] flex items-center justify-between text-sm font-bold tracking-[1px] cursor-pointer bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-colors"
-                      >
-                        <div className="flex items-center gap-2">
-                          <Swords className="w-4 h-4 text-primary" />
-                          <span>1V1 CHALLENGE</span>
+                    {isChallengeDropdownOpen && (
+                      <div className="p-3 border-t border-border bg-card space-y-3">
+                        {/* Arena Game Mode */}
+                        <div className="space-y-1">
+                          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider font-sans block">
+                            SELECT TRACK
+                          </label>
+                          <SegmentedControl
+                            label="Track"
+                            options={[
+                              { value: "webdev_arena", label: "Web Dev" },
+                              { value: "dsa_sprint", label: "DSA" },
+                            ]}
+                            value={selectedGameMode}
+                            onValueChange={(val) => {
+                              const mode = val as any;
+                              setSelectedGameMode(mode);
+                              if (mode === "webdev_arena") setSelectedLanguage("javascript");
+                              else if (mode === "dsa_sprint") setSelectedLanguage("python");
+                            }}
+                          />
                         </div>
-                        <ChevronDown
-                          className={`w-4 h-4 text-muted-foreground transition-transform duration-200 ${isChallengeDropdownOpen ? "rotate-180" : ""
-                            }`}
-                        />
-                      </button>
 
-                      {isChallengeDropdownOpen && (
-                        <div className="p-4 border-t border-border bg-card space-y-3.5">
-                          {/* Dropdown for 1v1 challenge mode */}
-                          <div className="space-y-1">
-                            <label className="text-[11px] font-semibold text-muted-foreground uppercase font-mono">
-                              Game Mode
-                            </label>
-                            <select
-                              value={selectedGameMode}
-                              onChange={(e) => {
-                                const mode = e.target.value as any;
-                                setSelectedGameMode(mode);
-                                if (mode === "webdev_arena") setSelectedLanguage("javascript");
-                                else if (mode === "dsa_sprint") setSelectedLanguage("python");
-                              }}
-                              className="w-full py-2 px-3 bg-secondary text-foreground border border-border rounded-lg text-xs font-medium focus:ring-1 focus:ring-primary outline-none cursor-pointer"
-                            >
-                              <option value="webdev_arena">Web Dev Arena (Active)</option>
-                              <option value="dsa_sprint">DSA Sprint (Active)</option>
-                              <option value="fullstack_blitz">FullStack Blitz (Coming Soon)</option>
-                            </select>
-                          </div>
+                        {/* Number of Questions */}
+                        <div className="space-y-1">
+                          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider font-sans block">
+                            NUMBER OF QUESTIONS
+                          </label>
+                          <SegmentedControl
+                            label="Number of Questions"
+                            options={[
+                              { value: "3", label: "3" },
+                              { value: "5", label: "5" },
+                              { value: "8", label: "8" },
+                            ]}
+                            value={String(selectedQuestionCount)}
+                            onValueChange={(val) => setSelectedQuestionCount(parseInt(val))}
+                          />
+                        </div>
 
-                          {/* No. of Questions Selector */}
-                          <div className="space-y-1.5">
-                            <div className="flex justify-between items-center">
-                              <label className="text-[11px] font-semibold text-muted-foreground uppercase font-mono">
-                                No. of Questions
-                              </label>
-                              <span className="text-[11px] font-bold text-primary">{selectedQuestionCount} Questions</span>
-                            </div>
-                            <div className="grid grid-cols-3 gap-1.5">
-                              {[3, 5, 8].map((count) => (
-                                <button
-                                  key={count}
-                                  type="button"
-                                  onClick={() => setSelectedQuestionCount(count)}
-                                  className={`py-1.5 rounded-lg text-xs font-bold border transition-all cursor-pointer ${
-                                    selectedQuestionCount === count
-                                      ? "bg-primary text-primary-foreground border-primary shadow-sm"
-                                      : "bg-secondary text-secondary-foreground border-border hover:bg-secondary/80"
-                                  }`}
-                                >
-                                  {count} Qs
-                                </button>
-                              ))}
-                            </div>
-                          </div>
+                        {/* Action Buttons: Host or Join */}
+                        <div className="space-y-2 pt-0.5">
+                          <button
+                            onClick={handleLaunchChallenge}
+                            className="w-full h-10 rounded-lg text-xs font-bold tracking-wide bg-primary text-primary-foreground hover:bg-primary/90 transition-all cursor-pointer uppercase font-sans"
+                          >
+                            CREATE 1V1 ROOM
+                          </button>
 
-                          {/* Action Buttons: Host or Join */}
-                          <div className="space-y-2 pt-1">
+                          <div className="flex gap-1.5">
+                            <input
+                              type="text"
+                              maxLength={6}
+                              placeholder="ROOM CODE"
+                              value={joinCodeInput}
+                              onChange={(e) => setJoinCodeInput(e.target.value.toUpperCase())}
+                              className="flex-1 h-10 bg-secondary text-foreground border border-border rounded-lg px-2.5 text-xs font-mono uppercase tracking-widest text-center focus:outline-none focus:ring-1 focus:ring-primary placeholder:text-muted-foreground"
+                            />
                             <button
-                              onClick={handleLaunchChallenge}
-                              className="w-full py-2.5 rounded-lg text-xs font-bold bg-primary text-primary-foreground hover:bg-primary/90 transition-all cursor-pointer shadow-sm tracking-wider"
+                              onClick={handleJoinChallenge}
+                              className="h-10 px-3.5 rounded-lg text-xs font-bold uppercase tracking-wide bg-secondary hover:bg-secondary/80 text-foreground border border-border cursor-pointer transition-colors font-sans"
                             >
-                              CREATE 1V1 ROOM
+                              JOIN
                             </button>
-
-                            <div className="flex gap-2">
-                              <input
-                                type="text"
-                                placeholder="ENTER ROOM CODE"
-                                value={joinCodeInput}
-                                onChange={(e) => setJoinCodeInput(e.target.value.toUpperCase())}
-                                className="flex-1 bg-secondary text-foreground border border-border rounded-lg px-2.5 py-1.5 text-xs font-mono uppercase tracking-wider focus:outline-none focus:ring-1 focus:ring-primary placeholder:text-muted-foreground/60"
-                              />
-                              <button
-                                onClick={handleJoinChallenge}
-                                className="px-3.5 py-1.5 rounded-lg text-xs font-bold bg-secondary hover:bg-secondary/80 text-foreground border border-border cursor-pointer transition-colors"
-                              >
-                                Join
-                              </button>
-                            </div>
                           </div>
                         </div>
-                      )}
-                    </div>
+                      </div>
+                    )}
+                  </div>
 
-                    {/* Rest of the sidebar: CODE A FRIEND & TOURNAMENTS */}
-                    <button
-                      onClick={() => setIsChallengeDropdownOpen(true)}
-                      className="w-full p-[14px] rounded-lg text-sm font-bold tracking-[1px] cursor-pointer transition-all duration-100 ease-in active:scale-[0.98] bg-secondary text-secondary-foreground border border-border hover:bg-secondary/80 flex items-center justify-center gap-2"
-                    >
-                      <Users className="w-4 h-4 text-muted-foreground" />
-                      <span>CODE A FRIEND</span>
-                    </button>
+                  {/* Rest of the sidebar: CODE A FRIEND & TOURNAMENTS */}
+                  <button
+                    onClick={() => setIsChallengeDropdownOpen(true)}
+                    className="w-full h-10 rounded-lg text-xs font-bold tracking-[1px] cursor-pointer transition-all duration-100 ease-in active:scale-[0.98] bg-secondary text-secondary-foreground border border-border hover:bg-secondary/80 flex items-center justify-center gap-2"
+                  >
+                    <Users className="w-4 h-4 text-muted-foreground" />
+                    <span>CODE A FRIEND</span>
+                  </button>
 
-                    <button
-                      onClick={() => alert("Tournaments schedule coming soon in the next release.")}
-                      className="w-full p-[14px] rounded-lg text-sm font-bold tracking-[1px] cursor-pointer transition-all duration-100 ease-in active:scale-[0.98] bg-transparent border border-border text-muted-foreground hover:border-foreground hover:text-foreground hover:bg-secondary/30 flex items-center justify-center gap-2"
-                    >
-                      <Trophy className="w-4 h-4 text-muted-foreground" />
-                      <span>TOURNAMENTS</span>
-                    </button>
-                  </>
-                )}
-              </div>
+                  <button
+                    onClick={() => alert("Tournaments schedule coming soon in the next release.")}
+                    className="w-full h-10 rounded-lg text-xs font-bold tracking-[1px] cursor-pointer transition-all duration-100 ease-in active:scale-[0.98] bg-transparent border border-border text-muted-foreground hover:border-foreground hover:text-foreground hover:bg-secondary/30 flex items-center justify-center gap-2"
+                  >
+                    <Trophy className="w-4 h-4 text-muted-foreground" />
+                    <span>TOURNAMENTS</span>
+                  </button>
+                </>
+              )}
             </div>
           </div>
         )}
