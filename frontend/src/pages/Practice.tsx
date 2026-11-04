@@ -22,8 +22,11 @@ import {
   Circle,
   HelpCircle,
   ArrowRight,
+  Zap,
+  Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { updateUserStatsAndBadges, getRankTier, BadgeDefinition } from "@/utils/ranks";
 
 interface QuizConfig {
   category?: string;
@@ -87,6 +90,13 @@ export const Practice: React.FC<PracticeProps> = ({ setMode, quizConfig }) => {
   const [sessionId, setSessionId] = useState<string | null>(() => (savedInitial?.showResult ? null : savedInitial?.sessionId || null));
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [earnedReward, setEarnedReward] = useState<{
+    points: number;
+    ratingDelta: number;
+    newBadges: BadgeDefinition[];
+    isPerfectScore?: boolean;
+    breakdown?: { base: number; correct: number; bonus: number };
+  } | null>(null);
 
   const fetchQuestions = async () => {
     try {
@@ -178,6 +188,39 @@ export const Practice: React.FC<PracticeProps> = ({ setMode, quizConfig }) => {
         if (typeof window !== "undefined") {
           sessionStorage.removeItem(STORAGE_KEY);
         }
+
+        const points = data.earnedPoints || (data.score * 15 + 15);
+        const ratingDelta = data.ratingDelta || (data.score * 5);
+        const isPerfect = !!(data.isPerfectScore ?? (data.score === questions.length && questions.length > 0));
+
+        try {
+          const resStats = await updateUserStatsAndBadges({
+            pointsDelta: points,
+            ratingDelta: ratingDelta,
+            quizCompleted: true,
+            quizPerfect: isPerfect,
+          });
+
+          setEarnedReward({
+            points,
+            ratingDelta,
+            newBadges: resStats.newBadgesUnlocked || [],
+            isPerfectScore: isPerfect,
+            breakdown: data.breakdown || {
+              base: 15,
+              correct: points - 15 - (isPerfect ? 50 : 0),
+              bonus: isPerfect ? 50 : 0,
+            },
+          });
+        } catch (updateErr) {
+          console.error("Failed to update user stats:", updateErr);
+          setEarnedReward({
+            points,
+            ratingDelta,
+            newBadges: [],
+            isPerfectScore: isPerfect,
+          });
+        }
       }
     } catch (err) {
       console.error("Failed to submit answers", err);
@@ -253,7 +296,7 @@ export const Practice: React.FC<PracticeProps> = ({ setMode, quizConfig }) => {
           </p>
 
           {/* Score Circle Card */}
-          <div className="w-full bg-secondary/50 rounded-2xl p-6 border border-border/80 mb-6 flex flex-col items-center">
+          <div className="w-full bg-secondary/50 rounded-2xl p-6 border border-border/80 mb-4 flex flex-col items-center">
             <div className="text-5xl font-black text-primary tracking-tight">
               {score} <span className="text-2xl font-bold text-muted-foreground">/ {questions.length}</span>
             </div>
@@ -266,6 +309,43 @@ export const Practice: React.FC<PracticeProps> = ({ setMode, quizConfig }) => {
                 : "Keep Practicing"}
             </div>
           </div>
+
+          {/* Points & Rating Rewards Banner */}
+          {earnedReward && (
+            <div className="w-full mb-5 space-y-2">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="flex items-center justify-center gap-2 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-500 font-bold">
+                  <Zap className="size-4 shrink-0" />
+                  <span className="text-sm tracking-wide">+{earnedReward.points} XP</span>
+                </div>
+                <div className="flex items-center justify-center gap-2 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 font-bold">
+                  <Sparkles className="size-4 shrink-0" />
+                  <span className="text-sm tracking-wide">+{earnedReward.ratingDelta} Rating</span>
+                </div>
+              </div>
+
+              {earnedReward.isPerfectScore && (
+                <div className="p-2.5 rounded-xl bg-primary/10 border border-primary/20 text-primary text-xs font-bold text-center uppercase tracking-wider">
+                  🎯 100% Accuracy Bonus Awarded! (+50 XP)
+                </div>
+              )}
+
+              {earnedReward.newBadges && earnedReward.newBadges.length > 0 && (
+                <div className="p-3 rounded-xl bg-gradient-to-r from-amber-500/20 via-pink-500/20 to-purple-500/20 border border-amber-500/40 text-foreground text-xs space-y-1 text-center">
+                  <span className="font-extrabold uppercase tracking-wider text-amber-400 block text-[11px]">
+                    🎉 New Achievement Badge Unlocked!
+                  </span>
+                  {earnedReward.newBadges.map((badge) => (
+                    <div key={badge.id} className="font-semibold text-xs flex items-center justify-center gap-1.5">
+                      <span>{badge.icon}</span>
+                      <span className="text-foreground">{badge.name}</span>
+                      <span className="text-muted-foreground">• {badge.description}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Stats Grid */}
           <div className="grid grid-cols-3 gap-3 w-full mb-8">

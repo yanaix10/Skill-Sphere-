@@ -208,6 +208,7 @@ export const submitSessionAnswers = async (req: Request, res: Response): Promise
 		}
 
 		let score = 0;
+		let correctPoints = 0;
 
 		session.questions.forEach(question => {
 			const submittedAnswerId = userAnswers[question.id];
@@ -217,9 +218,24 @@ export const submitSessionAnswers = async (req: Request, res: Response): Promise
 				const correctAnswer = question.answers.find(a => a.isCorrect);
 				if (correctAnswer && correctAnswer.id === submittedAnswerId) {
 					score += 1;
+					const diff = (question.difficulty || "").toLowerCase();
+					if (diff === "hard") {
+						correctPoints += 25;
+					} else if (diff === "medium") {
+						correctPoints += 15;
+					} else {
+						correctPoints += 10;
+					}
 				}
 			}
 		});
+
+		const totalQuestions = session.questions.length;
+		const isPerfectScore = score === totalQuestions && totalQuestions > 0;
+		const baseParticipationPoints = 15;
+		const perfectScoreBonus = isPerfectScore ? (totalQuestions >= 5 ? 50 : 25) : 0;
+		const earnedPoints = baseParticipationPoints + correctPoints + perfectScoreBonus;
+		const ratingDelta = Math.max(5, Math.round(score * 6 + (isPerfectScore ? 20 : 0)));
 
 		session.score = score;
 		session.status = 'completed';
@@ -231,6 +247,14 @@ export const submitSessionAnswers = async (req: Request, res: Response): Promise
 			message: 'Session submitted successfully',
 			score: updatedSession.score,
 			totalQuestions: updatedSession.questions.length,
+			earnedPoints,
+			ratingDelta,
+			isPerfectScore,
+			breakdown: {
+				base: baseParticipationPoints,
+				correct: correctPoints,
+				bonus: perfectScoreBonus,
+			},
 			session: updatedSession 
 		});
 

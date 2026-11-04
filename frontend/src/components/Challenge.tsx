@@ -46,6 +46,7 @@ import { Button } from "@/components/ui/button";
 import { SegmentedControl } from "@/components/ui/segmented-control";
 import { OtpInput } from "@/components/ui/otp-input";
 import { cn } from "@/lib/utils";
+import { updateUserStatsAndBadges, getRankTier, BadgeDefinition } from "@/utils/ranks";
 
 function getPersistentPlayerId(): string {
   if (typeof window === "undefined") return "guest";
@@ -184,6 +185,15 @@ export default function Challenge({
 
   // 1-Minute Timer (60s countdown when second player enters room)
   const [countdown, setCountdown] = useState<number | null>(null);
+
+  // Match points & rating rewards
+  const [matchReward, setMatchReward] = useState<{
+    points: number;
+    ratingDelta: number;
+    outcome: "win" | "loss" | "draw";
+    newBadges: BadgeDefinition[];
+  } | null>(null);
+  const matchRewardedRef = useRef<boolean>(false);
 
   const prevIndexRef = useRef<number>(-1);
   const typingTimeoutRef = useRef<any>(null);
@@ -542,6 +552,8 @@ export default function Challenge({
   }, []);
 
   const handleLeaveRoom = () => {
+    matchRewardedRef.current = false;
+    setMatchReward(null);
     if (typeof window !== "undefined") {
       sessionStorage.removeItem("skillsphere_active_room");
       sessionStorage.removeItem("skillsphere_quiz_mode");
@@ -632,6 +644,50 @@ export default function Challenge({
   const opponent = challengeState?.players?.find((p) => p !== myPlayer);
   const p1Score = myPlayer?.score || 0;
   const p2Score = opponent?.score || 0;
+
+  // Award match points & update user rating when a duel concludes
+  useEffect(() => {
+    if (!winner || matchRewardedRef.current) return;
+    matchRewardedRef.current = true;
+
+    const meWon = Boolean(
+      (winner.socketId && (winner.socketId === socket.id || winner.socketId === socketIdRef.current)) ||
+      (winner.userDetails?.name && winner.userDetails.name === getUserName()) ||
+      p1Score > p2Score
+    );
+
+    const isDraw =
+      winner.socketId === "draw" ||
+      winner.userDetails?.name?.toLowerCase().includes("draw") ||
+      p1Score === p2Score;
+
+    const outcome: "win" | "loss" | "draw" = isDraw ? "draw" : meWon ? "win" : "loss";
+    const points = outcome === "win" ? 100 + p1Score * 15 : outcome === "draw" ? 40 + p1Score * 10 : 20 + p1Score * 10;
+    const ratingDelta = outcome === "win" ? 30 : outcome === "draw" ? 5 : -10;
+
+    const currentTrack = challengeConfig?.gameMode === "webdev_arena" ? "webdev_arena" : "dsa_sprint";
+
+    updateUserStatsAndBadges({
+      pointsDelta: points,
+      ratingDelta,
+      duelWon: outcome === "win",
+      duelLost: outcome === "loss",
+      duelDraw: outcome === "draw",
+      track: currentTrack,
+    })
+      .then((res) => {
+        setMatchReward({
+          points,
+          ratingDelta,
+          outcome,
+          newBadges: res.newBadgesUnlocked || [],
+        });
+      })
+      .catch((err) => {
+        console.error("Failed to update user stats for match outcome:", err);
+        setMatchReward({ points, ratingDelta, outcome, newBadges: [] });
+      });
+  }, [winner, p1Score, p2Score, challengeConfig?.gameMode]);
 
   const fallbackQuestions = (gameMode === "webdev_arena" || gameModeRef.current === "webdev_arena")
     ? (defaultWebdevQuestions as unknown as Question[])
@@ -1000,6 +1056,47 @@ export default function Challenge({
                     <span className="font-display font-bold text-3xl text-rose-500 tabular-nums">{p2Score}</span>
                   </div>
                 </div>
+
+                {/* Match Rewards & Rating Delta */}
+                {matchReward && (
+                  <div className="space-y-2">
+                    <div className="grid grid-cols-2 gap-2.5">
+                      <div className="flex items-center justify-center gap-1.5 p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-500 font-bold text-xs">
+                        <Zap className="size-4 shrink-0" />
+                        <span>+{matchReward.points} XP Earned</span>
+                      </div>
+                      <div
+                        className={cn(
+                          "flex items-center justify-center gap-1.5 p-2.5 rounded-xl border font-bold text-xs",
+                          matchReward.ratingDelta >= 0
+                            ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-500"
+                            : "bg-rose-500/10 border-rose-500/20 text-rose-500"
+                        )}
+                      >
+                        <Sparkles className="size-4 shrink-0" />
+                        <span>
+                          {matchReward.ratingDelta >= 0
+                            ? `+${matchReward.ratingDelta} Rating`
+                            : `${matchReward.ratingDelta} Rating`}
+                        </span>
+                      </div>
+                    </div>
+
+                    {matchReward.newBadges && matchReward.newBadges.length > 0 && (
+                      <div className="p-2.5 rounded-xl bg-gradient-to-r from-amber-500/20 via-pink-500/20 to-purple-500/20 border border-amber-500/40 text-foreground text-xs text-center space-y-1">
+                        <span className="font-extrabold uppercase tracking-wider text-amber-400 block text-[10px]">
+                          🎉 New Duel Badge Unlocked!
+                        </span>
+                        {matchReward.newBadges.map((badge) => (
+                          <div key={badge.id} className="font-semibold text-xs flex items-center justify-center gap-1.5">
+                            <span>{badge.icon}</span>
+                            <span>{badge.name}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 <Button
                   onClick={handleLeaveRoom}
