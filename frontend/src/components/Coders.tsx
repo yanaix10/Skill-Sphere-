@@ -138,18 +138,20 @@ const Coders: React.FC = () => {
           }
         }
 
-        // Merge baseline competitors if pool is small
+        // Only merge baseline competitors if fewer than 3 real users exist
         const finalPool = [...firestoreUsers];
-        BENCHMARK_CODERS.forEach((bench, i) => {
-          const benchId = `benchmark_${i + 1}`;
-          if (!finalPool.some((u) => u.name === bench.name)) {
-            finalPool.push({
-              ...bench,
-              id: benchId,
-              isCurrentUser: false,
-            });
-          }
-        });
+        if (firestoreUsers.length < 3) {
+          BENCHMARK_CODERS.forEach((bench, i) => {
+            const benchId = `benchmark_${i + 1}`;
+            if (!finalPool.some((u) => u.name === bench.name)) {
+              finalPool.push({
+                ...bench,
+                id: benchId,
+                isCurrentUser: false,
+              });
+            }
+          });
+        }
 
         // Sort descending by rating (or points)
         finalPool.sort((a, b) => b.rating - a.rating);

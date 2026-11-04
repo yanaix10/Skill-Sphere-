@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { db, auth } from '../firebase';
 import { doc, getDoc } from 'firebase/firestore';
+import HomeSidebar from '../components/HomeSidebar';
 
 const HomePage: React.FC = () => {
   const [fullName, setFullName] = useState<string>("User");
@@ -26,8 +27,12 @@ const HomePage: React.FC = () => {
   }, []);
 
   return (
-    <div className="h-full w-full flex flex-col bg-background overflow-hidden text-foreground transition-colors duration-200">
-      <div className="flex-1 flex flex-col items-center justify-center text-center p-5">
+    <div className="h-full w-full flex bg-background overflow-hidden text-foreground transition-colors duration-200">
+      {/* Left Sidebar */}
+      <HomeSidebar />
+
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col items-center justify-center text-center p-5 overflow-auto">
         <h2 className="text-muted-foreground text-xl font-medium mb-2">Welcome {fullName}</h2>
         <h1 className="text-[clamp(3rem,10vw,5.5rem)] font-black text-primary m-0 leading-[1.1] uppercase transition-transform duration-300 hover:scale-105 filter drop-shadow-[0_0_15px_rgba(2,132,199,0.25)] dark:drop-shadow-[0_0_15px_rgba(0,242,254,0.3)]">
           Skill Sphere <br />
