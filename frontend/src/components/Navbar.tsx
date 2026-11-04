@@ -132,8 +132,18 @@ export default function Navbar() {
             </div>
 
             {/* Logo */}
-            <Link to="/" className="text-primary hover:text-primary/90 font-bold text-xl no-underline tracking-tight">
-              SkillSphere
+            <Link
+              to="/"
+              className="flex items-center gap-2.5 text-foreground hover:opacity-95 font-bold text-xl no-underline tracking-tight group"
+            >
+              <img
+                src="/logo.png"
+                alt="SkillSphere Logo"
+                className="size-7 rounded-full object-contain shrink-0 transition-transform duration-200 group-hover:scale-105 shadow-xs"
+              />
+              <span className="font-display font-bold tracking-tight text-foreground text-lg">
+                SkillSphere
+              </span>
             </Link>
 
             {/* Desktop Navigation menu from navbar.txt */}
