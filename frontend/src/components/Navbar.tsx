@@ -25,7 +25,7 @@ import ProfileDialog from "@/components/ui/profile-dialog";
 import { useTheme } from "../context/ThemeContext";
 
 const navigationLinks = [
-  { href: "/", label: "Home" },
+  { href: "/dashboard", label: "Home" },
   { href: "/quizzes", label: "Quizzes & Duels" },
   { href: "/friends", label: "Friends" },
 ];

@@ -15,7 +15,7 @@ import {
   Mountain,
   Waves,
   Trees,
-  Sparkles,
+  Sliders,
   X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -549,7 +549,7 @@ export const DynamicWallpaper: React.FC<DynamicWallpaperProps> = ({ children }) 
         <div className="absolute bottom-12 right-4 z-40 w-80 p-3.5 rounded-2xl bg-card/95 border border-border shadow-2xl backdrop-blur-md text-card-foreground space-y-3.5 animate-in zoom-in-95 duration-150">
           <div className="flex items-center justify-between border-b border-border/80 pb-2">
             <div className="flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-primary" />
+              <Sliders className="w-4 h-4 text-primary" />
               <span className="text-xs font-bold uppercase tracking-wider">Dynamic Wallpaper Engine</span>
             </div>
             <button

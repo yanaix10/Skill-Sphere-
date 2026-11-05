@@ -4,6 +4,7 @@ import { app } from './firebase';
 import { getAuth, onAuthStateChanged, User } from 'firebase/auth';
 import SignupCard from './components/SignupCard';
 import HomePage from './pages/HomePage';
+import DashboardPage from './pages/DashboardPage';
 import Profile from './components/Profile';
 import Navbar from './components/Navbar';
 import Friends from './pages/Friends';
@@ -45,6 +46,8 @@ const router = createBrowserRouter([
     errorElement: <RootErrorBoundary />,
     children: [
       { path: "/", element: <HomePage /> },
+      { path: "/dashboard", element: <DashboardPage /> },
+      { path: "/home", element: <DashboardPage /> },
       { path: "/profile", element: <Profile /> },
       { path: "/friends", element: <Friends /> },
       { path: "/quizzes", element: <Quizzes /> },
