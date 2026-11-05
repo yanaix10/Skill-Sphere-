@@ -2,17 +2,19 @@ import React, { useState, useEffect } from "react";
 import {
   Trophy,
   ExternalLink,
-  RefreshCw,
   Search,
   Star,
   GitFork,
-  CheckCircle2,
   AlertCircle,
   TrendingUp,
-  Swords,
   Award,
+  UserCheck,
+  Edit2,
+  X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { auth, db } from "../../firebase";
+import { doc, getDoc, updateDoc } from "firebase/firestore";
 
 const GithubIcon: React.FC<{ className?: string }> = ({ className }) => (
   <svg className={className} viewBox="0 0 24 24" fill="currentColor">
@@ -50,7 +52,6 @@ interface ChessUser {
   name?: string;
   avatar?: string;
   title?: string;
-  country?: string;
   url: string;
 }
 
@@ -76,28 +77,60 @@ interface ChessStats {
 }
 
 export const DeveloperActivityCard: React.FC<{ compact?: boolean }> = ({ compact = false }) => {
-  // GitHub State
+  // GitHub State - no hardcoded user, checks local storage / user profile
   const [githubUsername, setGithubUsername] = useState<string>(() => {
-    return localStorage.getItem("skillsphere_github_username") || "torvalds";
+    return localStorage.getItem("skillsphere_github_username") || "";
   });
-  const [githubInput, setGithubInput] = useState(githubUsername);
+  const [githubInput, setGithubInput] = useState("");
   const [githubData, setGithubData] = useState<GitHubUser | null>(null);
   const [githubRepos, setGithubRepos] = useState<GitHubRepo[]>([]);
   const [githubLoading, setGithubLoading] = useState(false);
   const [githubError, setGithubError] = useState<string | null>(null);
+  const [isEditingGithub, setIsEditingGithub] = useState(false);
 
-  // Chess.com State
+  // Chess.com State - no hardcoded user
   const [chessUsername, setChessUsername] = useState<string>(() => {
-    return localStorage.getItem("skillsphere_chess_username") || "hikaru";
+    return localStorage.getItem("skillsphere_chess_username") || "";
   });
-  const [chessInput, setChessInput] = useState(chessUsername);
+  const [chessInput, setChessInput] = useState("");
   const [chessUser, setChessUser] = useState<ChessUser | null>(null);
   const [chessStats, setChessStats] = useState<ChessStats | null>(null);
   const [chessLoading, setChessLoading] = useState(false);
   const [chessError, setChessError] = useState<string | null>(null);
+  const [isEditingChess, setIsEditingChess] = useState(false);
 
   // Active Tab
   const [activeTab, setActiveTab] = useState<"github" | "chess">("github");
+
+  // Load from user profile on mount
+  useEffect(() => {
+    const initProfiles = async () => {
+      let savedGh = localStorage.getItem("skillsphere_github_username") || "";
+      let savedChess = localStorage.getItem("skillsphere_chess_username") || "";
+
+      const user = auth.currentUser;
+      if (user && user.uid !== "test-user-123") {
+        try {
+          const snap = await getDoc(doc(db, "users", user.uid));
+          if (snap.exists()) {
+            const data = snap.data();
+            if (data.githubUsername && !savedGh) savedGh = data.githubUsername;
+            if (data.chessUsername && !savedChess) savedChess = data.chessUsername;
+          }
+        } catch {}
+      }
+
+      if (savedGh) {
+        setGithubUsername(savedGh);
+        fetchGithub(savedGh);
+      }
+      if (savedChess) {
+        setChessUsername(savedChess);
+        fetchChess(savedChess);
+      }
+    };
+    initProfiles();
+  }, []);
 
   /* ─── Fetch GitHub Data ─── */
   const fetchGithub = async (username: string) => {
@@ -107,14 +140,14 @@ export const DeveloperActivityCard: React.FC<{ compact?: boolean }> = ({ compact
     try {
       const userRes = await fetch(`https://api.github.com/users/${encodeURIComponent(username.trim())}`);
       if (!userRes.ok) {
-        if (userRes.status === 404) throw new Error("GitHub user not found");
+        if (userRes.status === 404) throw new Error("GitHub profile not found");
         throw new Error("Could not load GitHub profile");
       }
       const userData: GitHubUser = await userRes.json();
       setGithubData(userData);
 
       const reposRes = await fetch(
-        `https://api.github.com/users/${encodeURIComponent(username.trim())}/repos?sort=updated&per_page=4`
+        `https://api.github.com/users/${encodeURIComponent(username.trim())}/repos?sort=updated&per_page=3`
       );
       if (reposRes.ok) {
         const reposData = await reposRes.json();
@@ -124,8 +157,9 @@ export const DeveloperActivityCard: React.FC<{ compact?: boolean }> = ({ compact
       }
       localStorage.setItem("skillsphere_github_username", username.trim());
       setGithubUsername(username.trim());
+      setIsEditingGithub(false);
     } catch (err: any) {
-      setGithubError(err.message || "Failed to fetch GitHub");
+      setGithubError(err.message || "Failed to load GitHub");
     } finally {
       setGithubLoading(false);
     }
@@ -154,51 +188,37 @@ export const DeveloperActivityCard: React.FC<{ compact?: boolean }> = ({ compact
       }
       localStorage.setItem("skillsphere_chess_username", username.trim().toLowerCase());
       setChessUsername(username.trim().toLowerCase());
+      setIsEditingChess(false);
     } catch (err: any) {
-      setChessError(err.message || "Failed to fetch Chess.com");
+      setChessError(err.message || "Failed to load Chess.com");
     } finally {
       setChessLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchGithub(githubUsername);
-    fetchChess(chessUsername);
-  }, []);
-
-  const handleSearchGithub = (e: React.FormEvent) => {
-    e.preventDefault();
-    fetchGithub(githubInput);
-  };
-
-  const handleSearchChess = (e: React.FormEvent) => {
-    e.preventDefault();
-    fetchChess(chessInput);
-  };
-
   return (
     <div className="w-full rounded-2xl bg-card border border-border overflow-hidden shadow-xs text-foreground transition-colors">
-      {/* Top Header & Tab Switcher */}
+      {/* Bento Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border-b border-border bg-secondary/30 gap-3">
         <div>
-          <h3 className="text-base font-bold text-foreground flex items-center gap-2">
+          <h3 className="text-[14px] font-semibold text-[#E2E8F0] flex items-center gap-2">
             <TrendingUp className="w-4 h-4 text-primary" />
             Developer & Gaming Activity
           </h3>
-          <p className="text-xs text-muted-foreground">
-            Live metrics from your GitHub repositories and Chess.com rating history
+          <p className="text-[12px] text-[#94A3B8]">
+            Connected GitHub contribution metrics and Chess.com performance
           </p>
         </div>
 
         {/* Tab Buttons */}
-        <div className="flex items-center gap-1.5 p-1 rounded-xl bg-secondary/70 border border-border shrink-0">
+        <div className="flex items-center gap-1 p-1 rounded-xl bg-secondary border border-border shrink-0">
           <button
             onClick={() => setActiveTab("github")}
             className={cn(
-              "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer border-none",
+              "flex items-center gap-1.5 px-3 py-1 rounded-lg text-[12px] font-medium transition-all cursor-pointer border-none",
               activeTab === "github"
-                ? "bg-card text-foreground shadow-xs"
-                : "text-muted-foreground hover:text-foreground bg-transparent"
+                ? "bg-card text-white shadow-xs font-semibold"
+                : "text-[#94A3B8] hover:text-white bg-transparent"
             )}
           >
             <GithubIcon className="w-3.5 h-3.5" />
@@ -207,10 +227,10 @@ export const DeveloperActivityCard: React.FC<{ compact?: boolean }> = ({ compact
           <button
             onClick={() => setActiveTab("chess")}
             className={cn(
-              "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer border-none",
+              "flex items-center gap-1.5 px-3 py-1 rounded-lg text-[12px] font-medium transition-all cursor-pointer border-none",
               activeTab === "chess"
-                ? "bg-card text-foreground shadow-xs"
-                : "text-muted-foreground hover:text-foreground bg-transparent"
+                ? "bg-card text-white shadow-xs font-semibold"
+                : "text-[#94A3B8] hover:text-white bg-transparent"
             )}
           >
             <Trophy className="w-3.5 h-3.5 text-amber-500" />
@@ -219,164 +239,147 @@ export const DeveloperActivityCard: React.FC<{ compact?: boolean }> = ({ compact
         </div>
       </div>
 
-      <div className="p-4 sm:p-6 space-y-6">
+      <div className="p-4 sm:p-5 space-y-4">
         {/* ─── GITHUB SECTION ─── */}
         {activeTab === "github" && (
-          <div className="space-y-6 animate-in fade-in duration-200">
-            {/* Search Input Bar */}
-            <form onSubmit={handleSearchGithub} className="flex gap-2">
-              <div className="relative flex-1">
-                <GithubIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <input
-                  type="text"
-                  value={githubInput}
-                  onChange={(e) => setGithubInput(e.target.value)}
-                  placeholder="Enter GitHub username (e.g. torvalds)..."
-                  className="w-full pl-9 pr-3 py-2 bg-background border border-border rounded-xl text-xs sm:text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-                />
+          <div className="space-y-4">
+            {/* If no GitHub username set or editing, show connect prompt */}
+            {(!githubUsername || isEditingGithub) ? (
+              <div className="p-4 rounded-xl border border-dashed border-border bg-secondary/20 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-xs font-semibold text-[#E2E8F0]">
+                    <GithubIcon className="w-4 h-4 text-primary" />
+                    <span>Connect your GitHub Account</span>
+                  </div>
+                  {githubUsername && (
+                    <button
+                      onClick={() => setIsEditingGithub(false)}
+                      className="p-1 text-[#94A3B8] hover:text-white cursor-pointer border-none bg-transparent"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+                <p className="text-[12px] text-[#94A3B8]">
+                  Enter your GitHub username to display your annual contribution heatmap and repos.
+                </p>
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    fetchGithub(githubInput);
+                  }}
+                  className="flex gap-2"
+                >
+                  <input
+                    type="text"
+                    value={githubInput}
+                    onChange={(e) => setGithubInput(e.target.value)}
+                    placeholder="e.g. torvalds or your username"
+                    className="flex-1 px-3 py-1.5 rounded-xl bg-background border border-border text-[12px] text-white focus:outline-none focus:ring-1 focus:ring-primary"
+                  />
+                  <button
+                    type="submit"
+                    disabled={githubLoading}
+                    className="px-4 py-1.5 rounded-xl bg-primary text-primary-foreground text-[10px] font-bold uppercase tracking-wider hover:bg-primary/90 transition-all cursor-pointer border-none"
+                  >
+                    {githubLoading ? "Loading..." : "Connect"}
+                  </button>
+                </form>
               </div>
-              <button
-                type="submit"
-                disabled={githubLoading}
-                className="px-4 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 hover:bg-primary/90 transition-colors cursor-pointer border-none"
-              >
-                <Search className="w-3.5 h-3.5" />
-                <span>{githubLoading ? "Loading..." : "Load"}</span>
-              </button>
-            </form>
+            ) : null}
 
             {githubError && (
-              <div className="p-3 rounded-xl bg-destructive/10 border border-destructive/30 text-destructive text-xs flex items-center gap-2">
+              <div className="p-2.5 rounded-xl bg-destructive/10 border border-destructive/30 text-destructive text-[12px] flex items-center gap-2">
                 <AlertCircle className="w-4 h-4 shrink-0" />
                 <span>{githubError}</span>
               </div>
             )}
 
+            {/* Concise GitHub Display */}
             {githubData && (
-              <div className="space-y-6">
-                {/* Profile Overview Card */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-xl bg-secondary/30 border border-border gap-4">
-                  <div className="flex items-center gap-3.5">
+              <div className="space-y-3">
+                {/* Compact Identity Row */}
+                <div className="flex items-center justify-between p-3 rounded-xl bg-secondary/30 border border-border">
+                  <div className="flex items-center gap-3">
                     <img
                       src={githubData.avatar_url}
                       alt={githubData.login}
-                      className="w-14 h-14 rounded-full border-2 border-border shadow-xs"
+                      className="w-10 h-10 rounded-full border border-border object-cover"
                     />
                     <div>
                       <div className="flex items-center gap-2">
-                        <h4 className="font-bold text-foreground text-base">{githubData.name || githubData.login}</h4>
-                        <span className="text-xs text-muted-foreground font-mono">@{githubData.login}</span>
+                        <span className="text-[14px] font-semibold text-white">{githubData.name || githubData.login}</span>
+                        <span className="text-[11px] text-[#94A3B8] font-mono">@{githubData.login}</span>
                       </div>
-                      {githubData.bio && (
-                        <p className="text-xs text-muted-foreground mt-0.5 max-w-md line-clamp-2">{githubData.bio}</p>
-                      )}
+                      <div className="flex items-center gap-3 text-[11px] text-[#94A3B8] font-mono tabular-nums mt-0.5">
+                        <span>{githubData.public_repos} repos</span>
+                        <span>•</span>
+                        <span>{githubData.followers} followers</span>
+                      </div>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-3">
-                    <div className="text-center px-3 py-1.5 rounded-lg bg-card border border-border">
-                      <div className="text-xs font-mono font-bold text-foreground">{githubData.public_repos}</div>
-                      <div className="text-[10px] text-muted-foreground uppercase">Repos</div>
-                    </div>
-                    <div className="text-center px-3 py-1.5 rounded-lg bg-card border border-border">
-                      <div className="text-xs font-mono font-bold text-foreground">{githubData.followers}</div>
-                      <div className="text-[10px] text-muted-foreground uppercase">Followers</div>
-                    </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => {
+                        setGithubInput(githubUsername);
+                        setIsEditingGithub(true);
+                      }}
+                      className="p-1.5 rounded-lg text-[#94A3B8] hover:text-white hover:bg-secondary transition-colors cursor-pointer border-none bg-transparent"
+                      title="Switch GitHub Account"
+                    >
+                      <Edit2 className="w-3.5 h-3.5" />
+                    </button>
                     <a
                       href={githubData.html_url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="p-2 rounded-xl bg-secondary hover:bg-secondary/80 text-foreground transition-colors border border-border"
-                      title="View on GitHub"
+                      className="p-1.5 rounded-lg text-[#94A3B8] hover:text-white hover:bg-secondary transition-colors"
+                      title="Open on GitHub"
                     >
-                      <ExternalLink className="w-4 h-4" />
+                      <ExternalLink className="w-3.5 h-3.5" />
                     </a>
                   </div>
                 </div>
 
-                {/* Contribution Activity Chart Matrix */}
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                      <GitFork className="w-3.5 h-3.5 text-emerald-500" />
-                      Annual Contribution Heatmap
-                    </h4>
-                    <span className="text-[11px] text-muted-foreground font-mono">Activity Graph</span>
+                {/* Short Contribution Heatmap */}
+                <div className="p-3 rounded-xl bg-secondary/20 border border-border overflow-x-auto">
+                  <div className="min-w-[500px]">
+                    <img
+                      src={`https://ghchart.rshah.org/00f2fe/${githubData.login}`}
+                      alt={`${githubData.login}'s Contribution Chart`}
+                      className="w-full h-auto dark:invert dark:hue-rotate-180"
+                      onError={(e) => {
+                        (e.target as HTMLElement).style.display = "none";
+                      }}
+                    />
                   </div>
-
-                  <div className="p-4 rounded-xl bg-secondary/20 border border-border overflow-x-auto">
-                    <div className="min-w-[640px]">
-                      {/* GitHub Public Chart Embed or Fallback matrix */}
-                      <img
-                        src={`https://ghchart.rshah.org/10b981/${githubData.login}`}
-                        alt={`${githubData.login}'s GitHub Contribution Chart`}
-                        className="w-full h-auto rounded-sm filter dark:invert dark:hue-rotate-180"
-                        onError={(e) => {
-                          // Fallback to stylized grid if external CDN is blocked
-                          (e.target as HTMLElement).style.display = "none";
-                        }}
-                      />
-                    </div>
-                    <div className="flex items-center justify-between text-[11px] text-muted-foreground mt-3 pt-2 border-t border-border/60">
-                      <span>Recent 12 Months Contributions</span>
-                      <div className="flex items-center gap-1.5">
-                        <span>Less</span>
-                        <span className="w-2.5 h-2.5 rounded-xs bg-emerald-900/30" />
-                        <span className="w-2.5 h-2.5 rounded-xs bg-emerald-600/50" />
-                        <span className="w-2.5 h-2.5 rounded-xs bg-emerald-500" />
-                        <span className="w-2.5 h-2.5 rounded-xs bg-emerald-400" />
-                        <span>More</span>
-                      </div>
-                    </div>
+                  <div className="flex items-center justify-between text-[10px] text-[#94A3B8] mt-2 pt-1.5 border-t border-border/50 font-mono">
+                    <span>12-Month Contribution Timeline</span>
+                    <span>Active Developer Heatmap</span>
                   </div>
                 </div>
 
-                {/* Top Repositories */}
+                {/* Compact Recent Repositories */}
                 {githubRepos.length > 0 && (
-                  <div className="space-y-2">
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                      Featured Repositories
-                    </h4>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      {githubRepos.map((repo) => (
-                        <a
-                          key={repo.id}
-                          href={repo.html_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="p-3.5 rounded-xl bg-secondary/30 border border-border hover:border-primary/50 transition-all block group no-underline"
-                        >
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs font-bold text-foreground group-hover:text-primary transition-colors flex items-center gap-1.5 truncate">
-                              <GitFork className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-                              <span className="truncate">{repo.name}</span>
-                            </span>
-                            <ExternalLink className="w-3 h-3 text-muted-foreground group-hover:text-foreground shrink-0" />
-                          </div>
-                          {repo.description && (
-                            <p className="text-[11px] text-muted-foreground mt-1.5 line-clamp-2">
-                              {repo.description}
-                            </p>
-                          )}
-                          <div className="flex items-center gap-3 mt-3 text-[10px] text-muted-foreground font-mono">
-                            {repo.language && (
-                              <span className="flex items-center gap-1">
-                                <span className="w-2 h-2 rounded-full bg-primary" />
-                                {repo.language}
-                              </span>
-                            )}
-                            <span className="flex items-center gap-1">
-                              <Star className="w-3 h-3 text-amber-500 fill-amber-500" />
-                              {repo.stargazers_count}
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <GitFork className="w-3 h-3" />
-                              {repo.forks_count}
-                            </span>
-                          </div>
-                        </a>
-                      ))}
-                    </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    {githubRepos.map((repo) => (
+                      <a
+                        key={repo.id}
+                        href={repo.html_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="p-2.5 rounded-lg bg-secondary/30 border border-border hover:border-primary/40 transition-colors block no-underline group"
+                      >
+                        <div className="text-[12px] font-semibold text-[#E2E8F0] group-hover:text-primary transition-colors truncate">
+                          {repo.name}
+                        </div>
+                        <div className="flex items-center gap-2 mt-1.5 text-[10px] text-[#94A3B8] font-mono tabular-nums">
+                          {repo.language && <span>{repo.language}</span>}
+                          <span>★ {repo.stargazers_count}</span>
+                        </div>
+                      </a>
+                    ))}
                   </div>
                 )}
               </div>
@@ -386,188 +389,151 @@ export const DeveloperActivityCard: React.FC<{ compact?: boolean }> = ({ compact
 
         {/* ─── CHESS.COM SECTION ─── */}
         {activeTab === "chess" && (
-          <div className="space-y-6 animate-in fade-in duration-200">
-            {/* Search Input Bar */}
-            <form onSubmit={handleSearchChess} className="flex gap-2">
-              <div className="relative flex-1">
-                <Trophy className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-amber-500" />
-                <input
-                  type="text"
-                  value={chessInput}
-                  onChange={(e) => setChessInput(e.target.value)}
-                  placeholder="Enter Chess.com username (e.g. hikaru, magnuscarlsen)..."
-                  className="w-full pl-9 pr-3 py-2 bg-background border border-border rounded-xl text-xs sm:text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-                />
+          <div className="space-y-4">
+            {(!chessUsername || isEditingChess) ? (
+              <div className="p-4 rounded-xl border border-dashed border-border bg-secondary/20 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-xs font-semibold text-[#E2E8F0]">
+                    <Trophy className="w-4 h-4 text-amber-500" />
+                    <span>Connect your Chess.com Profile</span>
+                  </div>
+                  {chessUsername && (
+                    <button
+                      onClick={() => setIsEditingChess(false)}
+                      className="p-1 text-[#94A3B8] hover:text-white cursor-pointer border-none bg-transparent"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+                <p className="text-[12px] text-[#94A3B8]">
+                  Enter your Chess.com handle to fetch real-time Rapid, Blitz, Bullet ratings and win ratios.
+                </p>
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    fetchChess(chessInput);
+                  }}
+                  className="flex gap-2"
+                >
+                  <input
+                    type="text"
+                    value={chessInput}
+                    onChange={(e) => setChessInput(e.target.value)}
+                    placeholder="e.g. hikaru or your username"
+                    className="flex-1 px-3 py-1.5 rounded-xl bg-background border border-border text-[12px] text-white focus:outline-none focus:ring-1 focus:ring-primary"
+                  />
+                  <button
+                    type="submit"
+                    disabled={chessLoading}
+                    className="px-4 py-1.5 rounded-xl bg-primary text-primary-foreground text-[10px] font-bold uppercase tracking-wider hover:bg-primary/90 transition-all cursor-pointer border-none"
+                  >
+                    {chessLoading ? "Loading..." : "Connect"}
+                  </button>
+                </form>
               </div>
-              <button
-                type="submit"
-                disabled={chessLoading}
-                className="px-4 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 hover:bg-primary/90 transition-colors cursor-pointer border-none"
-              >
-                <Search className="w-3.5 h-3.5" />
-                <span>{chessLoading ? "Loading..." : "Load"}</span>
-              </button>
-            </form>
+            ) : null}
 
             {chessError && (
-              <div className="p-3 rounded-xl bg-destructive/10 border border-destructive/30 text-destructive text-xs flex items-center gap-2">
+              <div className="p-2.5 rounded-xl bg-destructive/10 border border-destructive/30 text-destructive text-[12px] flex items-center gap-2">
                 <AlertCircle className="w-4 h-4 shrink-0" />
                 <span>{chessError}</span>
               </div>
             )}
 
             {chessUser && (
-              <div className="space-y-6">
-                {/* Chess User Profile Overview */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-xl bg-secondary/30 border border-border gap-4">
-                  <div className="flex items-center gap-3.5">
+              <div className="space-y-3">
+                {/* Identity Header */}
+                <div className="flex items-center justify-between p-3 rounded-xl bg-secondary/30 border border-border">
+                  <div className="flex items-center gap-3">
                     {chessUser.avatar ? (
                       <img
                         src={chessUser.avatar}
                         alt={chessUser.username}
-                        className="w-14 h-14 rounded-xl border-2 border-border shadow-xs object-cover"
+                        className="w-10 h-10 rounded-xl border border-border object-cover"
                       />
                     ) : (
-                      <div className="w-14 h-14 rounded-xl bg-amber-500/10 border-2 border-border flex items-center justify-center text-amber-500 font-bold text-lg">
+                      <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-border flex items-center justify-center text-amber-500 font-bold text-sm">
                         ♟
                       </div>
                     )}
                     <div>
                       <div className="flex items-center gap-2">
                         {chessUser.title && (
-                          <span className="px-1.5 py-0.5 rounded-sm bg-destructive text-destructive-foreground text-[10px] font-extrabold tracking-wider">
+                          <span className="px-1.5 py-0.2 rounded-sm bg-destructive text-destructive-foreground text-[9px] font-bold uppercase">
                             {chessUser.title}
                           </span>
                         )}
-                        <h4 className="font-bold text-foreground text-base">{chessUser.name || chessUser.username}</h4>
-                        <span className="text-xs text-muted-foreground font-mono">@{chessUser.username}</span>
+                        <span className="text-[14px] font-semibold text-white">{chessUser.name || chessUser.username}</span>
+                        <span className="text-[11px] text-[#94A3B8] font-mono">@{chessUser.username}</span>
                       </div>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        Official Chess.com Player Profile
-                      </p>
+                      <p className="text-[11px] text-[#94A3B8]">Verified Chess.com Player Profile</p>
                     </div>
                   </div>
 
-                  <a
-                    href={chessUser.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-secondary hover:bg-secondary/80 text-foreground transition-colors border border-border text-xs font-semibold self-start sm:self-auto no-underline"
-                  >
-                    <span>View on Chess.com</span>
-                    <ExternalLink className="w-3.5 h-3.5" />
-                  </a>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => {
+                        setChessInput(chessUsername);
+                        setIsEditingChess(true);
+                      }}
+                      className="p-1.5 rounded-lg text-[#94A3B8] hover:text-white hover:bg-secondary transition-colors cursor-pointer border-none bg-transparent"
+                      title="Switch Chess.com Account"
+                    >
+                      <Edit2 className="w-3.5 h-3.5" />
+                    </button>
+                    <a
+                      href={chessUser.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="p-1.5 rounded-lg text-[#94A3B8] hover:text-white hover:bg-secondary transition-colors"
+                      title="View on Chess.com"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </a>
+                  </div>
                 </div>
 
                 {/* Ratings Grid */}
                 {chessStats && (
-                  <div className="space-y-4">
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                      <Award className="w-3.5 h-3.5 text-amber-500" />
-                      Current Ratings & Game Records
-                    </h4>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
-                      {/* Rapid */}
-                      <div className="p-3.5 rounded-xl bg-secondary/30 border border-border">
-                        <div className="flex items-center justify-between text-muted-foreground text-xs mb-1">
-                          <span className="font-semibold uppercase tracking-wider text-[10px]">Rapid</span>
-                          <span className="text-[10px] font-mono">Best: {chessStats.chess_rapid?.best?.rating || "N/A"}</span>
-                        </div>
-                        <div className="text-2xl font-black font-mono text-emerald-500">
-                          {chessStats.chess_rapid?.last?.rating || "Unrated"}
-                        </div>
-                        {chessStats.chess_rapid?.record && (
-                          <div className="text-[10px] text-muted-foreground mt-1 flex gap-2 font-mono">
-                            <span className="text-emerald-500 font-bold">{chessStats.chess_rapid.record.win}W</span>
-                            <span className="text-muted-foreground">{chessStats.chess_rapid.record.draw}D</span>
-                            <span className="text-destructive font-bold">{chessStats.chess_rapid.record.loss}L</span>
-                          </div>
-                        )}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    <div className="p-3 rounded-xl bg-secondary/30 border border-border text-center">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-[#94A3B8]">Rapid</span>
+                      <div className="text-[20px] font-bold font-mono tabular-nums text-emerald-400 mt-0.5">
+                        {chessStats.chess_rapid?.last?.rating || "N/A"}
                       </div>
-
-                      {/* Blitz */}
-                      <div className="p-3.5 rounded-xl bg-secondary/30 border border-border">
-                        <div className="flex items-center justify-between text-muted-foreground text-xs mb-1">
-                          <span className="font-semibold uppercase tracking-wider text-[10px]">Blitz</span>
-                          <span className="text-[10px] font-mono">Best: {chessStats.chess_blitz?.best?.rating || "N/A"}</span>
-                        </div>
-                        <div className="text-2xl font-black font-mono text-amber-500">
-                          {chessStats.chess_blitz?.last?.rating || "Unrated"}
-                        </div>
-                        {chessStats.chess_blitz?.record && (
-                          <div className="text-[10px] text-muted-foreground mt-1 flex gap-2 font-mono">
-                            <span className="text-emerald-500 font-bold">{chessStats.chess_blitz.record.win}W</span>
-                            <span className="text-muted-foreground">{chessStats.chess_blitz.record.draw}D</span>
-                            <span className="text-destructive font-bold">{chessStats.chess_blitz.record.loss}L</span>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Bullet */}
-                      <div className="p-3.5 rounded-xl bg-secondary/30 border border-border">
-                        <div className="flex items-center justify-between text-muted-foreground text-xs mb-1">
-                          <span className="font-semibold uppercase tracking-wider text-[10px]">Bullet</span>
-                          <span className="text-[10px] font-mono">Best: {chessStats.chess_bullet?.best?.rating || "N/A"}</span>
-                        </div>
-                        <div className="text-2xl font-black font-mono text-cyan-500">
-                          {chessStats.chess_bullet?.last?.rating || "Unrated"}
-                        </div>
-                        {chessStats.chess_bullet?.record && (
-                          <div className="text-[10px] text-muted-foreground mt-1 flex gap-2 font-mono">
-                            <span className="text-emerald-500 font-bold">{chessStats.chess_bullet.record.win}W</span>
-                            <span className="text-muted-foreground">{chessStats.chess_bullet.record.draw}D</span>
-                            <span className="text-destructive font-bold">{chessStats.chess_bullet.record.loss}L</span>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Tactics / Puzzles */}
-                      <div className="p-3.5 rounded-xl bg-secondary/30 border border-border">
-                        <div className="flex items-center justify-between text-muted-foreground text-xs mb-1">
-                          <span className="font-semibold uppercase tracking-wider text-[10px]">Puzzles</span>
-                          <span className="text-[10px] font-mono">Peak</span>
-                        </div>
-                        <div className="text-2xl font-black font-mono text-purple-500">
-                          {chessStats.tactics?.highest?.rating || "N/A"}
-                        </div>
-                        <div className="text-[10px] text-muted-foreground mt-1">Tactics Rating</div>
+                      <div className="text-[10px] font-mono tabular-nums text-[#94A3B8]">
+                        Peak: {chessStats.chess_rapid?.best?.rating || "—"}
                       </div>
                     </div>
 
-                    {/* Win / Loss / Draw Visual Ratio Bar */}
-                    {chessStats.chess_rapid?.record && (
-                      <div className="p-4 rounded-xl bg-secondary/20 border border-border space-y-2">
-                        {(() => {
-                          const w = chessStats.chess_rapid!.record.win;
-                          const d = chessStats.chess_rapid!.record.draw;
-                          const l = chessStats.chess_rapid!.record.loss;
-                          const total = w + d + l || 1;
-                          const winPct = Math.round((w / total) * 100);
-                          const drawPct = Math.round((d / total) * 100);
-                          const lossPct = 100 - winPct - drawPct;
-
-                          return (
-                            <>
-                              <div className="flex items-center justify-between text-xs font-semibold">
-                                <span className="text-foreground">Rapid Performance Distribution</span>
-                                <span className="font-mono text-muted-foreground">{total} Total Games</span>
-                              </div>
-                              <div className="w-full h-3 rounded-full bg-secondary overflow-hidden flex">
-                                <div style={{ width: `${winPct}%` }} className="bg-emerald-500 h-full" title={`Wins: ${winPct}%`} />
-                                <div style={{ width: `${drawPct}%` }} className="bg-zinc-400 h-full" title={`Draws: ${drawPct}%`} />
-                                <div style={{ width: `${lossPct}%` }} className="bg-destructive h-full" title={`Losses: ${lossPct}%`} />
-                              </div>
-                              <div className="flex items-center justify-between text-[11px] font-mono pt-1">
-                                <span className="text-emerald-500 font-bold">{winPct}% Won ({w})</span>
-                                <span className="text-muted-foreground font-bold">{drawPct}% Draw ({d})</span>
-                                <span className="text-destructive font-bold">{lossPct}% Lost ({l})</span>
-                              </div>
-                            </>
-                          );
-                        })()}
+                    <div className="p-3 rounded-xl bg-secondary/30 border border-border text-center">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-[#94A3B8]">Blitz</span>
+                      <div className="text-[20px] font-bold font-mono tabular-nums text-amber-400 mt-0.5">
+                        {chessStats.chess_blitz?.last?.rating || "N/A"}
                       </div>
-                    )}
+                      <div className="text-[10px] font-mono tabular-nums text-[#94A3B8]">
+                        Peak: {chessStats.chess_blitz?.best?.rating || "—"}
+                      </div>
+                    </div>
+
+                    <div className="p-3 rounded-xl bg-secondary/30 border border-border text-center">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-[#94A3B8]">Bullet</span>
+                      <div className="text-[20px] font-bold font-mono tabular-nums text-cyan-400 mt-0.5">
+                        {chessStats.chess_bullet?.last?.rating || "N/A"}
+                      </div>
+                      <div className="text-[10px] font-mono tabular-nums text-[#94A3B8]">
+                        Peak: {chessStats.chess_bullet?.best?.rating || "—"}
+                      </div>
+                    </div>
+
+                    <div className="p-3 rounded-xl bg-secondary/30 border border-border text-center">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-[#94A3B8]">Tactics</span>
+                      <div className="text-[20px] font-bold font-mono tabular-nums text-purple-400 mt-0.5">
+                        {chessStats.tactics?.highest?.rating || "N/A"}
+                      </div>
+                      <div className="text-[10px] text-[#94A3B8]">Puzzle Rating</div>
+                    </div>
                   </div>
                 )}
               </div>

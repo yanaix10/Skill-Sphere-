@@ -163,20 +163,20 @@ export const DashboardJobs: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-border gap-4">
         <div>
-          <h2 className="text-2xl font-black tracking-tight text-foreground flex items-center gap-2.5">
-            <Briefcase className="w-6 h-6 text-primary" />
+          <h2 className="text-[24px] font-semibold tracking-tight text-white flex items-center gap-2.5">
+            <Briefcase className="w-5 h-5 text-primary" />
             Job & Internship Applications
           </h2>
-          <p className="text-xs text-muted-foreground mt-1">
+          <p className="text-[12px] text-[#94A3B8] mt-1">
             Track interview pipelines, offers, salary details, and application links
           </p>
         </div>
 
         <button
           onClick={() => setShowAddModal(true)}
-          className="px-4 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 hover:bg-primary/90 transition-all shadow-xs cursor-pointer border-none self-start sm:self-auto"
+          className="px-3.5 py-1.5 rounded-lg bg-primary text-primary-foreground text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 hover:bg-primary/90 transition-all shadow-xs cursor-pointer border-none self-start sm:self-auto"
         >
-          <Plus className="w-4 h-4" />
+          <Plus className="w-3.5 h-3.5" />
           <span>New Application</span>
         </button>
       </div>
@@ -192,15 +192,15 @@ export const DashboardJobs: React.FC = () => {
               key={st}
               onClick={() => setFilter(filter === st ? "all" : st)}
               className={cn(
-                "p-3.5 rounded-2xl bg-card border text-left transition-all cursor-pointer shadow-xs",
+                "p-3 rounded-xl bg-card border text-left transition-all cursor-pointer shadow-xs",
                 filter === st ? "ring-2 ring-primary border-primary" : "border-border hover:border-primary/40"
               )}
             >
               <div className="flex items-center justify-between text-xs font-bold">
-                <span className={cn("px-2 py-0.5 rounded-md border text-[10px] uppercase font-mono", style.bg, style.text)}>
+                <span className={cn("px-2 py-0.5 rounded-md border text-[10px] uppercase font-bold tracking-wider", style.bg, style.text)}>
                   {style.label}
                 </span>
-                <span className="font-mono text-base font-black text-foreground">{count}</span>
+                <span className="text-[16px] font-semibold text-white tabular-nums">{count}</span>
               </div>
             </button>
           );
@@ -213,7 +213,7 @@ export const DashboardJobs: React.FC = () => {
           <button
             onClick={() => setFilter("all")}
             className={cn(
-              "px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer border",
+              "px-3 py-1 rounded-lg text-[12px] font-semibold transition-all cursor-pointer border",
               filter === "all"
                 ? "bg-foreground text-background border-foreground font-bold shadow-xs"
                 : "bg-card text-muted-foreground hover:text-foreground border-border"
@@ -226,7 +226,7 @@ export const DashboardJobs: React.FC = () => {
               key={st}
               onClick={() => setFilter(st)}
               className={cn(
-                "px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer border",
+                "px-3 py-1 rounded-lg text-[12px] font-semibold transition-all cursor-pointer border",
                 filter === st
                   ? "bg-foreground text-background border-foreground font-bold shadow-xs"
                   : "bg-card text-muted-foreground hover:text-foreground border-border"
@@ -244,7 +244,7 @@ export const DashboardJobs: React.FC = () => {
             placeholder="Search company or role..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-8 pr-3 py-1.5 bg-background border border-border rounded-xl text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+            className="w-full pl-8 pr-3 py-1.5 bg-background border border-border rounded-lg text-[12px] text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
           />
         </div>
       </div>
@@ -252,31 +252,31 @@ export const DashboardJobs: React.FC = () => {
       {/* Job Cards Grid */}
       <div className="space-y-3">
         {filteredJobs.length === 0 ? (
-          <div className="p-12 text-center rounded-2xl bg-card border border-border text-muted-foreground">
-            <Briefcase className="w-10 h-10 mx-auto text-muted-foreground/40 mb-2" />
-            <p className="text-sm font-semibold">No applications found</p>
-            <p className="text-xs mt-1">Add your target roles and track your application milestones</p>
+          <div className="p-10 text-center rounded-xl bg-card border border-border text-muted-foreground">
+            <Briefcase className="w-8 h-8 mx-auto text-muted-foreground/40 mb-2" />
+            <p className="text-[14px] font-semibold text-[#E2E8F0]">No applications found</p>
+            <p className="text-[12px] text-[#94A3B8] mt-0.5">Add your target roles and track your application milestones</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
             {filteredJobs.map((job) => {
               const style = STATUS_STYLES[job.status] || STATUS_STYLES.saved;
 
               return (
                 <div
                   key={job.id}
-                  className="p-5 rounded-2xl bg-card border border-border hover:border-primary/50 transition-all shadow-xs flex flex-col justify-between space-y-4 group"
+                  className="p-4 rounded-xl bg-card border border-border hover:border-primary/50 transition-all shadow-xs flex flex-col justify-between space-y-3 group"
                 >
-                  <div className="space-y-2">
+                  <div className="space-y-1.5">
                     <div className="flex items-start justify-between gap-2">
                       <div>
-                        <div className="flex items-center gap-2">
-                          <Building2 className="w-4 h-4 text-primary" />
-                          <span className="text-xs font-bold text-primary uppercase tracking-wide">
+                        <div className="flex items-center gap-1.5">
+                          <Building2 className="w-3.5 h-3.5 text-primary" />
+                          <span className="text-[10px] font-bold text-primary uppercase tracking-wider">
                             {job.company}
                           </span>
                         </div>
-                        <h4 className="text-base font-bold text-foreground mt-0.5">{job.title}</h4>
+                        <h4 className="text-[14px] font-semibold text-[#E2E8F0] mt-0.5">{job.title}</h4>
                       </div>
 
                       {/* Status selector */}
@@ -284,7 +284,7 @@ export const DashboardJobs: React.FC = () => {
                         value={job.status}
                         onChange={(e) => handleChangeStatus(job.id, e.target.value as any)}
                         className={cn(
-                          "px-2 py-1 rounded-lg text-xs font-bold border uppercase font-mono cursor-pointer bg-background focus:outline-none",
+                          "px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider border cursor-pointer bg-background focus:outline-none",
                           style.text,
                           style.bg
                         )}
@@ -297,27 +297,27 @@ export const DashboardJobs: React.FC = () => {
                       </select>
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground pt-1">
+                    <div className="flex flex-wrap items-center gap-2.5 text-[12px] text-[#94A3B8] pt-1">
                       {job.location && (
-                        <span className="flex items-center gap-1 font-mono">
+                        <span className="flex items-center gap-1">
                           <MapPin className="w-3.5 h-3.5 text-muted-foreground" />
                           {job.location}
                         </span>
                       )}
                       {job.salary && (
-                        <span className="flex items-center gap-1 font-mono text-foreground font-semibold">
-                          <DollarSign className="w-3.5 h-3.5 text-emerald-500" />
+                        <span className="flex items-center gap-1 text-[#E2E8F0] font-semibold tabular-nums">
+                          <DollarSign className="w-3.5 h-3.5 text-emerald-400" />
                           {job.salary}
                         </span>
                       )}
-                      <span className="flex items-center gap-1 font-mono">
+                      <span className="flex items-center gap-1 tabular-nums">
                         <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
                         {job.date}
                       </span>
                     </div>
 
                     {job.notes && (
-                      <p className="text-xs text-muted-foreground pt-1 border-t border-border/60">
+                      <p className="text-[12px] text-[#94A3B8] pt-1 border-t border-border/60">
                         {job.notes}
                       </p>
                     )}
@@ -329,13 +329,13 @@ export const DashboardJobs: React.FC = () => {
                         href={job.link}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-xs text-primary hover:underline flex items-center gap-1 font-semibold no-underline"
+                        className="text-[12px] text-primary hover:underline flex items-center gap-1 font-semibold no-underline"
                       >
                         <span>View Job Posting</span>
                         <ExternalLink className="w-3 h-3" />
                       </a>
                     ) : (
-                      <span className="text-xs text-muted-foreground">No link attached</span>
+                      <span className="text-[12px] text-[#94A3B8]">No link attached</span>
                     )}
 
                     <button

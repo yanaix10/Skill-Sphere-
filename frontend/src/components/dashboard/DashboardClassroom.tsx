@@ -235,17 +235,17 @@ export const DashboardClassroom: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-border gap-4">
         <div>
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center border border-emerald-500/30">
+            <div className="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center border border-emerald-500/30">
               <GraduationCap className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-2xl font-black tracking-tight text-foreground flex items-center gap-2">
+              <h2 className="text-[24px] font-semibold tracking-tight text-white flex items-center gap-2">
                 Google Classroom
-                <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-bold tracking-normal border border-emerald-500/30">
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 font-bold uppercase tracking-wider border border-emerald-500/30">
                   Live Sync
                 </span>
               </h2>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-[12px] text-[#94A3B8]">
                 Track pending coursework, homework deadlines, and classroom assignments in one place
               </p>
             </div>
@@ -256,13 +256,13 @@ export const DashboardClassroom: React.FC = () => {
         <div className="flex items-center gap-2">
           {isConnected ? (
             <div className="flex items-center gap-2">
-              <span className="text-xs text-muted-foreground hidden md:inline font-mono">
+              <span className="text-[12px] text-[#94A3B8] hidden md:inline font-mono">
                 {connectedEmail}
               </span>
               <button
                 onClick={handleSync}
                 disabled={isSyncing}
-                className="px-3 py-1.5 rounded-xl bg-secondary hover:bg-secondary/80 text-foreground text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer border border-border"
+                className="px-3 py-1.5 rounded-lg bg-secondary hover:bg-secondary/80 text-[#E2E8F0] text-[12px] font-semibold flex items-center gap-1.5 transition-colors cursor-pointer border border-border"
                 title="Refresh Google Classroom sync"
               >
                 <RefreshCw className={cn("w-3.5 h-3.5 text-emerald-500", isSyncing && "animate-spin")} />
@@ -272,16 +272,16 @@ export const DashboardClassroom: React.FC = () => {
           ) : (
             <button
               onClick={handleSync}
-              className="px-4 py-2 rounded-xl bg-emerald-600 text-white text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 hover:bg-emerald-700 transition-colors shadow-xs cursor-pointer border-none"
+              className="px-3.5 py-1.5 rounded-lg bg-emerald-600 text-white text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 hover:bg-emerald-700 transition-colors shadow-xs cursor-pointer border-none"
             >
-              <UserCheck className="w-4 h-4" />
+              <UserCheck className="w-3.5 h-3.5" />
               <span>Connect Google Account</span>
             </button>
           )}
 
           <button
             onClick={() => setShowAddModal(true)}
-            className="px-3.5 py-1.5 rounded-xl bg-primary text-primary-foreground text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 hover:bg-primary/90 transition-all shadow-xs cursor-pointer border-none"
+            className="px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 hover:bg-primary/90 transition-all shadow-xs cursor-pointer border-none"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>Add Task</span>
@@ -292,7 +292,7 @@ export const DashboardClassroom: React.FC = () => {
       {/* Course Enrollment Cards */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+          <h3 className="text-[14px] font-semibold text-[#E2E8F0] flex items-center gap-1.5">
             <BookOpen className="w-3.5 h-3.5 text-primary" />
             Enrolled Google Classroom Courses ({courses.length})
           </h3>
@@ -300,34 +300,34 @@ export const DashboardClassroom: React.FC = () => {
             href="https://classroom.google.com"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-xs text-primary hover:underline flex items-center gap-1 font-semibold"
+            className="text-[12px] text-primary hover:underline flex items-center gap-1 font-semibold"
           >
             <span>Open Google Classroom</span>
             <ExternalLink className="w-3 h-3" />
           </a>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {courses.map((course) => (
             <a
               key={course.id}
               href={course.link}
               target="_blank"
               rel="noopener noreferrer"
-              className="p-4 rounded-2xl bg-card border border-border hover:border-emerald-500/50 transition-all flex flex-col justify-between group no-underline shadow-xs"
+              className="p-3.5 rounded-xl bg-card border border-border hover:border-emerald-500/50 transition-all flex flex-col justify-between group no-underline shadow-xs"
             >
               <div>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded-md bg-secondary text-muted-foreground font-bold">
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-secondary text-[#94A3B8]">
                     {course.section}
                   </span>
-                  <ExternalLink className="w-3.5 h-3.5 text-muted-foreground group-hover:text-emerald-500 transition-colors" />
+                  <ExternalLink className="w-3.5 h-3.5 text-muted-foreground group-hover:text-emerald-400 transition-colors" />
                 </div>
-                <h4 className="text-xs font-bold text-foreground group-hover:text-emerald-500 transition-colors line-clamp-2">
+                <h4 className="text-[14px] font-semibold text-[#E2E8F0] group-hover:text-emerald-400 transition-colors line-clamp-2">
                   {course.name}
                 </h4>
               </div>
-              <div className="pt-3 mt-3 border-t border-border/60 text-[11px] text-muted-foreground flex items-center justify-between">
+              <div className="pt-2.5 mt-2.5 border-t border-border/60 text-[12px] text-[#94A3B8] flex items-center justify-between">
                 <span className="truncate">{course.teacher}</span>
                 <span className="font-mono text-[10px] text-muted-foreground/80">{course.roomCode}</span>
               </div>
@@ -337,11 +337,11 @@ export const DashboardClassroom: React.FC = () => {
       </div>
 
       {/* Filter Tabs for Assignments */}
-      <div className="flex items-center gap-2 pt-2">
+      <div className="flex items-center gap-2 pt-1">
         <button
           onClick={() => setFilter("pending")}
           className={cn(
-            "px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer border",
+            "px-3 py-1 rounded-lg text-[12px] font-semibold transition-all cursor-pointer border",
             filter === "pending"
               ? "bg-foreground text-background border-foreground font-bold shadow-xs"
               : "bg-card text-muted-foreground hover:text-foreground border-border"
@@ -352,7 +352,7 @@ export const DashboardClassroom: React.FC = () => {
         <button
           onClick={() => setFilter("submitted")}
           className={cn(
-            "px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer border",
+            "px-3 py-1 rounded-lg text-[12px] font-semibold transition-all cursor-pointer border",
             filter === "submitted"
               ? "bg-foreground text-background border-foreground font-bold shadow-xs"
               : "bg-card text-muted-foreground hover:text-foreground border-border"
@@ -363,7 +363,7 @@ export const DashboardClassroom: React.FC = () => {
         <button
           onClick={() => setFilter("all")}
           className={cn(
-            "px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer border",
+            "px-3 py-1 rounded-lg text-[12px] font-semibold transition-all cursor-pointer border",
             filter === "all"
               ? "bg-foreground text-background border-foreground font-bold shadow-xs"
               : "bg-card text-muted-foreground hover:text-foreground border-border"
@@ -374,50 +374,50 @@ export const DashboardClassroom: React.FC = () => {
       </div>
 
       {/* Assignments List */}
-      <div className="space-y-3">
+      <div className="space-y-2.5">
         {displayList.length === 0 ? (
-          <div className="p-12 text-center rounded-2xl bg-card border border-border text-muted-foreground">
-            <CheckCircle2 className="w-10 h-10 mx-auto text-emerald-500 mb-2.5" />
-            <p className="text-sm font-semibold text-foreground">You are all caught up!</p>
-            <p className="text-xs mt-1">No pending Google Classroom tasks due right now.</p>
+          <div className="p-10 text-center rounded-xl bg-card border border-border text-muted-foreground">
+            <CheckCircle2 className="w-8 h-8 mx-auto text-emerald-400 mb-2" />
+            <p className="text-[14px] font-semibold text-[#E2E8F0]">You are all caught up!</p>
+            <p className="text-[12px] text-[#94A3B8] mt-0.5">No pending Google Classroom tasks due right now.</p>
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-2.5">
             {displayList.map((assign) => (
               <div
                 key={assign.id}
                 className={cn(
-                  "p-4 rounded-2xl bg-card border transition-all flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xs",
+                  "p-3.5 rounded-xl bg-card border transition-all flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-xs",
                   assign.submitted ? "border-border/60 opacity-75" : "border-border hover:border-emerald-500/50"
                 )}
               >
-                <div className="flex items-start gap-3.5">
+                <div className="flex items-start gap-3">
                   <button
                     onClick={() => handleToggleSubmit(assign.id)}
                     className={cn(
-                      "mt-0.5 w-5 h-5 rounded-md border flex items-center justify-center transition-colors cursor-pointer shrink-0",
+                      "mt-0.5 w-4 h-4 rounded-md border flex items-center justify-center transition-colors cursor-pointer shrink-0",
                       assign.submitted
                         ? "bg-emerald-500 border-emerald-500 text-white"
                         : "border-border hover:border-emerald-500 bg-background"
                     )}
                     title={assign.submitted ? "Mark as pending" : "Mark as turned in"}
                   >
-                    {assign.submitted && <Check className="w-3.5 h-3.5" />}
+                    {assign.submitted && <Check className="w-3 h-3" />}
                   </button>
 
-                  <div className="space-y-1">
+                  <div className="space-y-0.5">
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-secondary text-primary">
                         {assign.courseName}
                       </span>
-                      <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-secondary text-muted-foreground">
+                      <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-secondary text-[#94A3B8] tabular-nums">
                         {assign.points} pts
                       </span>
                     </div>
 
                     <h4
                       className={cn(
-                        "text-sm font-bold text-foreground",
+                        "text-[14px] font-semibold text-[#E2E8F0]",
                         assign.submitted && "line-through text-muted-foreground"
                       )}
                     >
@@ -425,18 +425,18 @@ export const DashboardClassroom: React.FC = () => {
                     </h4>
 
                     {assign.description && (
-                      <p className="text-xs text-muted-foreground line-clamp-2 max-w-2xl">{assign.description}</p>
+                      <p className="text-[12px] text-[#94A3B8] line-clamp-2 max-w-2xl">{assign.description}</p>
                     )}
                   </div>
                 </div>
 
                 <div className="flex items-center gap-3 self-end md:self-auto shrink-0">
                   <div className="text-right">
-                    <div className="flex items-center gap-1.5 text-xs font-semibold text-foreground justify-end">
+                    <div className="flex items-center gap-1.5 text-[12px] font-semibold text-[#E2E8F0] justify-end tabular-nums">
                       <Clock className="w-3.5 h-3.5 text-amber-500" />
                       <span>{assign.dueTime || "11:59 PM"}</span>
                     </div>
-                    <div className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
+                    <div className="text-[12px] font-medium text-emerald-400">
                       {getRelativeDue(assign.dueDate)}
                     </div>
                   </div>
@@ -445,10 +445,10 @@ export const DashboardClassroom: React.FC = () => {
                     href={assign.link || "https://classroom.google.com"}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="p-2 rounded-xl bg-secondary hover:bg-secondary/80 text-foreground transition-colors border border-border"
+                    className="p-1.5 rounded-lg bg-secondary hover:bg-secondary/80 text-foreground transition-colors border border-border"
                     title="Open Assignment in Google Classroom"
                   >
-                    <ExternalLink className="w-4 h-4" />
+                    <ExternalLink className="w-3.5 h-3.5" />
                   </a>
                 </div>
               </div>

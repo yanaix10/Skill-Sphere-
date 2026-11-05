@@ -2,9 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { db, auth } from '../firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import DynamicWallpaper from '../components/DynamicWallpaper';
-import { Link } from 'react-router-dom';
-import { LayoutDashboard, Swords, Users, Trophy, ArrowRight, Sparkles } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 
 export const HomePage: React.FC = () => {
   const [fullName, setFullName] = useState<string>("User");
@@ -47,7 +44,7 @@ export const HomePage: React.FC = () => {
       {/* Full Screen Dynamic Wallpaper Canvas */}
       <div className="flex-1 flex flex-col h-full overflow-hidden relative">
         <DynamicWallpaper>
-          {/* Central Hero Branding & Quick Actions */}
+          {/* Central Hero Branding */}
           <div className="flex-1 flex flex-col items-center justify-center text-center p-6 overflow-auto select-none z-10">
             <h2 className="text-foreground/80 dark:text-foreground/90 text-lg sm:text-xl font-semibold mb-2 tracking-wide">
               Welcome {fullName}
@@ -57,48 +54,9 @@ export const HomePage: React.FC = () => {
               Skill Sphere <br />
             </h1>
 
-            <p className="text-[clamp(1.2rem,3.5vw,2rem)] text-foreground/75 dark:text-muted-foreground mt-4 mb-8 font-normal tracking-wide">
+            <p className="text-[clamp(1.2rem,3.5vw,2rem)] text-foreground/75 dark:text-muted-foreground mt-4 mb-2 font-normal tracking-wide">
               Learn • Enjoy • Grow
             </p>
-
-            {/* Main Action Hub */}
-            <div className="flex flex-wrap items-center justify-center gap-3 max-w-md w-full">
-              <Button
-                asChild
-                size="lg"
-                className="px-6 py-6 rounded-2xl bg-primary text-primary-foreground font-bold text-sm tracking-wide shadow-lg shadow-primary/25 hover:scale-105 transition-all duration-200 cursor-pointer"
-              >
-                <Link to="/dashboard" className="flex items-center gap-2.5 no-underline">
-                  <LayoutDashboard className="w-5 h-5 shrink-0" />
-                  <span>Open Dashboard</span>
-                  <ArrowRight className="w-4 h-4 ml-1" />
-                </Link>
-              </Button>
-
-              <Button
-                asChild
-                variant="outline"
-                size="lg"
-                className="px-5 py-6 rounded-2xl border-border bg-card/80 backdrop-blur-md text-foreground font-semibold text-sm hover:bg-card hover:border-primary/50 transition-all duration-200 cursor-pointer"
-              >
-                <Link to="/quizzes" className="flex items-center gap-2 no-underline">
-                  <Swords className="w-4 h-4 text-purple-500 shrink-0" />
-                  <span>Quizzes & Duels</span>
-                </Link>
-              </Button>
-
-              <Button
-                asChild
-                variant="outline"
-                size="lg"
-                className="px-5 py-6 rounded-2xl border-border bg-card/80 backdrop-blur-md text-foreground font-semibold text-sm hover:bg-card hover:border-primary/50 transition-all duration-200 cursor-pointer"
-              >
-                <Link to="/friends" className="flex items-center gap-2 no-underline">
-                  <Users className="w-4 h-4 text-emerald-500 shrink-0" />
-                  <span>Friends & Chat</span>
-                </Link>
-              </Button>
-            </div>
           </div>
         </DynamicWallpaper>
       </div>

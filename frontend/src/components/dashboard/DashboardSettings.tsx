@@ -56,23 +56,23 @@ export const DashboardSettings: React.FC = () => {
     <div className="space-y-6 max-w-4xl mx-auto text-foreground">
       {/* Header */}
       <div className="pb-4 border-b border-border">
-        <h2 className="text-2xl font-black tracking-tight text-foreground flex items-center gap-2.5">
-          <Settings className="w-6 h-6 text-primary" />
+        <h2 className="text-[24px] font-semibold tracking-tight text-white flex items-center gap-2.5">
+          <Settings className="w-5 h-5 text-primary" />
           Settings & Preferences
         </h2>
-        <p className="text-xs text-muted-foreground mt-1">
+        <p className="text-[12px] text-[#94A3B8] mt-1">
           Customize your SkillSphere appearance, theme, dynamic wallpaper engine, and integrations
         </p>
       </div>
 
       {/* ─── Appearance & Theme Section ─── */}
-      <div className="p-5 rounded-2xl bg-card border border-border shadow-xs space-y-4">
+      <div className="p-4 sm:p-5 rounded-xl bg-card border border-border shadow-xs space-y-3.5">
         <div>
-          <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+          <h3 className="text-[14px] font-semibold text-[#E2E8F0] flex items-center gap-2">
             <Palette className="w-4 h-4 text-primary" />
             Theme & Appearance
           </h3>
-          <p className="text-xs text-muted-foreground mt-0.5">
+          <p className="text-[12px] text-[#94A3B8] mt-0.5">
             Select your preferred color scheme. Light mode is standardized with high contrast pitch black text.
           </p>
         </div>
@@ -82,19 +82,19 @@ export const DashboardSettings: React.FC = () => {
           <button
             onClick={() => setTheme("light")}
             className={cn(
-              "p-4 rounded-xl border text-left transition-all cursor-pointer relative shadow-xs flex flex-col justify-between h-28",
+              "p-3.5 rounded-xl border text-left transition-all cursor-pointer relative shadow-xs flex flex-col justify-between h-24",
               theme === "light"
                 ? "border-primary ring-2 ring-primary/30 bg-primary/5"
                 : "border-border bg-card hover:bg-secondary/40"
             )}
           >
             <div className="flex items-center justify-between">
-              <Sun className="w-5 h-5 text-amber-500" />
+              <Sun className="w-4 h-4 text-amber-500" />
               {theme === "light" && <Check className="w-4 h-4 text-primary" />}
             </div>
             <div>
-              <div className="text-xs font-bold text-foreground">Standard Light</div>
-              <div className="text-[10px] text-muted-foreground font-mono">Pitch black #000000 text</div>
+              <div className="text-[14px] font-semibold text-[#E2E8F0]">Standard Light</div>
+              <div className="text-[10px] text-[#94A3B8] font-bold uppercase tracking-wider">Pitch black #000000 text</div>
             </div>
           </button>
 
@@ -102,19 +102,19 @@ export const DashboardSettings: React.FC = () => {
           <button
             onClick={() => setTheme("dark")}
             className={cn(
-              "p-4 rounded-xl border text-left transition-all cursor-pointer relative shadow-xs flex flex-col justify-between h-28",
+              "p-3.5 rounded-xl border text-left transition-all cursor-pointer relative shadow-xs flex flex-col justify-between h-24",
               theme === "dark"
                 ? "border-primary ring-2 ring-primary/30 bg-primary/5"
                 : "border-border bg-card hover:bg-secondary/40"
             )}
           >
             <div className="flex items-center justify-between">
-              <Moon className="w-5 h-5 text-blue-400" />
+              <Moon className="w-4 h-4 text-blue-400" />
               {theme === "dark" && <Check className="w-4 h-4 text-primary" />}
             </div>
             <div>
-              <div className="text-xs font-bold text-foreground">Midnight Dark</div>
-              <div className="text-[10px] text-muted-foreground font-mono">Deep black & cyan glow</div>
+              <div className="text-[14px] font-semibold text-[#E2E8F0]">Midnight Dark</div>
+              <div className="text-[10px] text-[#94A3B8] font-bold uppercase tracking-wider">Deep black & cyan glow</div>
             </div>
           </button>
 
@@ -122,32 +122,32 @@ export const DashboardSettings: React.FC = () => {
           <button
             onClick={() => setTheme("system")}
             className={cn(
-              "p-4 rounded-xl border text-left transition-all cursor-pointer relative shadow-xs flex flex-col justify-between h-28",
+              "p-3.5 rounded-xl border text-left transition-all cursor-pointer relative shadow-xs flex flex-col justify-between h-24",
               theme === "system"
                 ? "border-primary ring-2 ring-primary/30 bg-primary/5"
                 : "border-border bg-card hover:bg-secondary/40"
             )}
           >
             <div className="flex items-center justify-between">
-              <Laptop className="w-5 h-5 text-muted-foreground" />
+              <Laptop className="w-4 h-4 text-muted-foreground" />
               {theme === "system" && <Check className="w-4 h-4 text-primary" />}
             </div>
             <div>
-              <div className="text-xs font-bold text-foreground">System Default</div>
-              <div className="text-[10px] text-muted-foreground font-mono">Syncs with OS ({resolvedTheme})</div>
+              <div className="text-[14px] font-semibold text-[#E2E8F0]">System Default</div>
+              <div className="text-[10px] text-[#94A3B8] font-bold uppercase tracking-wider">Syncs with OS ({resolvedTheme})</div>
             </div>
           </button>
         </div>
       </div>
 
       {/* ─── Wallpaper Engine Settings ─── */}
-      <div className="p-5 rounded-2xl bg-card border border-border shadow-xs space-y-4">
+      <div className="p-4 sm:p-5 rounded-xl bg-card border border-border shadow-xs space-y-3.5">
         <div>
-          <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+          <h3 className="text-[14px] font-semibold text-[#E2E8F0] flex items-center gap-2">
             <Sliders className="w-4 h-4 text-primary" />
             Dynamic Wallpaper Engine
           </h3>
-          <p className="text-xs text-muted-foreground mt-0.5">
+          <p className="text-[12px] text-[#94A3B8] mt-0.5">
             Configure the 3D procedural landscape scenes and meteorological particle simulation
           </p>
         </div>
@@ -156,23 +156,23 @@ export const DashboardSettings: React.FC = () => {
           <button
             onClick={() => handleSceneChange("mountains")}
             className={cn(
-              "p-3.5 rounded-xl border text-left transition-all cursor-pointer flex items-center gap-3",
+              "p-3 rounded-xl border text-left transition-all cursor-pointer flex items-center gap-3",
               wallpaperScene === "mountains"
                 ? "border-primary bg-primary/5 ring-1 ring-primary/40"
                 : "border-border bg-card hover:bg-secondary/40"
             )}
           >
-            <Mountain className="w-5 h-5 text-primary" />
+            <Mountain className="w-4 h-4 text-primary" />
             <div>
-              <div className="text-xs font-bold text-foreground">Alpine Mountains</div>
-              <div className="text-[10px] text-muted-foreground">High elevation ridge</div>
+              <div className="text-[14px] font-semibold text-[#E2E8F0]">Alpine Mountains</div>
+              <div className="text-[12px] text-[#94A3B8]">High elevation ridge</div>
             </div>
           </button>
 
           <button
             onClick={() => handleSceneChange("beaches")}
             className={cn(
-              "p-3.5 rounded-xl border text-left transition-all cursor-pointer flex items-center gap-3",
+              "p-3 rounded-xl border text-left transition-all cursor-pointer flex items-center gap-3",
               wallpaperScene === "beaches"
                 ? "border-primary bg-primary/5 ring-1 ring-primary/40"
                 : "border-border bg-card hover:bg-secondary/40"
