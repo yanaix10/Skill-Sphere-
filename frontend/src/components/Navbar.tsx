@@ -153,7 +153,7 @@ export default function Navbar() {
                   <NavigationMenuItem key={index}>
                     <Link
                       to={link.href}
-                      className="text-muted-foreground hover:text-primary border-b-2 border-transparent hover:border-b-primary px-3 py-2 font-medium transition-colors text-sm no-underline"
+                      className="text-foreground/80 hover:text-foreground hover:border-b-primary border-b-2 border-transparent px-3 py-2 font-medium transition-colors text-sm no-underline"
                     >
                       {link.label}
                     </Link>
@@ -228,7 +228,7 @@ export default function Navbar() {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="text-sm border-border hover:bg-destructive hover:text-destructive-foreground hover:border-destructive transition-colors"
+                  className="text-sm border-border text-foreground hover:bg-destructive hover:text-destructive-foreground hover:border-destructive transition-colors font-medium"
                   onClick={handleLogout}
                 >
                   Logout

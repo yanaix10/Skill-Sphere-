@@ -22,6 +22,12 @@ import {
   Building2,
   MapPin,
   Link as LinkIcon,
+  Film,
+  FileText,
+  BookOpen,
+  Headphones,
+  Zap,
+  PanelLeftClose,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTheme } from "../context/ThemeContext";
@@ -63,17 +69,29 @@ const JOB_STATUS_STYLES: Record<JobApplication["status"], { bg: string; text: st
   rejected:  { bg: "bg-red-500/15", text: "text-red-400",     label: "Rejected" },
 };
 
-const MEDIA_TYPE_ICONS: Record<MediaLink["type"], string> = {
-  video:   "🎬",
-  article: "📝",
-  course:  "📚",
-  podcast: "🎧",
-  other:   "🔗",
+const renderMediaIcon = (type: MediaLink["type"]) => {
+  switch (type) {
+    case "video":
+      return <Film className="w-4 h-4 text-cyan-400 shrink-0" />;
+    case "article":
+      return <FileText className="w-4 h-4 text-blue-400 shrink-0" />;
+    case "course":
+      return <BookOpen className="w-4 h-4 text-emerald-400 shrink-0" />;
+    case "podcast":
+      return <Headphones className="w-4 h-4 text-amber-400 shrink-0" />;
+    default:
+      return <LinkIcon className="w-4 h-4 text-purple-400 shrink-0" />;
+  }
 };
+
+interface HomeSidebarProps {
+  isOpen?: boolean;
+  onToggle?: () => void;
+}
 
 /* ─── Component ──────────────────────────────────────────────── */
 
-const HomeSidebar: React.FC = () => {
+const HomeSidebar: React.FC<HomeSidebarProps> = ({ isOpen = true, onToggle }) => {
   const { theme, setTheme } = useTheme();
   const [activeSection, setActiveSection] = useState<SidebarSection>(null);
 
@@ -208,25 +226,39 @@ const HomeSidebar: React.FC = () => {
     persist(undefined, undefined, updated);
   };
 
-  /* ─── Nav items ────────────────────────────────────────────── */
+  /* ─── Nav items (Settings moved below Media & Resources) ─── */
 
   const navItems: { key: SidebarSection; icon: React.ReactNode; label: string; badge?: number }[] = [
-    { key: "settings", icon: <Settings className="w-4 h-4" />, label: "Settings" },
     { key: "jobs", icon: <Briefcase className="w-4 h-4" />, label: "Job Applications", badge: jobs.filter((j) => j.status === "interview").length || undefined },
     { key: "todo", icon: <CheckSquare className="w-4 h-4" />, label: "To Do Tasks", badge: todos.filter((t) => !t.done).length || undefined },
     { key: "media", icon: <Image className="w-4 h-4" />, label: "Media & Resources" },
+    { key: "settings", icon: <Settings className="w-4 h-4" />, label: "Settings" },
   ];
 
   /* ─── Render ───────────────────────────────────────────────── */
 
   return (
-    <aside className="w-[280px] shrink-0 h-full bg-card border-r border-border flex flex-col font-sans text-card-foreground transition-colors duration-200 select-none overflow-hidden">
+    <aside
+      className={cn(
+        "h-full bg-card border-r border-border flex flex-col font-sans text-card-foreground transition-all duration-300 select-none overflow-hidden shrink-0 z-20",
+        isOpen ? "w-[280px]" : "w-0 border-r-0 p-0 opacity-0 pointer-events-none"
+      )}
+    >
       {/* Navigation Items */}
       <div className="p-2 space-y-0.5">
-        <div className="px-3 pt-2 pb-1.5">
+        <div className="px-3 pt-2 pb-1.5 flex items-center justify-between">
           <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
             Dashboard
           </span>
+          {onToggle && (
+            <button
+              onClick={onToggle}
+              className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors cursor-pointer border-none bg-transparent"
+              title="Hide sidebar"
+            >
+              <PanelLeftClose className="w-3.5 h-3.5" />
+            </button>
+          )}
         </div>
         {navItems.map((item) => (
           <button
@@ -605,11 +637,11 @@ const HomeSidebar: React.FC = () => {
                   onChange={(e) => setMediaForm((f) => ({ ...f, type: e.target.value as MediaLink["type"] }))}
                   className="w-full px-2 py-1.5 bg-background text-foreground border border-border rounded-md text-xs focus:outline-none focus:ring-1 focus:ring-primary"
                 >
-                  <option value="article">📝 Article</option>
-                  <option value="video">🎬 Video</option>
-                  <option value="course">📚 Course</option>
-                  <option value="podcast">🎧 Podcast</option>
-                  <option value="other">🔗 Other</option>
+                  <option value="article">Article</option>
+                  <option value="video">Video</option>
+                  <option value="course">Course</option>
+                  <option value="podcast">Podcast</option>
+                  <option value="other">Link / Resource</option>
                 </select>
                 <button
                   onClick={addMedia}
@@ -635,7 +667,9 @@ const HomeSidebar: React.FC = () => {
                     rel="noopener noreferrer"
                     className="flex items-center gap-2 px-2.5 py-2 rounded-lg bg-secondary/40 border border-border/80 hover:bg-secondary/60 transition-colors group no-underline"
                   >
-                    <span className="text-sm shrink-0">{MEDIA_TYPE_ICONS[m.type]}</span>
+                    <span className="p-1 rounded-md bg-secondary/80 shrink-0">
+                      {renderMediaIcon(m.type)}
+                    </span>
                     <div className="flex-1 min-w-0">
                       <div className="text-xs font-medium text-foreground truncate">{m.title}</div>
                       <div className="text-[10px] text-muted-foreground truncate font-mono">{m.url}</div>
@@ -659,7 +693,7 @@ const HomeSidebar: React.FC = () => {
         {/* Default: No section selected */}
         {activeSection === null && (
           <div className="flex flex-col items-center justify-center h-full p-6 text-center">
-            <div className="text-3xl mb-3">⚡</div>
+            <Zap className="w-8 h-8 text-primary/50 mb-2.5 stroke-[1.5]" />
             <p className="text-xs text-muted-foreground leading-relaxed">
               Select a section from above to get started
             </p>

@@ -9,9 +9,9 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
-import { TagElement } from "@/components/templates/tag-node";
-import { TimerMinimal } from "@/components/templates/timer-minimal";
-import { PendingButton } from "@/components/templates/pending-button";
+import { TagElement } from "@/components/ui/tag-node";
+import { TimerMinimal } from "@/components/ui/timer-minimal";
+import { PendingButton } from "@/components/ui/pending-button";
 import {
   CheckCircle2,
   ChevronLeft,
@@ -24,6 +24,7 @@ import {
   ArrowRight,
   Zap,
   Sparkles,
+  Target,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { updateUserStatsAndBadges, getRankTier, BadgeDefinition } from "@/utils/ranks";
@@ -325,15 +326,17 @@ export const Practice: React.FC<PracticeProps> = ({ setMode, quizConfig }) => {
               </div>
 
               {earnedReward.isPerfectScore && (
-                <div className="p-2.5 rounded-xl bg-primary/10 border border-primary/20 text-primary text-xs font-bold text-center uppercase tracking-wider">
-                  🎯 100% Accuracy Bonus Awarded! (+50 XP)
+                <div className="p-2.5 rounded-xl bg-primary/10 border border-primary/20 text-primary text-xs font-bold text-center uppercase tracking-wider flex items-center justify-center gap-1.5">
+                  <Target className="w-3.5 h-3.5" />
+                  <span>100% Accuracy Bonus Awarded! (+50 XP)</span>
                 </div>
               )}
 
               {earnedReward.newBadges && earnedReward.newBadges.length > 0 && (
                 <div className="p-3 rounded-xl bg-gradient-to-r from-amber-500/20 via-pink-500/20 to-purple-500/20 border border-amber-500/40 text-foreground text-xs space-y-1 text-center">
-                  <span className="font-extrabold uppercase tracking-wider text-amber-400 block text-[11px]">
-                    🎉 New Achievement Badge Unlocked!
+                  <span className="font-extrabold uppercase tracking-wider text-amber-400 flex items-center justify-center gap-1.5 text-[11px]">
+                    <Sparkles className="w-3.5 h-3.5" />
+                    New Achievement Badge Unlocked!
                   </span>
                   {earnedReward.newBadges.map((badge) => (
                     <div key={badge.id} className="font-semibold text-xs flex items-center justify-center gap-1.5">

@@ -1084,8 +1084,9 @@ export default function Challenge({
 
                     {matchReward.newBadges && matchReward.newBadges.length > 0 && (
                       <div className="p-2.5 rounded-xl bg-gradient-to-r from-amber-500/20 via-pink-500/20 to-purple-500/20 border border-amber-500/40 text-foreground text-xs text-center space-y-1">
-                        <span className="font-extrabold uppercase tracking-wider text-amber-400 block text-[10px]">
-                          🎉 New Duel Badge Unlocked!
+                        <span className="font-extrabold uppercase tracking-wider text-amber-400 flex items-center justify-center gap-1.5 text-[10px]">
+                          <Sparkles className="w-3.5 h-3.5" />
+                          New Duel Badge Unlocked!
                         </span>
                         {matchReward.newBadges.map((badge) => (
                           <div key={badge.id} className="font-semibold text-xs flex items-center justify-center gap-1.5">

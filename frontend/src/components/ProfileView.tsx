@@ -15,6 +15,9 @@ import {
   Lock,
   Sparkles,
   CheckCircle2,
+  Target,
+  Globe,
+  Brain,
 } from 'lucide-react';
 import { getRankTier, ACHIEVEMENT_BADGES } from '@/utils/ranks';
 import { cn } from '@/lib/utils';
@@ -252,8 +255,9 @@ const ProfileView: React.FC<ProfileViewProps> = ({ data, userId, onEdit }) => {
             </div>
             <div className="text-center p-1.5 rounded-lg bg-secondary/50">
               <span className="block text-[10px] text-muted-foreground uppercase">Streak</span>
-              <span className="text-xs font-bold text-amber-500">
-                🔥 {userData.winStreak || 0}
+              <span className="text-xs font-bold text-amber-500 flex items-center justify-center gap-1">
+                <Flame className="w-3.5 h-3.5 fill-amber-500/20" />
+                {userData.winStreak || 0}
               </span>
             </div>
           </div>
@@ -288,7 +292,17 @@ const ProfileView: React.FC<ProfileViewProps> = ({ data, userId, onEdit }) => {
                   title={badge.description}
                 >
                   <div className="flex items-center justify-between">
-                    <span className="text-base">{badge.icon}</span>
+                    <span className="p-1 rounded-md bg-secondary/60 shrink-0">
+                      {badge.iconName === 'Target' && <Target className="w-4 h-4 text-rose-500" />}
+                      {badge.iconName === 'Zap' && <Zap className="w-4 h-4 text-cyan-400" />}
+                      {badge.iconName === 'Award' && <Award className="w-4 h-4 text-pink-500" />}
+                      {badge.iconName === 'Flame' && <Flame className="w-4 h-4 text-amber-500" />}
+                      {badge.iconName === 'Globe' && <Globe className="w-4 h-4 text-blue-400" />}
+                      {badge.iconName === 'Brain' && <Brain className="w-4 h-4 text-purple-400" />}
+                      {!['Target', 'Zap', 'Award', 'Flame', 'Globe', 'Brain'].includes(badge.iconName) && (
+                        <Sparkles className="w-4 h-4 text-primary" />
+                      )}
+                    </span>
                     {isUnlocked ? (
                       <CheckCircle2 className="w-3 h-3 text-emerald-500" />
                     ) : (

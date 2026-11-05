@@ -79,8 +79,10 @@ export interface BadgeDefinition {
   id: string;
   name: string;
   description: string;
-  icon: string;
+  iconName: "Target" | "Zap" | "Award" | "Flame" | "Globe" | "Brain" | "ShieldCheck";
+  icon?: string;
   category: "quiz" | "duel" | "mastery";
+  color?: string;
 }
 
 export const ACHIEVEMENT_BADGES: Record<string, BadgeDefinition> = {
@@ -88,43 +90,49 @@ export const ACHIEVEMENT_BADGES: Record<string, BadgeDefinition> = {
     id: "bullseye",
     name: "Bullseye",
     description: "Score 100% accuracy in a Practice Quiz session",
-    icon: "🎯",
+    iconName: "Target",
     category: "quiz",
+    color: "#F43F5E",
   },
   speed_demon: {
     id: "speed_demon",
     name: "Speed Demon",
     description: "Pass all challenge test cases in under 90s",
-    icon: "⚡",
+    iconName: "Zap",
     category: "duel",
+    color: "#06B6D4",
   },
   first_blood: {
     id: "first_blood",
     name: "First Blood",
     description: "Win your first 1v1 Arena Duel",
-    icon: "⚔️",
+    iconName: "Award",
     category: "duel",
+    color: "#EC4899",
   },
   hot_streak: {
     id: "hot_streak",
     name: "Hot Streak",
     description: "Win 3 consecutive 1v1 duels",
-    icon: "🔥",
+    iconName: "Flame",
     category: "duel",
+    color: "#F59E0B",
   },
   polyglot: {
     id: "polyglot",
     name: "Polyglot",
     description: "Compete in both Web Dev and DSA duel tracks",
-    icon: "🌐",
+    iconName: "Globe",
     category: "mastery",
+    color: "#3B82F6",
   },
   quizmaster: {
     id: "quizmaster",
     name: "Quizmaster",
     description: "Complete 10 or more MCQ practice quiz sessions",
-    icon: "🧠",
+    iconName: "Brain",
     category: "quiz",
+    color: "#8B5CF6",
   },
 };
 

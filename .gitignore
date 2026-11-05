@@ -36,6 +36,14 @@ temp.cpp
 temp.out
 test_*.js
 test_*.py
+test_debugbench/
+test-*/
+
+# Local dev/seed scripts (kept locally on device, not tracked in repo)
+backend/src/scripts/
+backend/src/seedDsa.ts
+frontend/src/components/templates/
+frontend/src/components/blocks/
 
 # Logs
 logs/

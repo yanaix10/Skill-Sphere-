@@ -3,7 +3,7 @@ import { db, auth } from "../firebase";
 import { collection, onSnapshot } from "firebase/firestore";
 import { getRankTier, ACHIEVEMENT_BADGES } from "@/utils/ranks";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Trophy, Award, Search, Sparkles } from "lucide-react";
+import { Trophy, Award, Medal, Search, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface CoderUser {
@@ -263,13 +263,13 @@ const Coders: React.FC = () => {
                 {/* Left: Rank #, Avatar & Name info */}
                 <div className="flex items-center gap-2.5 min-w-0">
                   {/* Position Badge */}
-                  <div className="w-5 text-center shrink-0">
+                  <div className="w-5 text-center shrink-0 flex items-center justify-center">
                     {rankPosition === 1 ? (
-                      <span className="text-amber-500 font-black text-xs">🥇</span>
+                      <Trophy className="w-4 h-4 text-amber-500 fill-amber-500/20" title="1st Place" />
                     ) : rankPosition === 2 ? (
-                      <span className="text-slate-400 font-black text-xs">🥈</span>
+                      <Medal className="w-4 h-4 text-slate-400 fill-slate-400/20" title="2nd Place" />
                     ) : rankPosition === 3 ? (
-                      <span className="text-amber-700 font-black text-xs">🥉</span>
+                      <Award className="w-4 h-4 text-amber-700 fill-amber-700/20" title="3rd Place" />
                     ) : (
                       <span className="text-[11px] font-mono font-bold text-muted-foreground">
                         #{rankPosition}
