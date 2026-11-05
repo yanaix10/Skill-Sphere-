@@ -18,6 +18,7 @@ import {
   X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useTheme } from "../context/ThemeContext";
 
 /* ─── Types & Configuration ──────────────────────────────────── */
 
@@ -116,6 +117,9 @@ export const DynamicWallpaper: React.FC<DynamicWallpaperProps> = ({ children }) 
       return null;
     }
   });
+
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === "dark";
 
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
   const [isControlsOpen, setIsControlsOpen] = useState(false);
@@ -314,7 +318,7 @@ export const DynamicWallpaper: React.FC<DynamicWallpaperProps> = ({ children }) 
       ctx.clearRect(0, 0, width, height);
 
       if (activeCondition === "rain") {
-        ctx.strokeStyle = "rgba(180, 220, 255, 0.45)";
+        ctx.strokeStyle = isDark ? "rgba(180, 220, 255, 0.45)" : "rgba(50, 110, 180, 0.55)";
         ctx.lineWidth = 1.2;
         ctx.beginPath();
         particles.forEach((p) => {
@@ -330,7 +334,7 @@ export const DynamicWallpaper: React.FC<DynamicWallpaperProps> = ({ children }) 
         });
         ctx.stroke();
       } else if (activeCondition === "snow") {
-        ctx.fillStyle = "rgba(255, 255, 255, 0.75)";
+        ctx.fillStyle = isDark ? "rgba(255, 255, 255, 0.75)" : "rgba(120, 160, 200, 0.65)";
         particles.forEach((p) => {
           if (p.swing !== undefined) p.swing += 0.02;
           const swingX = p.swing ? Math.sin(p.swing) * 1.2 : 0;
@@ -347,7 +351,7 @@ export const DynamicWallpaper: React.FC<DynamicWallpaperProps> = ({ children }) 
           }
         });
       } else if (activeCondition === "wind") {
-        ctx.strokeStyle = "rgba(255, 255, 255, 0.2)";
+        ctx.strokeStyle = isDark ? "rgba(255, 255, 255, 0.2)" : "rgba(60, 90, 130, 0.3)";
         ctx.lineWidth = 1.2;
         particles.forEach((p) => {
           ctx.beginPath();
@@ -366,7 +370,7 @@ export const DynamicWallpaper: React.FC<DynamicWallpaperProps> = ({ children }) 
         particles.forEach((p) => {
           if (p.swing !== undefined) p.swing += 0.03;
           const alpha = 0.2 + Math.abs(Math.sin(p.swing || 0)) * 0.6;
-          ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+          ctx.fillStyle = isDark ? `rgba(255, 255, 255, ${alpha})` : `rgba(70, 90, 140, ${alpha * 0.7})`;
           ctx.beginPath();
           ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
           ctx.fill();
@@ -464,16 +468,28 @@ export const DynamicWallpaper: React.FC<DynamicWallpaperProps> = ({ children }) 
     }
   };
 
-  /* ─── Sky Background Gradients by Phase ────────────────────── */
+  /* ─── Sky Background Gradients by Phase & Theme ───────────── */
   const getSkyGradient = () => {
-    if (activePhase === "night") {
-      return "bg-gradient-to-b from-[#050814] via-[#090e1f] to-[#0d142b]";
+    if (isDark) {
+      if (activePhase === "night") {
+        return "bg-gradient-to-b from-[#050814] via-[#090e1f] to-[#0d142b]";
+      }
+      if (activePhase === "sunset") {
+        return "bg-gradient-to-b from-[#3b0d3c]/50 via-[#270b22]/40 to-[#09090b]";
+      }
+      // Day (Dark Mode)
+      return "bg-gradient-to-b from-[#0e213b]/60 via-[#0a1626]/40 to-[#09090b]";
+    } else {
+      // Light Mode
+      if (activePhase === "night") {
+        return "bg-gradient-to-b from-slate-200/90 via-indigo-50/70 to-background";
+      }
+      if (activePhase === "sunset") {
+        return "bg-gradient-to-b from-amber-100/80 via-rose-50/70 to-background";
+      }
+      // Day (Light Mode)
+      return "bg-gradient-to-b from-sky-200/70 via-sky-100/40 to-background";
     }
-    if (activePhase === "sunset") {
-      return "bg-gradient-to-b from-[#4a154b]/30 via-[#a33b5c]/20 to-[#e0813d]/20";
-    }
-    // Day
-    return "bg-gradient-to-b from-sky-400/10 via-sky-200/5 to-transparent";
   };
 
   return (

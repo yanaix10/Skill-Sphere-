@@ -23,10 +23,10 @@ export const DashboardTodos: React.FC = () => {
       const stored = localStorage.getItem("skillsphere_home_todos");
       if (stored) {
         const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed)) return parsed;
       }
     } catch {}
-    return DEFAULT_TODOS;
+    return [];
   });
 
   const [input, setInput] = useState("");
@@ -81,8 +81,8 @@ export const DashboardTodos: React.FC = () => {
       {/* Header */}
       <div className="flex items-center justify-between pb-3 border-b border-border">
         <div>
-          <h2 className="text-[24px] font-semibold tracking-tight text-white m-0">To-Do Tasks</h2>
-          <p className="text-[12px] text-[#94A3B8] mt-0.5">Quick daily check-list & goals</p>
+          <h2 className="text-[20px] font-semibold tracking-tight text-foreground m-0">To-Do Tasks</h2>
+          <p className="text-[12px] text-muted-foreground mt-0.5">Quick daily check-list & goals</p>
         </div>
 
         <div className="flex items-center gap-2">
@@ -92,7 +92,7 @@ export const DashboardTodos: React.FC = () => {
           {completedCount > 0 && (
             <button
               onClick={handleClearCompleted}
-              className="text-[12px] text-[#94A3B8] hover:text-white transition-colors cursor-pointer border-none bg-transparent"
+              className="text-[12px] text-muted-foreground hover:text-foreground transition-colors cursor-pointer border-none bg-transparent"
             >
               Clear completed
             </button>
@@ -101,12 +101,14 @@ export const DashboardTodos: React.FC = () => {
       </div>
 
       {/* Progress Line */}
-      <div className="w-full h-1.5 rounded-full bg-secondary overflow-hidden">
-        <div
-          style={{ width: `${progressPct}%` }}
-          className="h-full bg-primary rounded-full transition-all duration-300"
-        />
-      </div>
+      {todos.length > 0 && (
+        <div className="w-full h-1.5 rounded-full bg-secondary overflow-hidden">
+          <div
+            style={{ width: `${progressPct}%` }}
+            className="h-full bg-primary rounded-full transition-all duration-300"
+          />
+        </div>
+      )}
 
       {/* Clean Android/Laptop Widget Card */}
       <div className="rounded-2xl border border-border bg-card p-4 sm:p-5 shadow-xs space-y-4">
@@ -117,7 +119,7 @@ export const DashboardTodos: React.FC = () => {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Add a new task and press enter..."
-            className="flex-1 px-3.5 py-2 rounded-xl bg-background border border-border text-[13px] text-white placeholder:text-[#94A3B8]/60 focus:outline-none focus:ring-1 focus:ring-primary"
+            className="flex-1 px-3.5 py-2 rounded-xl bg-background border border-border text-[13px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
           />
           <button
             type="submit"
@@ -137,8 +139,8 @@ export const DashboardTodos: React.FC = () => {
               className={cn(
                 "px-3 py-1 rounded-lg text-[12px] font-medium transition-all cursor-pointer border-none capitalize",
                 filter === tab
-                  ? "bg-secondary text-white font-semibold"
-                  : "text-[#94A3B8] hover:text-white bg-transparent"
+                  ? "bg-secondary text-foreground font-semibold"
+                  : "text-muted-foreground hover:text-foreground bg-transparent"
               )}
             >
               {tab}
@@ -149,8 +151,8 @@ export const DashboardTodos: React.FC = () => {
         {/* Task List */}
         <div className="space-y-1.5 pt-1">
           {filtered.length === 0 ? (
-            <div className="text-center py-8 text-[12px] text-[#94A3B8]">
-              No tasks found. Add a new task above!
+            <div className="text-center py-8 text-[12px] text-muted-foreground">
+              No tasks yet. Type a task above and press Add!
             </div>
           ) : (
             filtered.map((todo) => (
@@ -173,8 +175,8 @@ export const DashboardTodos: React.FC = () => {
                   </div>
                   <span
                     className={cn(
-                      "text-[13px] font-medium text-[#E2E8F0] truncate",
-                      todo.done && "line-through text-[#94A3B8]"
+                      "text-[13px] font-medium text-foreground truncate",
+                      todo.done && "line-through text-muted-foreground"
                     )}
                   >
                     {todo.text}
@@ -186,7 +188,7 @@ export const DashboardTodos: React.FC = () => {
                     e.stopPropagation();
                     handleDelete(todo.id);
                   }}
-                  className="opacity-0 group-hover:opacity-100 p-1 text-[#94A3B8] hover:text-destructive rounded-md transition-all cursor-pointer border-none bg-transparent"
+                  className="opacity-0 group-hover:opacity-100 p-1 rounded-md text-muted-foreground hover:text-destructive transition-all cursor-pointer border-none bg-transparent"
                   title="Delete task"
                 >
                   <Trash2 className="w-3.5 h-3.5" />

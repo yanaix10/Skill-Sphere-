@@ -94,13 +94,22 @@ export const DashboardMedia: React.FC = () => {
       const stored = localStorage.getItem("skillsphere_uploaded_media");
       if (stored) {
         const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed)) return parsed;
       }
     } catch {}
-    return DEFAULT_FILES;
+    return [];
   });
 
-  const [links, setLinks] = useState<ResourceLinkItem[]>(DEFAULT_LINKS);
+  const [links, setLinks] = useState<ResourceLinkItem[]>(() => {
+    try {
+      const stored = localStorage.getItem("skillsphere_saved_links");
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch {}
+    return [];
+  });
   const [lightboxImage, setLightboxImage] = useState<MediaFileItem | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -183,19 +192,19 @@ export const DashboardMedia: React.FC = () => {
 
   return (
     <div className="space-y-5 max-w-7xl mx-auto text-foreground">
-      {/* 24px Workspace Header */}
+      {/* Workspace Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-border gap-3">
         <div>
-          <h2 className="text-[24px] font-semibold tracking-tight text-white m-0">Media & Study Resources</h2>
-          <p className="text-[12px] text-[#94A3B8] mt-0.5">
-            Store and review JPG whiteboard diagrams, architecture notes, and reference courses
+          <h2 className="text-[20px] font-semibold tracking-tight text-foreground m-0">Media & Resources</h2>
+          <p className="text-[12px] text-muted-foreground mt-0.5">
+            Store and review whiteboard diagrams, architecture notes, and reference courses
           </p>
         </div>
 
         <div className="flex items-center gap-2">
           <button
             onClick={() => setShowLinkForm(!showLinkForm)}
-            className="px-3 py-1.5 rounded-xl bg-secondary hover:bg-secondary/80 text-white text-[12px] font-medium flex items-center gap-1.5 transition-colors cursor-pointer border border-border"
+            className="px-3 py-1.5 rounded-xl bg-secondary hover:bg-secondary/80 text-foreground text-[12px] font-medium flex items-center gap-1.5 transition-colors cursor-pointer border border-border"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>Add Link</span>
@@ -210,7 +219,7 @@ export const DashboardMedia: React.FC = () => {
         </div>
       </div>
 
-      {/* Upload Dropzone Container (Matching image 5 template) */}
+      {/* Upload Dropzone Container */}
       <div
         onDragOver={(e) => {
           e.preventDefault();
@@ -240,8 +249,8 @@ export const DashboardMedia: React.FC = () => {
           <div className="w-12 h-12 rounded-2xl bg-secondary flex items-center justify-center group-hover:scale-105 transition-transform text-primary">
             <UploadCloud className="w-6 h-6" />
           </div>
-          <h3 className="text-[14px] font-semibold text-[#E2E8F0] m-0">Drop files to upload</h3>
-          <p className="text-[12px] text-[#94A3B8]">
+          <h3 className="text-[14px] font-semibold text-foreground m-0">Drop files to upload</h3>
+          <p className="text-[12px] text-muted-foreground">
             JPG, PNG diagrams, system architecture charts, or PDF documentation (up to 10MB)
           </p>
         </div>
@@ -254,11 +263,11 @@ export const DashboardMedia: React.FC = () => {
           className="p-4 rounded-2xl bg-card border border-border space-y-3 animate-in fade-in duration-150"
         >
           <div className="flex items-center justify-between pb-2 border-b border-border">
-            <h3 className="text-[14px] font-semibold text-white">Add Resource Link</h3>
+            <h3 className="text-[14px] font-semibold text-foreground">Add Resource Link</h3>
             <button
               type="button"
               onClick={() => setShowLinkForm(false)}
-              className="p-1 text-[#94A3B8] hover:text-white cursor-pointer border-none bg-transparent"
+              className="p-1 text-muted-foreground hover:text-foreground cursor-pointer border-none bg-transparent"
             >
               <X className="w-4 h-4" />
             </button>
@@ -270,7 +279,7 @@ export const DashboardMedia: React.FC = () => {
               placeholder="Title (e.g. NeetCode 150)"
               value={newLink.title}
               onChange={(e) => setNewLink({ ...newLink, title: e.target.value })}
-              className="px-3 py-1.5 rounded-xl bg-background border border-border text-[12px] text-white focus:outline-none focus:ring-1 focus:ring-primary"
+              className="px-3 py-1.5 rounded-xl bg-background border border-border text-[12px] text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
             />
             <input
               type="text"
@@ -278,7 +287,7 @@ export const DashboardMedia: React.FC = () => {
               placeholder="https://..."
               value={newLink.url}
               onChange={(e) => setNewLink({ ...newLink, url: e.target.value })}
-              className="px-3 py-1.5 rounded-xl bg-background border border-border text-[12px] text-white focus:outline-none focus:ring-1 focus:ring-primary"
+              className="px-3 py-1.5 rounded-xl bg-background border border-border text-[12px] text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
             />
             <button
               type="submit"
@@ -293,73 +302,79 @@ export const DashboardMedia: React.FC = () => {
       {/* ─── JPGs & Files Gallery ─── */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <h3 className="text-[14px] font-semibold text-[#E2E8F0] flex items-center gap-2">
+          <h3 className="text-[14px] font-semibold text-foreground flex items-center gap-2">
             <ImageIcon className="w-4 h-4 text-primary" />
             Uploaded JPG Diagrams & Notes ({imageFiles.length})
           </h3>
-          <span className="text-[12px] text-[#94A3B8]">Click any image to expand full-screen</span>
+          <span className="text-[12px] text-muted-foreground">Click any image to expand full-screen</span>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3.5">
-          {imageFiles.map((file) => (
-            <div
-              key={file.id}
-              className="rounded-2xl border border-border bg-card overflow-hidden hover:border-primary/50 transition-all group flex flex-col justify-between shadow-xs"
-            >
+        {imageFiles.length === 0 ? (
+          <div className="p-8 text-center rounded-xl bg-card border border-border text-muted-foreground text-[12px]">
+            No files uploaded yet. Drop JPGs or diagrams above to organize your study notes!
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3.5">
+            {imageFiles.map((file) => (
               <div
-                onClick={() => setLightboxImage(file)}
-                className="relative w-full aspect-video sm:aspect-4/3 bg-secondary/30 cursor-pointer overflow-hidden"
+                key={file.id}
+                className="rounded-2xl border border-border bg-card overflow-hidden hover:border-primary/50 transition-all group flex flex-col justify-between shadow-xs"
               >
-                <img
-                  src={file.dataUrl}
-                  alt={file.name}
-                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                  loading="lazy"
-                />
-                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5 text-white">
-                  <Eye className="w-4 h-4" />
-                  <span className="text-[11px] font-semibold">Preview</span>
-                </div>
-                <div className="absolute top-2 right-2 px-1.5 py-0.5 rounded-md bg-black/60 text-[9px] font-mono uppercase text-white font-bold">
-                  {file.name.split(".").pop() || "JPG"}
-                </div>
-              </div>
-
-              <div className="p-3 space-y-2">
-                <div className="flex items-center justify-between text-[12px]">
-                  <span className="font-semibold text-white truncate max-w-[160px]" title={file.name}>
-                    {file.name}
-                  </span>
-                  <span className="font-mono text-[10px] tabular-nums text-[#94A3B8]">{formatSize(file.size)}</span>
+                <div
+                  onClick={() => setLightboxImage(file)}
+                  className="relative w-full aspect-video sm:aspect-4/3 bg-secondary/30 cursor-pointer overflow-hidden"
+                >
+                  <img
+                    src={file.dataUrl}
+                    alt={file.name}
+                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    loading="lazy"
+                  />
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5 text-white">
+                    <Eye className="w-4 h-4" />
+                    <span className="text-[11px] font-semibold">Preview</span>
+                  </div>
+                  <div className="absolute top-2 right-2 px-1.5 py-0.5 rounded-md bg-black/60 text-[9px] font-mono uppercase text-white font-bold">
+                    {file.name.split(".").pop() || "JPG"}
+                  </div>
                 </div>
 
-                <div className="flex items-center justify-end gap-1 pt-2 border-t border-border">
-                  <a
-                    href={file.dataUrl}
-                    download={file.name}
-                    className="p-1.5 rounded-lg text-[#94A3B8] hover:text-white hover:bg-secondary transition-colors"
-                    title="Download"
-                  >
-                    <Download className="w-3.5 h-3.5" />
-                  </a>
-                  <button
-                    onClick={() => handleDeleteFile(file.id)}
-                    className="p-1.5 rounded-lg text-[#94A3B8] hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer border-none bg-transparent"
-                    title="Delete"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
+                <div className="p-3 space-y-2">
+                  <div className="flex items-center justify-between text-[12px]">
+                    <span className="font-semibold text-foreground truncate max-w-[160px]" title={file.name}>
+                      {file.name}
+                    </span>
+                    <span className="font-mono text-[10px] tabular-nums text-muted-foreground">{formatSize(file.size)}</span>
+                  </div>
+
+                  <div className="flex items-center justify-end gap-1 pt-2 border-t border-border">
+                    <a
+                      href={file.dataUrl}
+                      download={file.name}
+                      className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+                      title="Download"
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                    </a>
+                    <button
+                      onClick={() => handleDeleteFile(file.id)}
+                      className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer border-none bg-transparent"
+                      title="Delete"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* ─── Learning Links Grid ─── */}
       {links.length > 0 && (
         <div className="space-y-3 pt-2">
-          <h3 className="text-[14px] font-semibold text-[#E2E8F0]">Saved Study & Architecture Links</h3>
+          <h3 className="text-[14px] font-semibold text-foreground">Saved Study & Architecture Links</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {links.map((link) => (
               <a
@@ -373,12 +388,24 @@ export const DashboardMedia: React.FC = () => {
                   <span className="text-[10px] font-bold uppercase tracking-wider text-primary font-mono">
                     {link.type}
                   </span>
-                  <h4 className="text-[13px] font-semibold text-white group-hover:text-primary transition-colors truncate mt-0.5">
+                  <h4 className="text-[13px] font-semibold text-foreground group-hover:text-primary transition-colors truncate mt-0.5">
                     {link.title}
                   </h4>
-                  <p className="text-[11px] text-[#94A3B8] truncate font-mono">{link.url}</p>
+                  <p className="text-[11px] text-muted-foreground truncate font-mono">{link.url}</p>
                 </div>
-                <ExternalLink className="w-4 h-4 text-[#94A3B8] group-hover:text-white shrink-0" />
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleDeleteLink(link.id);
+                    }}
+                    className="p-1.5 text-muted-foreground hover:text-destructive transition-colors cursor-pointer border-none bg-transparent"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                  <ExternalLink className="w-4 h-4 text-muted-foreground group-hover:text-foreground" />
+                </div>
               </a>
             ))}
           </div>
@@ -396,7 +423,7 @@ export const DashboardMedia: React.FC = () => {
             className="relative max-w-4xl max-h-[90vh] bg-card rounded-2xl overflow-hidden border border-border shadow-2xl flex flex-col"
           >
             <div className="flex items-center justify-between px-4 py-2.5 border-b border-border bg-secondary/40">
-              <span className="text-[12px] font-semibold text-white truncate max-w-md">{lightboxImage.name}</span>
+              <span className="text-[12px] font-semibold text-foreground truncate max-w-md">{lightboxImage.name}</span>
               <div className="flex items-center gap-2">
                 <a
                   href={lightboxImage.dataUrl}
@@ -408,7 +435,7 @@ export const DashboardMedia: React.FC = () => {
                 </a>
                 <button
                   onClick={() => setLightboxImage(null)}
-                  className="p-1 text-[#94A3B8] hover:text-white cursor-pointer border-none bg-transparent"
+                  className="p-1 text-muted-foreground hover:text-foreground cursor-pointer border-none bg-transparent"
                 >
                   <X className="w-4 h-4" />
                 </button>

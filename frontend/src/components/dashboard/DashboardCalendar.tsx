@@ -14,9 +14,12 @@ import {
   Search,
   Grid3x3,
   List,
+  LogOut,
+  UserCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { auth } from "../../firebase";
+import { auth, googleProvider } from "../../firebase";
+import { signInWithPopup } from "firebase/auth";
 
 export interface CalendarEvent {
   id: string;
@@ -31,62 +34,12 @@ export interface CalendarEvent {
   color?: string;
 }
 
-const DEFAULT_EVENTS: CalendarEvent[] = [
-  {
-    id: "meet-1",
-    title: "Google Meet: CS Final Project Sprint & Architecture Sync",
-    date: new Date().toISOString().slice(0, 10),
-    startTime: "10:30 AM",
-    endTime: "11:15 AM",
-    meetLink: "https://meet.google.com/abc-defg-hij",
-    category: "Meeting",
-    organizer: "Alex Chen (Tech Lead)",
-    description: "Discuss socket gateway optimization and test bench verification.",
-    color: "blue",
-  },
-  {
-    id: "meet-2",
-    title: "SkillSphere 1v1 Algorithmic Duel vs Alex",
-    date: new Date().toISOString().slice(0, 10),
-    startTime: "06:00 PM",
-    endTime: "06:45 PM",
-    category: "Duel",
-    organizer: "SkillSphere Arena",
-    description: "Best of 3 dynamic programming speed duel. Winner receives +35 Elo.",
-    color: "purple",
-  },
-  {
-    id: "meet-3",
-    title: "Mock Technical Interview: Distributed Caching & Redis",
-    date: new Date(Date.now() + 86400000 * 2).toISOString().slice(0, 10),
-    startTime: "04:00 PM",
-    endTime: "05:00 PM",
-    meetLink: "https://meet.google.com/xyz-uvwx-rst",
-    category: "Interview",
-    organizer: "Dr. Evelyn Miller",
-    description: "System design practice: LRU cache implementation and consistency models.",
-    color: "orange",
-  },
-  {
-    id: "meet-4",
-    title: "Discrete Mathematics: Graph Theory Problem Session",
-    date: new Date(Date.now() + 86400000 * 4).toISOString().slice(0, 10),
-    startTime: "02:00 PM",
-    endTime: "03:30 PM",
-    meetLink: "https://meet.google.com/uvw-mnop-qrs",
-    category: "Class",
-    organizer: "Prof. David Clark",
-    description: "Live walkthrough of Dijkstra and Bellman-Ford proofs.",
-    color: "green",
-  },
-];
-
 const CATEGORY_COLORS: Record<string, { bg: string; text: string; badge: string }> = {
-  Meeting:   { bg: "bg-blue-500", text: "text-blue-400", badge: "bg-blue-500/15 text-blue-400 border-blue-500/30" },
-  Duel:      { bg: "bg-purple-500", text: "text-purple-400", badge: "bg-purple-500/15 text-purple-400 border-purple-500/30" },
-  Interview: { bg: "bg-orange-500", text: "text-orange-400", badge: "bg-orange-500/15 text-orange-400 border-orange-500/30" },
-  Class:     { bg: "bg-emerald-500", text: "text-emerald-400", badge: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30" },
-  Task:      { bg: "bg-zinc-500", text: "text-zinc-400", badge: "bg-zinc-500/15 text-zinc-400 border-zinc-500/30" },
+  Meeting:   { bg: "bg-blue-600 text-white", text: "text-blue-600 dark:text-blue-400", badge: "bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/30" },
+  Duel:      { bg: "bg-purple-600 text-white", text: "text-purple-600 dark:text-purple-400", badge: "bg-purple-500/15 text-purple-600 dark:text-purple-400 border-purple-500/30" },
+  Interview: { bg: "bg-orange-600 text-white", text: "text-orange-600 dark:text-orange-400", badge: "bg-orange-500/15 text-orange-600 dark:text-orange-400 border-orange-500/30" },
+  Class:     { bg: "bg-emerald-600 text-white", text: "text-emerald-600 dark:text-emerald-400", badge: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30" },
+  Task:      { bg: "bg-zinc-600 text-white", text: "text-zinc-600 dark:text-zinc-400", badge: "bg-zinc-500/15 text-zinc-600 dark:text-zinc-400 border-zinc-500/30" },
 };
 
 export const DashboardCalendar: React.FC = () => {
@@ -95,10 +48,10 @@ export const DashboardCalendar: React.FC = () => {
       const stored = localStorage.getItem("skillsphere_calendar_meetings");
       if (stored) {
         const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed)) return parsed;
       }
     } catch {}
-    return DEFAULT_EVENTS;
+    return [];
   });
 
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -106,8 +59,80 @@ export const DashboardCalendar: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [isSyncing, setIsSyncing] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showAccountModal, setShowAccountModal] = useState(false);
 
-  // New Event Form State
+  const [isConnected, setIsConnected] = useState<boolean>(() => {
+    return localStorage.getItem("skillsphere_calendar_connected") === "true";
+  });
+
+  const user = auth.currentUser;
+  const [calendarEmail, setCalendarEmail] = useState<string>(() => {
+    return localStorage.getItem("skillsphere_calendar_email") || "";
+  });
+  const [isCollegeAccount, setIsCollegeAccount] = useState<boolean>(() => {
+    return localStorage.getItem("skillsphere_calendar_is_college") === "true";
+  });
+  const [collegeEmailInput, setCollegeEmailInput] = useState<string>("");
+
+  const effectiveEmail = calendarEmail || user?.email || "";
+
+  const saveEvents = (data: CalendarEvent[]) => {
+    setEvents(data);
+    try {
+      localStorage.setItem("skillsphere_calendar_meetings", JSON.stringify(data));
+    } catch {}
+  };
+
+  const handleConnectGoogle = async () => {
+    setIsSyncing(true);
+    try {
+      const res = await signInWithPopup(auth, googleProvider);
+      if (res.user?.email) {
+        setCalendarEmail(res.user.email);
+        setIsConnected(true);
+        setIsCollegeAccount(res.user.email.endsWith(".edu") || res.user.email.includes("student") || res.user.email.includes(".ac."));
+        localStorage.setItem("skillsphere_calendar_email", res.user.email);
+        localStorage.setItem("skillsphere_calendar_connected", "true");
+        localStorage.setItem("skillsphere_calendar_is_college", String(res.user.email.endsWith(".edu") || res.user.email.includes(".ac.")));
+      }
+    } catch (e: any) {
+      console.warn("Google popup auth:", e);
+      setShowAccountModal(true);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  const handleDisconnect = () => {
+    setIsConnected(false);
+    setCalendarEmail("");
+    localStorage.removeItem("skillsphere_calendar_email");
+    localStorage.removeItem("skillsphere_calendar_connected");
+    localStorage.removeItem("skillsphere_calendar_is_college");
+    saveEvents([]);
+  };
+
+  const handleSaveCollegeEmail = () => {
+    if (!collegeEmailInput.trim()) return;
+    const clean = collegeEmailInput.trim().toLowerCase();
+    setCalendarEmail(clean);
+    setIsConnected(true);
+    setIsCollegeAccount(true);
+    localStorage.setItem("skillsphere_calendar_email", clean);
+    localStorage.setItem("skillsphere_calendar_connected", "true");
+    localStorage.setItem("skillsphere_calendar_is_college", "true");
+    setShowAccountModal(false);
+    handleSync();
+  };
+
+  const handleSync = () => {
+    setIsSyncing(true);
+    setTimeout(() => {
+      setIsSyncing(false);
+    }, 1000);
+  };
+
+  // Form State
   const [newEvent, setNewEvent] = useState({
     title: "",
     date: new Date().toISOString().slice(0, 10),
@@ -117,56 +142,6 @@ export const DashboardCalendar: React.FC = () => {
     category: "Meeting" as CalendarEvent["category"],
     description: "",
   });
-
-  const user = auth.currentUser;
-  const personalEmail = user?.email || "naitik.yadav641@gmail.com";
-
-  const [calendarEmail, setCalendarEmail] = useState<string>(() => {
-    return localStorage.getItem("skillsphere_calendar_email") || "";
-  });
-  const [isCollegeAccount, setIsCollegeAccount] = useState<boolean>(() => {
-    return localStorage.getItem("skillsphere_calendar_is_college") === "true";
-  });
-  const [showAccountModal, setShowAccountModal] = useState<boolean>(false);
-  const [collegeEmailInput, setCollegeEmailInput] = useState<string>(
-    localStorage.getItem("skillsphere_calendar_email") || "naitik.yadav@vitstudent.ac.in"
-  );
-
-  const effectiveEmail = calendarEmail || personalEmail;
-
-  const handleSaveCollegeEmail = () => {
-    if (!collegeEmailInput.trim()) return;
-    const clean = collegeEmailInput.trim().toLowerCase();
-    setCalendarEmail(clean);
-    setIsCollegeAccount(true);
-    localStorage.setItem("skillsphere_calendar_email", clean);
-    localStorage.setItem("skillsphere_calendar_is_college", "true");
-    setShowAccountModal(false);
-    handleSync();
-  };
-
-  const handleUsePersonalEmail = () => {
-    setCalendarEmail(personalEmail);
-    setIsCollegeAccount(false);
-    localStorage.setItem("skillsphere_calendar_email", personalEmail);
-    localStorage.setItem("skillsphere_calendar_is_college", "false");
-    setShowAccountModal(false);
-    handleSync();
-  };
-
-  const saveEvents = (data: CalendarEvent[]) => {
-    setEvents(data);
-    try {
-      localStorage.setItem("skillsphere_calendar_meetings", JSON.stringify(data));
-    } catch {}
-  };
-
-  const handleSync = () => {
-    setIsSyncing(true);
-    setTimeout(() => {
-      setIsSyncing(false);
-    }, 1000);
-  };
 
   const handleAddEvent = (e: React.FormEvent) => {
     e.preventDefault();
@@ -238,41 +213,63 @@ export const DashboardCalendar: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-border gap-3">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-400 flex items-center justify-center border border-blue-500/20">
+          <div className="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center border border-blue-500/20">
             <CalendarIcon className="w-4 h-4" />
           </div>
           <div>
-            <h2 className="text-[20px] font-semibold tracking-tight text-white m-0">Google Calendar</h2>
+            <h2 className="text-[20px] font-semibold tracking-tight text-foreground m-0">Google Calendar</h2>
           </div>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          {/* Account Switcher Pill */}
-          <button
-            onClick={() => setShowAccountModal(true)}
-            className="px-2.5 py-1.5 rounded-lg bg-card hover:bg-secondary/70 border border-border flex items-center gap-2 text-[12px] text-foreground transition-all cursor-pointer shadow-xs"
-            title="Switch between Personal and College Google Account"
-          >
-            <div className={cn("w-2 h-2 rounded-full shrink-0", isCollegeAccount ? "bg-emerald-400 ring-2 ring-emerald-500/30" : "bg-blue-400")} />
-            <span className="font-mono text-[11px] text-[#E2E8F0] max-w-[180px] sm:max-w-[220px] truncate">
-              {effectiveEmail}
-            </span>
-            <span className="text-[10px] text-primary font-bold uppercase tracking-wider pl-1 border-l border-border/80">
-              {isCollegeAccount ? "College" : "Personal"}
-            </span>
-          </button>
+          {isConnected ? (
+            <>
+              {/* Account Switcher Pill */}
+              <button
+                onClick={() => setShowAccountModal(true)}
+                className="px-2.5 py-1.5 rounded-lg bg-card hover:bg-secondary/70 border border-border flex items-center gap-2 text-[12px] text-foreground transition-all cursor-pointer shadow-xs"
+                title="Switch between Personal and College Google Account"
+              >
+                <div className={cn("w-2 h-2 rounded-full shrink-0", isCollegeAccount ? "bg-emerald-500 ring-2 ring-emerald-500/30" : "bg-blue-500")} />
+                <span className="font-mono text-[11px] text-foreground max-w-[180px] sm:max-w-[220px] truncate">
+                  {effectiveEmail}
+                </span>
+                <span className="text-[10px] text-primary font-bold uppercase tracking-wider pl-1 border-l border-border/80">
+                  {isCollegeAccount ? "College" : "Personal"}
+                </span>
+              </button>
+
+              <button
+                onClick={handleSync}
+                disabled={isSyncing}
+                className="px-3 py-1.5 rounded-lg bg-secondary hover:bg-secondary/80 text-foreground text-[12px] font-semibold flex items-center gap-1.5 transition-colors cursor-pointer border border-border"
+              >
+                <RefreshCw className={cn("w-3.5 h-3.5 text-blue-500", isSyncing && "animate-spin")} />
+                <span>{isSyncing ? "Syncing..." : "Sync"}</span>
+              </button>
+
+              <button
+                onClick={handleDisconnect}
+                className="p-2 rounded-lg bg-secondary hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors cursor-pointer border border-border"
+                title="Disconnect Google Calendar"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+              </button>
+            </>
+          ) : (
+            <button
+              onClick={handleConnectGoogle}
+              disabled={isSyncing}
+              className="px-3.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all shadow-xs cursor-pointer border-none"
+            >
+              <UserCheck className="w-3.5 h-3.5" />
+              <span>Connect Google Account</span>
+            </button>
+          )}
 
           <button
-            onClick={handleSync}
-            disabled={isSyncing}
-            className="px-3 py-1.5 rounded-lg bg-secondary hover:bg-secondary/80 text-white text-[12px] font-semibold flex items-center gap-1.5 transition-colors cursor-pointer border border-border"
-          >
-            <RefreshCw className={cn("w-3.5 h-3.5 text-blue-400", isSyncing && "animate-spin")} />
-            <span>{isSyncing ? "Syncing..." : "Sync"}</span>
-          </button>
-          <button
             onClick={() => setShowAddModal(true)}
-            className="px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 hover:bg-primary/90 transition-all cursor-pointer border-none"
+            className="px-3.5 py-1.5 rounded-lg bg-primary text-primary-foreground text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 hover:bg-primary/90 transition-all cursor-pointer border-none"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>New Event</span>
@@ -280,29 +277,58 @@ export const DashboardCalendar: React.FC = () => {
         </div>
       </div>
 
+      {/* Disconnected State Callout */}
+      {!isConnected && (
+        <div className="p-6 rounded-2xl bg-card border border-border flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xs">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center border border-blue-500/20 shrink-0">
+              <CalendarIcon className="w-5 h-5" />
+            </div>
+            <div>
+              <h4 className="text-[14px] font-semibold text-foreground">Sync Google Calendar & Meetings</h4>
+              <p className="text-[12px] text-muted-foreground mt-0.5">
+                Authorize Google Calendar to pull your upcoming team sprints, lectures, exams, and Google Meet links.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={handleConnectGoogle}
+            className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-[12px] font-semibold flex items-center gap-2 shrink-0 cursor-pointer border-none shadow-xs transition-all"
+          >
+            <svg className="w-4 h-4" viewBox="0 0 24 24">
+              <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+              <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+              <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
+              <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
+            </svg>
+            <span>Authorize Google</span>
+          </button>
+        </div>
+      )}
+
       {/* Navigation & View Controls Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-2xl bg-card border border-border">
         {/* Month Title & Arrow Controls */}
         <div className="flex items-center gap-2">
-          <h3 className="text-[14px] font-semibold text-[#E2E8F0] m-0 w-44">
+          <h3 className="text-[14px] font-semibold text-foreground m-0 w-44">
             {monthName} {year}
           </h3>
           <div className="flex items-center gap-1">
             <button
               onClick={() => navigateDate("prev")}
-              className="p-1 rounded-lg text-[#94A3B8] hover:text-white hover:bg-secondary cursor-pointer border-none bg-transparent"
+              className="p-1 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary cursor-pointer border-none bg-transparent"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
             <button
               onClick={() => setCurrentDate(new Date())}
-              className="px-2.5 py-1 rounded-lg text-[12px] font-medium text-[#94A3B8] hover:text-white hover:bg-secondary cursor-pointer border-none bg-transparent"
+              className="px-2.5 py-1 rounded-lg text-[12px] font-medium text-muted-foreground hover:text-foreground hover:bg-secondary cursor-pointer border-none bg-transparent"
             >
               Today
             </button>
             <button
               onClick={() => navigateDate("next")}
-              className="p-1 rounded-lg text-[#94A3B8] hover:text-white hover:bg-secondary cursor-pointer border-none bg-transparent"
+              className="p-1 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary cursor-pointer border-none bg-transparent"
             >
               <ChevronRight className="w-4 h-4" />
             </button>
@@ -311,13 +337,13 @@ export const DashboardCalendar: React.FC = () => {
 
         {/* Search Input */}
         <div className="relative flex-1 max-w-xs">
-          <Search className="w-3.5 h-3.5 text-[#94A3B8] absolute left-3 top-1/2 -translate-y-1/2" />
+          <Search className="w-3.5 h-3.5 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
           <input
             type="text"
             placeholder="Search events..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-8 pr-3 py-1.5 rounded-xl bg-background border border-border text-[12px] text-white focus:outline-none focus:ring-1 focus:ring-primary"
+            className="w-full pl-8 pr-3 py-1.5 rounded-xl bg-background border border-border text-[12px] text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
           />
         </div>
 
@@ -329,7 +355,7 @@ export const DashboardCalendar: React.FC = () => {
               onClick={() => setView(mode)}
               className={cn(
                 "px-3 py-1 rounded-lg text-[12px] font-medium transition-all cursor-pointer border-none capitalize",
-                view === mode ? "bg-card text-white font-semibold shadow-xs" : "text-[#94A3B8] hover:text-white bg-transparent"
+                view === mode ? "bg-card text-foreground font-semibold shadow-xs" : "text-muted-foreground hover:text-foreground bg-transparent"
               )}
             >
               {mode}
@@ -342,7 +368,7 @@ export const DashboardCalendar: React.FC = () => {
       {view === "month" && (
         <div className="rounded-2xl border border-border bg-card overflow-hidden shadow-xs">
           {/* Day of Week Header */}
-          <div className="grid grid-cols-7 border-b border-border bg-secondary/30 text-center text-[12px] font-semibold text-[#94A3B8]">
+          <div className="grid grid-cols-7 border-b border-border bg-secondary/30 text-center text-[12px] font-semibold text-muted-foreground">
             {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
               <div key={day} className="py-2 border-r border-border last:border-r-0">
                 {day}
@@ -371,7 +397,7 @@ export const DashboardCalendar: React.FC = () => {
                     <span
                       className={cn(
                         "text-[12px] font-mono tabular-nums",
-                        isToday ? "w-5 h-5 rounded-full bg-primary text-primary-foreground font-bold flex items-center justify-center" : "text-[#94A3B8]"
+                        isToday ? "w-5 h-5 rounded-full bg-primary text-primary-foreground font-bold flex items-center justify-center" : "text-muted-foreground"
                       )}
                     >
                       {isCurrentMonth ? dayNum : ""}
@@ -385,18 +411,18 @@ export const DashboardCalendar: React.FC = () => {
                         <div
                           key={ev.id}
                           className={cn(
-                            "px-1.5 py-0.5 rounded text-[10px] font-semibold text-white truncate tabular-nums flex items-center justify-between gap-1",
+                            "px-1.5 py-0.5 rounded text-[10px] font-semibold truncate tabular-nums flex items-center justify-between gap-1 shadow-xs",
                             cat.bg
                           )}
                           title={`${ev.title} (${ev.startTime})`}
                         >
                           <span className="truncate">{ev.title}</span>
-                          <span className="opacity-80 shrink-0 text-[9px]">{ev.startTime}</span>
+                          <span className="opacity-90 shrink-0 text-[9px]">{ev.startTime}</span>
                         </div>
                       );
                     })}
                     {dayEvents.length > 2 && (
-                      <span className="text-[10px] font-mono tabular-nums text-[#94A3B8]">
+                      <span className="text-[10px] font-mono tabular-nums text-muted-foreground">
                         +{dayEvents.length - 2} more
                       </span>
                     )}
@@ -420,16 +446,20 @@ export const DashboardCalendar: React.FC = () => {
 
               return (
                 <div key={i} className="rounded-xl border border-border bg-secondary/20 p-3 min-h-[160px] space-y-2">
-                  <div className="text-[12px] font-semibold text-white">
+                  <div className="text-[12px] font-semibold text-foreground">
                     {d.toLocaleDateString("en-US", { weekday: "short", month: "numeric", day: "numeric" })}
                   </div>
                   <div className="space-y-1.5">
-                    {dayEvents.map((ev) => (
-                      <div key={ev.id} className="p-2 rounded-lg bg-card border border-border space-y-1">
-                        <div className="text-[11px] font-semibold text-[#E2E8F0] truncate">{ev.title}</div>
-                        <div className="text-[10px] font-mono tabular-nums text-[#94A3B8]">{ev.startTime}</div>
-                      </div>
-                    ))}
+                    {dayEvents.length === 0 ? (
+                      <div className="text-[11px] text-muted-foreground pt-2">No events</div>
+                    ) : (
+                      dayEvents.map((ev) => (
+                        <div key={ev.id} className="p-2 rounded-lg bg-card border border-border space-y-1">
+                          <div className="text-[11px] font-semibold text-foreground truncate">{ev.title}</div>
+                          <div className="text-[10px] font-mono tabular-nums text-muted-foreground">{ev.startTime}</div>
+                        </div>
+                      ))
+                    )}
                   </div>
                 </div>
               );
@@ -441,70 +471,80 @@ export const DashboardCalendar: React.FC = () => {
       {/* Day / List View */}
       {(view === "day" || view === "list") && (
         <div className="rounded-2xl border border-border bg-card p-4 space-y-3">
-          <h3 className="text-[14px] font-semibold text-[#E2E8F0]">
+          <h3 className="text-[14px] font-semibold text-foreground">
             {view === "day" ? currentDate.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" }) : "All Scheduled Events"}
           </h3>
           <div className="space-y-2">
-            {filteredEvents.map((ev) => {
-              const cat = CATEGORY_COLORS[ev.category] || CATEGORY_COLORS.Meeting;
-              return (
-                <div
-                  key={ev.id}
-                  className="p-3.5 rounded-xl border border-border bg-secondary/20 hover:border-primary/40 transition-colors flex items-center justify-between gap-3"
-                >
-                  <div className="space-y-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className={cn("text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md border", cat.badge)}>
+            {filteredEvents.length === 0 ? (
+              <div className="text-center py-8 text-[12px] text-muted-foreground">
+                No events scheduled. Click "New Event" to add a meeting or study session!
+              </div>
+            ) : (
+              filteredEvents.map((ev) => {
+                const cat = CATEGORY_COLORS[ev.category] || CATEGORY_COLORS.Meeting;
+                return (
+                  <div
+                    key={ev.id}
+                    className="p-3.5 rounded-xl border border-border bg-card hover:bg-secondary/30 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs"
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className={cn("px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider border", cat.badge)}>
                         {ev.category}
-                      </span>
-                      <span className="text-[12px] font-mono tabular-nums text-[#94A3B8]">{ev.date}</span>
+                      </div>
+                      <div>
+                        <h4 className="text-[14px] font-semibold text-foreground">{ev.title}</h4>
+                        <div className="flex flex-wrap items-center gap-3 text-[12px] text-muted-foreground mt-0.5">
+                          <span className="flex items-center gap-1 font-mono tabular-nums">
+                            <Clock className="w-3.5 h-3.5 text-blue-500" />
+                            {ev.startTime} - {ev.endTime}
+                          </span>
+                          <span>•</span>
+                          <span>{ev.organizer}</span>
+                        </div>
+                      </div>
                     </div>
-                    <h4 className="text-[13px] font-semibold text-white truncate">{ev.title}</h4>
-                    {ev.description && <p className="text-[12px] text-[#94A3B8] line-clamp-1">{ev.description}</p>}
-                  </div>
 
-                  <div className="flex items-center gap-2 shrink-0">
-                    {ev.meetLink && (
-                      <a
-                        href={ev.meetLink}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="px-3 py-1.5 rounded-xl bg-blue-600 text-white text-[12px] font-bold flex items-center gap-1.5 no-underline hover:bg-blue-700 transition-colors"
+                    <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
+                      {ev.meetLink && (
+                        <a
+                          href={ev.meetLink}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-3 py-1.5 rounded-lg bg-blue-600 text-white text-[12px] font-semibold flex items-center gap-1.5 shadow-xs hover:bg-blue-700 transition-colors no-underline"
+                        >
+                          <Video className="w-3.5 h-3.5" />
+                          <span>Join Meet</span>
+                        </a>
+                      )}
+                      <button
+                        onClick={() => handleDeleteEvent(ev.id)}
+                        className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive transition-colors cursor-pointer border-none bg-transparent"
+                        title="Delete event"
                       >
-                        <Video className="w-3.5 h-3.5" />
-                        <span>Join</span>
-                      </a>
-                    )}
-                    <button
-                      onClick={() => handleDeleteEvent(ev.id)}
-                      className="p-1.5 text-[#94A3B8] hover:text-destructive cursor-pointer border-none bg-transparent"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })
+            )}
           </div>
         </div>
       )}
 
-      {/* Schedule Meeting Modal */}
+      {/* Schedule Event Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
           <form
             onSubmit={handleAddEvent}
-            className="w-full max-w-md rounded-2xl bg-card border border-border p-5 space-y-3.5 shadow-2xl animate-in zoom-in-95 duration-150"
+            className="w-full max-w-md rounded-2xl bg-card border border-border p-5 space-y-4 shadow-2xl animate-in zoom-in-95 duration-150"
           >
             <div className="flex items-center justify-between pb-2 border-b border-border">
-              <h3 className="text-[14px] font-semibold text-white flex items-center gap-2">
-                <Plus className="w-4 h-4 text-primary" />
-                Schedule Calendar Event
-              </h3>
+              <h3 className="text-[14px] font-semibold text-foreground">Schedule Calendar Event</h3>
               <button
                 type="button"
                 onClick={() => setShowAddModal(false)}
-                className="p-1 text-[#94A3B8] hover:text-white cursor-pointer border-none bg-transparent"
+                className="p-1 rounded-lg text-muted-foreground hover:text-foreground cursor-pointer border-none bg-transparent"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -512,58 +552,56 @@ export const DashboardCalendar: React.FC = () => {
 
             <div className="space-y-3">
               <div>
-                <label className="text-[12px] font-medium text-[#E2E8F0] mb-1 block">Title</label>
+                <label className="text-[12px] font-medium text-foreground mb-1 block">Title</label>
                 <input
                   type="text"
                   required
-                  placeholder="e.g. Algorithmic Duel / Review"
+                  placeholder="e.g. CS Architecture Review"
                   value={newEvent.title}
                   onChange={(e) => setNewEvent({ ...newEvent, title: e.target.value })}
-                  className="w-full px-3 py-2 bg-background border border-border rounded-xl text-[12px] text-white focus:outline-none focus:ring-1 focus:ring-primary"
+                  className="w-full px-3 py-2 bg-background border border-border rounded-xl text-[12px] text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                 />
               </div>
 
               <div className="grid grid-cols-3 gap-2">
                 <div>
-                  <label className="text-[12px] font-medium text-[#E2E8F0] mb-1 block">Date</label>
+                  <label className="text-[12px] font-medium text-foreground mb-1 block">Date</label>
                   <input
                     type="date"
                     required
                     value={newEvent.date}
                     onChange={(e) => setNewEvent({ ...newEvent, date: e.target.value })}
-                    className="w-full px-2 py-2 bg-background border border-border rounded-xl text-[12px] text-white focus:outline-none focus:ring-1 focus:ring-primary"
+                    className="w-full px-2 py-2 bg-background border border-border rounded-xl text-[11px] text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                   />
                 </div>
                 <div>
-                  <label className="text-[12px] font-medium text-[#E2E8F0] mb-1 block">Start Time</label>
+                  <label className="text-[12px] font-medium text-foreground mb-1 block">Start</label>
                   <input
                     type="text"
-                    required
                     placeholder="10:00 AM"
                     value={newEvent.startTime}
                     onChange={(e) => setNewEvent({ ...newEvent, startTime: e.target.value })}
-                    className="w-full px-2 py-2 bg-background border border-border rounded-xl text-[12px] text-white focus:outline-none focus:ring-1 focus:ring-primary"
+                    className="w-full px-2 py-2 bg-background border border-border rounded-xl text-[11px] text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                   />
                 </div>
                 <div>
-                  <label className="text-[12px] font-medium text-[#E2E8F0] mb-1 block">End Time</label>
+                  <label className="text-[12px] font-medium text-foreground mb-1 block">End</label>
                   <input
                     type="text"
-                    required
                     placeholder="11:00 AM"
                     value={newEvent.endTime}
                     onChange={(e) => setNewEvent({ ...newEvent, endTime: e.target.value })}
-                    className="w-full px-2 py-2 bg-background border border-border rounded-xl text-[12px] text-white focus:outline-none focus:ring-1 focus:ring-primary"
+                    className="w-full px-2 py-2 bg-background border border-border rounded-xl text-[11px] text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="text-[12px] font-medium text-[#E2E8F0] mb-1 block">Category</label>
+                <label className="text-[12px] font-medium text-foreground mb-1 block">Category</label>
                 <select
                   value={newEvent.category}
                   onChange={(e) => setNewEvent({ ...newEvent, category: e.target.value as any })}
-                  className="w-full px-3 py-2 bg-background border border-border rounded-xl text-[12px] text-white focus:outline-none focus:ring-1 focus:ring-primary"
+                  className="w-full px-3 py-2 bg-background border border-border rounded-xl text-[12px] text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                 >
                   <option value="Meeting">Team Meeting</option>
                   <option value="Duel">Coding Duel</option>
@@ -574,13 +612,13 @@ export const DashboardCalendar: React.FC = () => {
               </div>
 
               <div>
-                <label className="text-[12px] font-medium text-[#E2E8F0] mb-1 block">Google Meet Link</label>
+                <label className="text-[12px] font-medium text-foreground mb-1 block">Google Meet Link</label>
                 <input
                   type="text"
                   placeholder="https://meet.google.com/..."
                   value={newEvent.meetLink}
                   onChange={(e) => setNewEvent({ ...newEvent, meetLink: e.target.value })}
-                  className="w-full px-3 py-2 bg-background border border-border rounded-xl text-[12px] text-white focus:outline-none focus:ring-1 focus:ring-primary"
+                  className="w-full px-3 py-2 bg-background border border-border rounded-xl text-[12px] text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                 />
               </div>
             </div>
@@ -589,7 +627,7 @@ export const DashboardCalendar: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setShowAddModal(false)}
-                className="px-3 py-1.5 text-[12px] text-[#94A3B8] hover:text-white cursor-pointer border-none bg-transparent"
+                className="px-3 py-1.5 text-[12px] text-muted-foreground hover:text-foreground cursor-pointer border-none bg-transparent"
               >
                 Cancel
               </button>
@@ -610,27 +648,27 @@ export const DashboardCalendar: React.FC = () => {
           <div className="w-full max-w-md rounded-2xl bg-card border border-border p-5 space-y-4 shadow-2xl animate-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between pb-2 border-b border-border">
               <div className="flex items-center gap-2">
-                <CalendarIcon className="w-4 h-4 text-blue-400" />
-                <h3 className="text-[14px] font-semibold text-white">
+                <CalendarIcon className="w-4 h-4 text-blue-500" />
+                <h3 className="text-[14px] font-semibold text-foreground">
                   Link College / University Google Calendar
                 </h3>
               </div>
               <button
                 type="button"
                 onClick={() => setShowAccountModal(false)}
-                className="p-1 rounded-lg text-[#94A3B8] hover:text-white hover:bg-secondary cursor-pointer border-none bg-transparent"
+                className="p-1 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary cursor-pointer border-none bg-transparent"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <p className="text-[12px] text-[#94A3B8]">
+            <p className="text-[12px] text-muted-foreground">
               Link your college / institutional Google Calendar account to pull classes, exams, lab schedules, and meetings into SkillSphere.
             </p>
 
             <div className="space-y-3">
               <div>
-                <label className="text-[10px] font-bold uppercase tracking-wider text-[#94A3B8] block mb-1">
+                <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block mb-1">
                   College Institutional Email Address
                 </label>
                 <input
@@ -638,37 +676,42 @@ export const DashboardCalendar: React.FC = () => {
                   placeholder="e.g. naitik.yadav@vitstudent.ac.in"
                   value={collegeEmailInput}
                   onChange={(e) => setCollegeEmailInput(e.target.value)}
-                  className="w-full px-3 py-2 bg-background border border-border rounded-lg text-[13px] text-white focus:outline-none focus:ring-1 focus:ring-primary font-mono"
+                  className="w-full px-3 py-2 bg-background border border-border rounded-lg text-[13px] text-foreground focus:outline-none focus:ring-1 focus:ring-primary font-mono"
                 />
               </div>
 
-              <div className="p-3 rounded-lg bg-secondary/30 border border-border text-[12px] space-y-1">
-                <div className="text-[#94A3B8]">Currently Active Calendar Account:</div>
-                <div className="font-mono text-white text-[12px] font-medium break-all">
-                  {effectiveEmail} {isCollegeAccount && <span className="text-blue-400 font-semibold">(College Linked)</span>}
+              {effectiveEmail && (
+                <div className="p-3 rounded-lg bg-secondary/30 border border-border text-[12px] space-y-1">
+                  <div className="text-muted-foreground">Active Calendar Account:</div>
+                  <div className="font-mono text-foreground text-[12px] font-medium break-all">
+                    {effectiveEmail} {isCollegeAccount && <span className="text-blue-500 font-semibold">(College Linked)</span>}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
 
             <div className="pt-2 flex flex-col gap-2">
               <button
                 type="button"
-                onClick={handleSaveCollegeEmail}
+                onClick={handleConnectGoogle}
                 className="w-full py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-[12px] font-semibold flex items-center justify-center gap-2 cursor-pointer border-none transition-colors"
               >
-                <CalendarIcon className="w-4 h-4" />
-                <span>Save & Connect College Calendar</span>
+                <svg className="w-4 h-4" viewBox="0 0 24 24">
+                  <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                  <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                  <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
+                  <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
+                </svg>
+                <span>Authorize with Google OAuth</span>
               </button>
 
-              {user?.email && isCollegeAccount && (
-                <button
-                  type="button"
-                  onClick={handleUsePersonalEmail}
-                  className="w-full py-2 rounded-lg bg-secondary hover:bg-secondary/80 text-[#E2E8F0] text-[12px] font-semibold cursor-pointer border border-border transition-colors"
-                >
-                  Switch back to Personal Account ({personalEmail})
-                </button>
-              )}
+              <button
+                type="button"
+                onClick={handleSaveCollegeEmail}
+                className="w-full py-2 rounded-lg bg-secondary hover:bg-secondary/80 text-foreground text-[12px] font-semibold cursor-pointer border border-border transition-colors"
+              >
+                Save College Email Manually
+              </button>
             </div>
           </div>
         </div>

@@ -83,7 +83,16 @@ const STATUS_STYLES: Record<JobApplication["status"], { bg: string; text: string
 };
 
 export const DashboardJobs: React.FC = () => {
-  const [jobs, setJobs] = useState<JobApplication[]>(DEFAULT_JOBS);
+  const [jobs, setJobs] = useState<JobApplication[]>(() => {
+    try {
+      const stored = localStorage.getItem("skillsphere_home_jobs");
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch (e) {}
+    return [];
+  });
   const [filter, setFilter] = useState<string>("all");
   const [search, setSearch] = useState("");
   const [showAddModal, setShowAddModal] = useState(false);
@@ -163,11 +172,11 @@ export const DashboardJobs: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-border gap-4">
         <div>
-          <h2 className="text-[24px] font-semibold tracking-tight text-white flex items-center gap-2.5">
+          <h2 className="text-[20px] font-semibold tracking-tight text-foreground flex items-center gap-2.5">
             <Briefcase className="w-5 h-5 text-primary" />
             Job & Internship Applications
           </h2>
-          <p className="text-[12px] text-[#94A3B8] mt-1">
+          <p className="text-[12px] text-muted-foreground mt-1">
             Track interview pipelines, offers, salary details, and application links
           </p>
         </div>
@@ -200,7 +209,7 @@ export const DashboardJobs: React.FC = () => {
                 <span className={cn("px-2 py-0.5 rounded-md border text-[10px] uppercase font-bold tracking-wider", style.bg, style.text)}>
                   {style.label}
                 </span>
-                <span className="text-[16px] font-semibold text-white tabular-nums">{count}</span>
+                <span className="text-[16px] font-semibold text-foreground tabular-nums">{count}</span>
               </div>
             </button>
           );
@@ -254,8 +263,8 @@ export const DashboardJobs: React.FC = () => {
         {filteredJobs.length === 0 ? (
           <div className="p-10 text-center rounded-xl bg-card border border-border text-muted-foreground">
             <Briefcase className="w-8 h-8 mx-auto text-muted-foreground/40 mb-2" />
-            <p className="text-[14px] font-semibold text-[#E2E8F0]">No applications found</p>
-            <p className="text-[12px] text-[#94A3B8] mt-0.5">Add your target roles and track your application milestones</p>
+            <p className="text-[14px] font-semibold text-foreground">No applications found</p>
+            <p className="text-[12px] text-muted-foreground mt-0.5">Add your target roles and track your application milestones</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
@@ -276,7 +285,7 @@ export const DashboardJobs: React.FC = () => {
                             {job.company}
                           </span>
                         </div>
-                        <h4 className="text-[14px] font-semibold text-[#E2E8F0] mt-0.5">{job.title}</h4>
+                        <h4 className="text-[14px] font-semibold text-foreground mt-0.5">{job.title}</h4>
                       </div>
 
                       {/* Status selector */}
@@ -297,7 +306,7 @@ export const DashboardJobs: React.FC = () => {
                       </select>
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-2.5 text-[12px] text-[#94A3B8] pt-1">
+                    <div className="flex flex-wrap items-center gap-2.5 text-[12px] text-muted-foreground pt-1">
                       {job.location && (
                         <span className="flex items-center gap-1">
                           <MapPin className="w-3.5 h-3.5 text-muted-foreground" />
@@ -305,7 +314,7 @@ export const DashboardJobs: React.FC = () => {
                         </span>
                       )}
                       {job.salary && (
-                        <span className="flex items-center gap-1 text-[#E2E8F0] font-semibold tabular-nums">
+                        <span className="flex items-center gap-1 text-foreground font-semibold tabular-nums">
                           <DollarSign className="w-3.5 h-3.5 text-emerald-400" />
                           {job.salary}
                         </span>
@@ -317,7 +326,7 @@ export const DashboardJobs: React.FC = () => {
                     </div>
 
                     {job.notes && (
-                      <p className="text-[12px] text-[#94A3B8] pt-1 border-t border-border/60">
+                      <p className="text-[12px] text-muted-foreground pt-1 border-t border-border/60">
                         {job.notes}
                       </p>
                     )}
@@ -335,7 +344,7 @@ export const DashboardJobs: React.FC = () => {
                         <ExternalLink className="w-3 h-3" />
                       </a>
                     ) : (
-                      <span className="text-[12px] text-[#94A3B8]">No link attached</span>
+                      <span className="text-[12px] text-muted-foreground">No link attached</span>
                     )}
 
                     <button

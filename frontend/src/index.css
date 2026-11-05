@@ -4,44 +4,44 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  --background: #ffffff;
-  --foreground: #000000;
+  --background: #f8fafc;
+  --foreground: #09090b;
   --card: #ffffff;
-  --card-foreground: #000000;
+  --card-foreground: #09090b;
   --popover: #ffffff;
-  --popover-foreground: #000000;
+  --popover-foreground: #09090b;
   --primary: #0284c7;
   --primary-foreground: #ffffff;
-  --secondary: #f4f4f5;
-  --secondary-foreground: #000000;
-  --muted: #f4f4f5;
-  --muted-foreground: #64748b;
-  --accent: #f4f4f5;
-  --accent-foreground: #000000;
+  --secondary: #f1f5f9;
+  --secondary-foreground: #09090b;
+  --muted: #f1f5f9;
+  --muted-foreground: #475569;
+  --accent: #f1f5f9;
+  --accent-foreground: #09090b;
   --destructive: #ef4444;
   --destructive-foreground: #ffffff;
-  --border: #e4e4e7;
-  --input: #e4e4e7;
+  --border: #e2e8f0;
+  --input: #e2e8f0;
   --ring: #0284c7;
-  --scrollbar-thumb: #d4d4d8;
-  --scrollbar-thumb-hover: #a1a1aa;
+  --scrollbar-thumb: #cbd5e1;
+  --scrollbar-thumb-hover: #94a3b8;
 }
 
 .dark {
   --background: #09090b;
-  --foreground: #ffffff;
-  --card: #131316;
-  --card-foreground: #e2e8f0;
-  --popover: #131316;
-  --popover-foreground: #e2e8f0;
+  --foreground: #f8fafc;
+  --card: #121215;
+  --card-foreground: #f8fafc;
+  --popover: #121215;
+  --popover-foreground: #f8fafc;
   --primary: #00f2fe;
   --primary-foreground: #09090b;
-  --secondary: #1e1e24;
-  --secondary-foreground: #e2e8f0;
-  --muted: #1e1e24;
+  --secondary: #1a1a20;
+  --secondary-foreground: #f8fafc;
+  --muted: #1a1a20;
   --muted-foreground: #94a3b8;
-  --accent: #1e1e24;
-  --accent-foreground: #ffffff;
+  --accent: #1a1a20;
+  --accent-foreground: #f8fafc;
   --destructive: #ef4444;
   --destructive-foreground: #ffffff;
   --border: #222228;
