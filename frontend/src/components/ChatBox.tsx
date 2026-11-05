@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
-import { db, auth } from "../firebase";
+import { db, auth, storage } from "../firebase";
 import {
   collection,
   addDoc,
@@ -13,6 +13,7 @@ import {
   getDocs,
   writeBatch,
 } from "firebase/firestore";
+import { ref as storageRef, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -64,6 +65,13 @@ import {
   ChevronDown,
   Check,
   Plus,
+  Download,
+  FileSpreadsheet,
+  FileCode,
+  FileArchive,
+  UploadCloud,
+  Loader2,
+  Eye,
 } from "lucide-react";
 import EmojiPicker from "./EmojiPicker";
 
@@ -74,17 +82,68 @@ interface ChatUser {
   avatarUrl?: string;
 }
 
-interface ChatMessage {
+export interface ChatAttachment {
+  url: string;
+  name: string;
+  size: number;
+  type: string;
+  category: "media" | "docs" | "file";
+}
+
+export interface ChatMessage {
   id: string;
   text?: string;
   senderId?: string;
   timestamp?: any;
   reactions?: Record<string, string[]>; // { [emoji]: [userId1, userId2] }
+  file?: ChatAttachment;
 }
 
 interface ChatboxProps {
   selectedUser: ChatUser;
 }
+
+const formatFileSize = (bytes?: number): string => {
+  if (!bytes || bytes === 0) return "0 B";
+  const k = 1024;
+  const sizes = ["B", "KB", "MB", "GB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + " " + sizes[i];
+};
+
+const getFileCategory = (file: File): "media" | "docs" | "file" => {
+  if (file.type.startsWith("image/") || file.type.startsWith("video/")) {
+    return "media";
+  }
+  const ext = file.name.split(".").pop()?.toLowerCase() || "";
+  if (
+    [
+      "pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "txt", "csv",
+      "json", "zip", "rar", "tar", "gz", "js", "ts", "tsx", "py", "html",
+      "css", "md", "sql", "xml", "yaml", "yml"
+    ].includes(ext)
+  ) {
+    return "docs";
+  }
+  return "file";
+};
+
+const getDocIcon = (name: string, type?: string) => {
+  const ext = name.split(".").pop()?.toLowerCase() || "";
+  if (ext === "pdf") {
+    return <FileText className="w-5 h-5 text-rose-500 shrink-0" />;
+  }
+  if (["xls", "xlsx", "csv"].includes(ext)) {
+    return <FileSpreadsheet className="w-5 h-5 text-emerald-500 shrink-0" />;
+  }
+  if (["js", "ts", "tsx", "py", "json", "html", "css", "cpp", "c", "java", "sql"].includes(ext)) {
+    return <FileCode className="w-5 h-5 text-cyan-400 shrink-0" />;
+  }
+  if (["zip", "rar", "7z", "tar", "gz"].includes(ext)) {
+    return <FileArchive className="w-5 h-5 text-amber-500 shrink-0" />;
+  }
+  return <FileText className="w-5 h-5 text-blue-400 shrink-0" />;
+};
 
 const QUICK_REACTIONS = ["👍", "❤️", "😂", "😮", "😢", "🙏"];
 
@@ -173,6 +232,125 @@ export const Chatbox: React.FC<ChatboxProps> = ({ selectedUser }) => {
     return localStorage.getItem(`skillsphere_chat_theme_${chatId}`) || "default";
   });
 
+  // File and Document Sharing State
+  interface StagedFile {
+    file: File;
+    previewUrl?: string;
+    category: "media" | "docs" | "file";
+  }
+
+  const [stagedFile, setStagedFile] = useState<StagedFile | null>(null);
+  const [isUploading, setIsUploading] = useState<boolean>(false);
+  const [uploadProgress, setUploadProgress] = useState<number>(0);
+  const [isDraggingOver, setIsDraggingOver] = useState<boolean>(false);
+  const [viewingImageUrl, setViewingImageUrl] = useState<string | null>(null);
+
+  const mediaInputRef = useRef<HTMLInputElement | null>(null);
+  const docInputRef = useRef<HTMLInputElement | null>(null);
+  const generalFileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const handleSelectFile = (file: File) => {
+    if (file.size > 25 * 1024 * 1024) {
+      alert("File is too large. Maximum supported size is 25MB.");
+      return;
+    }
+    const category = getFileCategory(file);
+    let previewUrl: string | undefined;
+    if (file.type.startsWith("image/")) {
+      previewUrl = URL.createObjectURL(file);
+    }
+    setStagedFile({
+      file,
+      category,
+      previewUrl,
+    });
+  };
+
+  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      handleSelectFile(file);
+    }
+    e.target.value = "";
+  };
+
+  const clearStagedFile = () => {
+    if (stagedFile?.previewUrl) {
+      URL.revokeObjectURL(stagedFile.previewUrl);
+    }
+    setStagedFile(null);
+    setIsUploading(false);
+    setUploadProgress(0);
+  };
+
+  const uploadFile = async (file: File): Promise<string> => {
+    const timestamp = Date.now();
+    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+    const path = `chats/${chatId}/${timestamp}_${safeName}`;
+
+    try {
+      const fileRef = storageRef(storage, path);
+      const uploadTask = uploadBytesResumable(fileRef, file);
+
+      return await new Promise<string>((resolve, reject) => {
+        uploadTask.on(
+          "state_changed",
+          (snapshot) => {
+            if (snapshot.totalBytes > 0) {
+              const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+              setUploadProgress(Math.round(progress));
+            }
+          },
+          (error) => {
+            console.warn("Storage upload error, attempting data URL fallback:", error);
+            reject(error);
+          },
+          async () => {
+            try {
+              const downloadUrl = await getDownloadURL(uploadTask.snapshot.ref);
+              resolve(downloadUrl);
+            } catch (err) {
+              reject(err);
+            }
+          }
+        );
+      });
+    } catch (err) {
+      // Fallback for dev environment or if Firebase storage rules block upload
+      if (file.size <= 2 * 1024 * 1024) {
+        return await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = (e) => reject(e);
+          reader.readAsDataURL(file);
+        });
+      }
+      throw new Error("Could not upload file. Please keep files under 2MB for direct delivery.");
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDraggingOver(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDraggingOver(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDraggingOver(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) {
+      handleSelectFile(file);
+    }
+  };
+
   // Fetch Live User Details for Chat Header
   useEffect(() => {
     if (selectedUser.name) setActualName(selectedUser.name);
@@ -226,24 +404,51 @@ export const Chatbox: React.FC<ChatboxProps> = ({ selectedUser }) => {
     }
   }, [messages, isSearchOpen]);
 
-  // Send Message
+  // Send Message (Text and/or File)
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newMessage.trim() || !currentUser || !chatId) return;
-
-    const messageData = {
-      text: newMessage.trim(),
-      senderId: currentUser.uid,
-      timestamp: serverTimestamp(),
-      reactions: {},
-    };
+    if ((!newMessage.trim() && !stagedFile) || !currentUser || !chatId) return;
 
     try {
+      let fileAttachment: ChatAttachment | undefined;
+
+      if (stagedFile) {
+        setIsUploading(true);
+        setUploadProgress(15);
+        const fileUrl = await uploadFile(stagedFile.file);
+        fileAttachment = {
+          url: fileUrl,
+          name: stagedFile.file.name,
+          size: stagedFile.file.size,
+          type: stagedFile.file.type || "application/octet-stream",
+          category: stagedFile.category,
+        };
+      }
+
+      const messageData: any = {
+        senderId: currentUser.uid,
+        timestamp: serverTimestamp(),
+        reactions: {},
+      };
+
+      if (newMessage.trim()) {
+        messageData.text = newMessage.trim();
+      }
+
+      if (fileAttachment) {
+        messageData.file = fileAttachment;
+      }
+
       await addDoc(collection(db, "chats", chatId, "messages"), messageData);
       setNewMessage("");
+      clearStagedFile();
       setIsInputEmojiOpen(false);
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error sending message:", err);
+      alert("Failed to send message: " + (err.message || "Unknown error"));
+    } finally {
+      setIsUploading(false);
+      setUploadProgress(0);
     }
   };
 
@@ -373,8 +578,8 @@ export const Chatbox: React.FC<ChatboxProps> = ({ selectedUser }) => {
   // Extracted Media, Docs & Links from Chat
   const mediaDocsData = useMemo(() => {
     const links: { url: string; time: string; sender: string }[] = [];
-    const media: { url: string; time: string; sender: string }[] = [];
-    const docsList: { name: string; url: string; time: string; sender: string }[] = [];
+    const media: { url: string; time: string; sender: string; name?: string; isVideo?: boolean }[] = [];
+    const docsList: { name: string; url: string; size?: number; time: string; sender: string }[] = [];
 
     const urlRegex = /(https?:\/\/[^\s]+)/gi;
 
@@ -388,13 +593,39 @@ export const Chatbox: React.FC<ChatboxProps> = ({ selectedUser }) => {
           })
         : "";
 
+      // 1. Check for attached file/document
+      if (msg.file) {
+        if (
+          msg.file.category === "media" ||
+          msg.file.type?.startsWith("image/") ||
+          msg.file.type?.startsWith("video/")
+        ) {
+          media.push({
+            url: msg.file.url,
+            name: msg.file.name,
+            isVideo: msg.file.type?.startsWith("video/"),
+            time,
+            sender,
+          });
+        } else {
+          docsList.push({
+            name: msg.file.name,
+            url: msg.file.url,
+            size: msg.file.size,
+            time,
+            sender,
+          });
+        }
+      }
+
+      // 2. Check for URL text matches
       if (msg.text) {
         const matches = msg.text.match(urlRegex);
         if (matches) {
           matches.forEach((u) => {
-            if (/\.(jpg|jpeg|png|gif|webp|svg)/i.test(u)) {
+            if (/\.(jpg|jpeg|png|gif|webp|svg|mp4|webm)/i.test(u)) {
               media.push({ url: u, time, sender });
-            } else if (/\.(pdf|doc|docx|zip|txt|json)/i.test(u)) {
+            } else if (/\.(pdf|doc|docx|zip|txt|json|xls|xlsx|csv)/i.test(u)) {
               docsList.push({ name: u.split("/").pop() || "Document", url: u, time, sender });
             } else {
               links.push({ url: u, time, sender });
@@ -422,7 +653,20 @@ export const Chatbox: React.FC<ChatboxProps> = ({ selectedUser }) => {
       onClick={() => {
         if (activeReactionMessageId) setActiveReactionMessageId(null);
       }}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
     >
+      {/* Drag & Drop File Overlay */}
+      {isDraggingOver && (
+        <div className="absolute inset-0 z-50 bg-background/85 backdrop-blur-sm border-2 border-dashed border-primary flex flex-col items-center justify-center gap-3 p-6 pointer-events-none animate-in fade-in-50 duration-150">
+          <UploadCloud className="w-14 h-14 text-primary animate-bounce" />
+          <p className="text-base font-bold text-foreground">Drop file or document here to share</p>
+          <p className="text-xs text-muted-foreground">
+            Share code, PDFs, sheets, images, and videos with {displayName}
+          </p>
+        </div>
+      )}
       {/* Chat Header */}
       <div className="h-14 border-b border-border/80 flex items-center px-4 justify-between bg-card/90 backdrop-blur-md shrink-0 z-20">
         <div className="flex items-center gap-3 min-w-0">
@@ -729,12 +973,83 @@ export const Chatbox: React.FC<ChatboxProps> = ({ selectedUser }) => {
                     e.stopPropagation();
                     setActiveReactionMessageId(isReactionOpen ? null : msg.id);
                   }}
-                  className={`max-w-[80%] sm:max-w-[70%] px-3.5 py-2 rounded-2xl text-sm leading-relaxed break-words shadow-sm transition-all cursor-default relative ${
+                  className={`max-w-[85%] sm:max-w-[70%] px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed break-words shadow-sm transition-all cursor-default relative ${
                     isMe
                       ? "bg-primary/20 text-foreground border border-primary/30 rounded-tr-xs"
                       : "bg-secondary text-secondary-foreground border border-border rounded-tl-xs"
                   } ${isSearchMatch ? "ring-2 ring-primary shadow-lg" : ""}`}
                 >
+                  {/* File / Document Attachment */}
+                  {msg.file && (
+                    <div className="mb-2">
+                      {msg.file.category === "media" && msg.file.type?.startsWith("image/") ? (
+                        <div className="relative group/media overflow-hidden rounded-xl border border-border/70 max-w-sm bg-black/20">
+                          <img
+                            src={msg.file.url}
+                            alt={msg.file.name}
+                            onClick={() => setViewingImageUrl(msg.file!.url)}
+                            className="w-full max-h-72 object-cover rounded-xl cursor-pointer hover:scale-[1.01] transition-transform duration-200"
+                          />
+                          <a
+                            href={msg.file.url}
+                            download={msg.file.name}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="absolute bottom-2 right-2 p-1.5 rounded-lg bg-black/80 hover:bg-black text-white opacity-0 group-hover/media:opacity-100 transition-opacity flex items-center gap-1 text-[11px] font-medium shadow-md"
+                            title="Download image"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <Download className="w-3.5 h-3.5" />
+                          </a>
+                        </div>
+                      ) : msg.file.category === "media" && msg.file.type?.startsWith("video/") ? (
+                        <div className="relative overflow-hidden rounded-xl border border-border/70 max-w-sm">
+                          <video
+                            src={msg.file.url}
+                            controls
+                            className="w-full max-h-72 rounded-xl bg-black/80"
+                          />
+                        </div>
+                      ) : (
+                        /* Document / File Card */
+                        <div
+                          className={`flex items-center gap-3 p-2.5 rounded-xl border transition-colors ${
+                            isMe
+                              ? "bg-background/50 border-primary/30 hover:bg-background/70"
+                              : "bg-background/60 border-border hover:bg-background/90"
+                          }`}
+                        >
+                          <div className="size-10 rounded-lg bg-secondary/80 flex items-center justify-center shrink-0 border border-border">
+                            {getDocIcon(msg.file.name, msg.file.type)}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-xs font-semibold text-foreground truncate max-w-[180px] sm:max-w-[240px]">
+                              {msg.file.name}
+                            </p>
+                            <p className="text-[10px] text-muted-foreground flex items-center gap-1.5 mt-0.5">
+                              <span>{formatFileSize(msg.file.size)}</span>
+                              <span>•</span>
+                              <span className="uppercase text-[9px] font-mono font-bold text-primary">
+                                {msg.file.name.split(".").pop() || "DOC"}
+                              </span>
+                            </p>
+                          </div>
+                          <a
+                            href={msg.file.url}
+                            download={msg.file.name}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="size-8 rounded-lg bg-secondary hover:bg-primary hover:text-primary-foreground flex items-center justify-center text-foreground transition-colors shrink-0 cursor-pointer"
+                            title={`Download ${msg.file.name}`}
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <Download className="w-4 h-4" />
+                          </a>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   <div className="flex items-baseline gap-3 justify-between">
                     <span className="break-words select-text">
                       {isSearchMatch && searchQuery.trim() ? (
@@ -826,6 +1141,57 @@ export const Chatbox: React.FC<ChatboxProps> = ({ selectedUser }) => {
         <div ref={scrollRef} />
       </div>
 
+      {/* File & Document Staging Preview */}
+      {stagedFile && (
+        <div className="mx-4 mb-2 p-2.5 rounded-xl bg-card border border-border flex items-center justify-between gap-3 shadow-md animate-in slide-in-from-bottom-2 duration-150 shrink-0">
+          <div className="flex items-center gap-3 min-w-0">
+            {stagedFile.previewUrl && stagedFile.file.type.startsWith("image/") ? (
+              <img
+                src={stagedFile.previewUrl}
+                alt="Preview"
+                className="w-12 h-12 rounded-lg object-cover border border-border shrink-0"
+              />
+            ) : (
+              <div className="w-12 h-12 rounded-lg bg-secondary/80 flex items-center justify-center shrink-0 border border-border">
+                {getDocIcon(stagedFile.file.name, stagedFile.file.type)}
+              </div>
+            )}
+            <div className="min-w-0">
+              <p className="text-xs font-semibold text-foreground truncate max-w-[200px] sm:max-w-[320px]">
+                {stagedFile.file.name}
+              </p>
+              <p className="text-[10px] text-muted-foreground flex items-center gap-2 mt-0.5">
+                <span>{formatFileSize(stagedFile.file.size)}</span>
+                <span>•</span>
+                <span className="uppercase text-[9px] font-mono text-primary font-bold">
+                  {stagedFile.file.name.split(".").pop() || stagedFile.category}
+                </span>
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            {isUploading ? (
+              <div className="flex items-center gap-1.5 text-xs text-primary font-medium px-2 py-1 rounded-md bg-primary/10">
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                <span className="text-[11px] font-mono">{uploadProgress}%</span>
+              </div>
+            ) : (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="size-7 rounded-full text-muted-foreground hover:text-destructive hover:bg-destructive/10 cursor-pointer"
+                onClick={clearStagedFile}
+                title="Remove attachment"
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Chat Input Bar */}
       <form
         className="flex items-center gap-2 p-3 border-t border-border/80 bg-card/90 backdrop-blur-md shrink-0 z-10"
@@ -858,6 +1224,28 @@ export const Chatbox: React.FC<ChatboxProps> = ({ selectedUser }) => {
           </PopoverContent>
         </Popover>
 
+        {/* Hidden File Inputs */}
+        <input
+          type="file"
+          ref={mediaInputRef}
+          accept="image/*,video/*"
+          className="hidden"
+          onChange={handleFileInputChange}
+        />
+        <input
+          type="file"
+          ref={docInputRef}
+          accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.json,.zip,.rar,.tar,.gz,.js,.ts,.tsx,.py,.html,.css,.md"
+          className="hidden"
+          onChange={handleFileInputChange}
+        />
+        <input
+          type="file"
+          ref={generalFileInputRef}
+          className="hidden"
+          onChange={handleFileInputChange}
+        />
+
         {/* Attachment Options */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -867,37 +1255,46 @@ export const Chatbox: React.FC<ChatboxProps> = ({ selectedUser }) => {
               size="icon"
               className="h-8 w-8 text-muted-foreground hover:text-foreground cursor-pointer"
               title="Attach media or document"
+              disabled={isUploading}
             >
               <Paperclip className="w-4 h-4" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent className="bg-popover border-border">
-            <DropdownMenuItem className="text-xs cursor-pointer">
-              <ImageIcon className="w-4 h-4 mr-2" /> Photos & Videos
+          <DropdownMenuContent className="bg-popover border-border min-w-[190px]">
+            <DropdownMenuItem
+              className="text-xs cursor-pointer flex items-center gap-2.5 py-2"
+              onClick={() => mediaInputRef.current?.click()}
+            >
+              <ImageIcon className="w-4 h-4 text-cyan-400" />
+              <span>Photos & Videos</span>
             </DropdownMenuItem>
-            <DropdownMenuItem className="text-xs cursor-pointer">
-              <Camera className="w-4 h-4 mr-2" /> Camera
+            <DropdownMenuItem
+              className="text-xs cursor-pointer flex items-center gap-2.5 py-2"
+              onClick={() => docInputRef.current?.click()}
+            >
+              <FileIcon className="w-4 h-4 text-blue-400" />
+              <span>Document (PDF, Code, Office)</span>
             </DropdownMenuItem>
-            <DropdownMenuItem className="text-xs cursor-pointer">
-              <FileIcon className="w-4 h-4 mr-2" /> Document
-            </DropdownMenuItem>
-            <DropdownMenuItem className="text-xs cursor-pointer">
-              <UserRound className="w-4 h-4 mr-2" /> Contact
-            </DropdownMenuItem>
-            <DropdownMenuItem className="text-xs cursor-pointer">
-              <ChartBarIncreasing className="w-4 h-4 mr-2" /> Poll
-            </DropdownMenuItem>
-            <DropdownMenuItem className="text-xs cursor-pointer">
-              <Brush className="w-4 h-4 mr-2" /> Drawing
+            <DropdownMenuItem
+              className="text-xs cursor-pointer flex items-center gap-2.5 py-2"
+              onClick={() => generalFileInputRef.current?.click()}
+            >
+              <Paperclip className="w-4 h-4 text-emerald-400" />
+              <span>Any File or Archive</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
 
         <Input
           className="flex-grow bg-secondary/50 border-border text-sm text-foreground placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-primary rounded-xl"
-          placeholder="Type a message (or right-click messages to react)"
+          placeholder={
+            stagedFile
+              ? `Add a caption for "${stagedFile.file.name}"... (optional)`
+              : "Type a message or drag & drop files here..."
+          }
           value={newMessage}
           onChange={(e) => setNewMessage(e.target.value)}
+          disabled={isUploading}
         />
 
         <Button
@@ -905,10 +1302,14 @@ export const Chatbox: React.FC<ChatboxProps> = ({ selectedUser }) => {
           variant="ghost"
           size="icon"
           className="h-8 w-8 text-muted-foreground hover:text-primary disabled:opacity-40 cursor-pointer"
-          disabled={!newMessage.trim()}
-          title="Send message"
+          disabled={(!newMessage.trim() && !stagedFile) || isUploading}
+          title={stagedFile ? "Send file and caption" : "Send message"}
         >
-          <Send className="w-4 h-4" />
+          {isUploading ? (
+            <Loader2 className="w-4 h-4 animate-spin text-primary" />
+          ) : (
+            <Send className="w-4 h-4" />
+          )}
         </Button>
 
         <Button
@@ -1009,15 +1410,31 @@ export const Chatbox: React.FC<ChatboxProps> = ({ selectedUser }) => {
                 ) : (
                   <div className="grid grid-cols-3 gap-2">
                     {mediaDocsData.media.map((item, idx) => (
-                      <a
+                      <div
                         key={idx}
-                        href={item.url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="aspect-square rounded-md overflow-hidden border border-border hover:opacity-90 transition-opacity"
+                        className="relative group aspect-square rounded-md overflow-hidden border border-border bg-secondary/30"
                       >
-                        <img src={item.url} alt="Media" className="w-full h-full object-cover" />
-                      </a>
+                        {item.isVideo ? (
+                          <video src={item.url} className="w-full h-full object-cover" />
+                        ) : (
+                          <img
+                            src={item.url}
+                            alt={item.name || "Media"}
+                            className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform"
+                            onClick={() => setViewingImageUrl(item.url)}
+                          />
+                        )}
+                        <a
+                          href={item.url}
+                          download={item.name || "media"}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="absolute bottom-1 right-1 p-1 rounded bg-black/80 hover:bg-black text-white opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
+                          title="Download"
+                        >
+                          <Download className="w-3 h-3" />
+                        </a>
+                      </div>
                     ))}
                   </div>
                 )}
@@ -1033,26 +1450,60 @@ export const Chatbox: React.FC<ChatboxProps> = ({ selectedUser }) => {
                   </div>
                 ) : (
                   mediaDocsData.docs.map((docItem, idx) => (
-                    <a
+                    <div
                       key={idx}
-                      href={docItem.url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="flex items-center gap-2.5 p-2 rounded-lg bg-secondary/50 hover:bg-secondary text-xs transition-colors"
+                      className="flex items-center justify-between gap-2.5 p-2 rounded-lg bg-secondary/50 hover:bg-secondary text-xs transition-colors"
                     >
-                      <FileIcon className="w-4 h-4 text-primary shrink-0" />
-                      <div className="min-w-0 flex-1">
-                        <p className="font-medium text-foreground truncate">{docItem.name}</p>
-                        <p className="text-[10px] text-muted-foreground">
-                          {docItem.sender} • {docItem.time}
-                        </p>
+                      <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                        {getDocIcon(docItem.name)}
+                        <div className="min-w-0 flex-1">
+                          <p className="font-medium text-foreground truncate">{docItem.name}</p>
+                          <p className="text-[10px] text-muted-foreground">
+                            {docItem.sender} • {docItem.time}
+                            {docItem.size ? ` • ${formatFileSize(docItem.size)}` : ""}
+                          </p>
+                        </div>
                       </div>
-                    </a>
+                      <a
+                        href={docItem.url}
+                        download={docItem.name}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="p-1.5 rounded-md hover:bg-card text-muted-foreground hover:text-primary transition-colors shrink-0"
+                        title="Download Document"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                      </a>
+                    </div>
                   ))
                 )}
               </>
             )}
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Fullscreen Image Preview Dialog */}
+      <Dialog open={!!viewingImageUrl} onOpenChange={() => setViewingImageUrl(null)}>
+        <DialogContent className="max-w-3xl bg-card/95 border-border text-foreground p-4 flex flex-col items-center">
+          <div className="w-full flex justify-end gap-2 mb-2">
+            <a
+              href={viewingImageUrl || ""}
+              download="image"
+              target="_blank"
+              rel="noreferrer"
+              className="p-1.5 px-3 rounded-lg bg-secondary hover:bg-primary hover:text-primary-foreground text-foreground transition-colors flex items-center gap-1.5 text-xs font-semibold"
+            >
+              <Download className="w-4 h-4" /> Download
+            </a>
+          </div>
+          {viewingImageUrl && (
+            <img
+              src={viewingImageUrl}
+              alt="Full Preview"
+              className="max-h-[75vh] w-auto max-w-full rounded-xl object-contain border border-border shadow-xl"
+            />
+          )}
         </DialogContent>
       </Dialog>
 
