@@ -334,3 +334,4 @@ export const DashboardSettings: React.FC = () => {
 };
 
 export default DashboardSettings;
+
