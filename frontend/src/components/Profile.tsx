@@ -20,7 +20,7 @@ interface ProfileFormData {
   avatarUrl?: string;
 }
 
-const Profile: React.FC = () => {
+export const Profile: React.FC = () => {
   const [isExistingUser, setIsExistingUser] = useState<boolean>(false);
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState<boolean>(false);
