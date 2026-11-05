@@ -35,11 +35,11 @@ export interface CalendarEvent {
 }
 
 const CATEGORY_COLORS: Record<string, { bg: string; text: string; badge: string }> = {
-  Meeting:   { bg: "bg-blue-600 text-white", text: "text-blue-600 dark:text-blue-400", badge: "bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/30" },
-  Duel:      { bg: "bg-purple-600 text-white", text: "text-purple-600 dark:text-purple-400", badge: "bg-purple-500/15 text-purple-600 dark:text-purple-400 border-purple-500/30" },
-  Interview: { bg: "bg-orange-600 text-white", text: "text-orange-600 dark:text-orange-400", badge: "bg-orange-500/15 text-orange-600 dark:text-orange-400 border-orange-500/30" },
-  Class:     { bg: "bg-emerald-600 text-white", text: "text-emerald-600 dark:text-emerald-400", badge: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30" },
-  Task:      { bg: "bg-zinc-600 text-white", text: "text-zinc-600 dark:text-zinc-400", badge: "bg-zinc-500/15 text-zinc-600 dark:text-zinc-400 border-zinc-500/30" },
+  Meeting:   { bg: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-l-2 border-blue-500", text: "text-blue-600 dark:text-blue-400", badge: "bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/30" },
+  Duel:      { bg: "bg-purple-500/10 text-purple-600 dark:text-purple-400 border-l-2 border-purple-500", text: "text-purple-600 dark:text-purple-400", badge: "bg-purple-500/15 text-purple-600 dark:text-purple-400 border border-purple-500/30" },
+  Interview: { bg: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-l-2 border-amber-500", text: "text-amber-600 dark:text-amber-400", badge: "bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30" },
+  Class:     { bg: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-l-2 border-emerald-500", text: "text-emerald-600 dark:text-emerald-400", badge: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30" },
+  Task:      { bg: "bg-zinc-500/10 text-zinc-600 dark:text-zinc-400 border-l-2 border-zinc-500", text: "text-zinc-600 dark:text-zinc-400", badge: "bg-zinc-500/15 text-zinc-600 dark:text-zinc-400 border border-zinc-500/30" },
 };
 
 export const DashboardCalendar: React.FC = () => {
@@ -213,68 +213,58 @@ export const DashboardCalendar: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-border gap-3">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center border border-blue-500/20">
-            <CalendarIcon className="w-4 h-4" />
+          <div className="w-8 h-8 rounded-md bg-surface-muted border border-border/50 text-muted-foreground flex items-center justify-center">
+            <CalendarIcon className="w-4 h-4 text-primary" />
           </div>
           <div>
-            <h2 className="text-[20px] font-semibold tracking-tight text-foreground m-0">Google Calendar</h2>
+            <h2 className="text-[18px] font-semibold tracking-tight text-foreground m-0">Google Calendar</h2>
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          {isConnected ? (
-            <>
-              {/* Account Switcher Pill */}
-              <button
-                onClick={() => setShowAccountModal(true)}
-                className="px-2.5 py-1.5 rounded-lg bg-card hover:bg-secondary/70 border border-border flex items-center gap-2 text-[12px] text-foreground transition-all cursor-pointer shadow-xs"
-                title="Switch between Personal and College Google Account"
-              >
-                <div className={cn("w-2 h-2 rounded-full shrink-0", isCollegeAccount ? "bg-emerald-500 ring-2 ring-emerald-500/30" : "bg-blue-500")} />
-                <span className="font-mono text-[11px] text-foreground max-w-[180px] sm:max-w-[220px] truncate">
-                  {effectiveEmail}
-                </span>
-                <span className="text-[10px] text-primary font-bold uppercase tracking-wider pl-1 border-l border-border/80">
-                  {isCollegeAccount ? "College" : "Personal"}
-                </span>
-              </button>
-
-              <button
-                onClick={handleSync}
-                disabled={isSyncing}
-                className="px-3 py-1.5 rounded-lg bg-secondary hover:bg-secondary/80 text-foreground text-[12px] font-semibold flex items-center gap-1.5 transition-colors cursor-pointer border border-border"
-              >
-                <RefreshCw className={cn("w-3.5 h-3.5 text-blue-500", isSyncing && "animate-spin")} />
-                <span>{isSyncing ? "Syncing..." : "Sync"}</span>
-              </button>
-
-              <button
-                onClick={handleDisconnect}
-                className="p-2 rounded-lg bg-secondary hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors cursor-pointer border border-border"
-                title="Disconnect Google Calendar"
-              >
-                <LogOut className="w-3.5 h-3.5" />
-              </button>
-            </>
-          ) : (
+        {/* Toolbar actions show ONLY when connected */}
+        {isConnected && (
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Account Switcher Pill */}
             <button
-              onClick={handleConnectGoogle}
-              disabled={isSyncing}
-              className="px-3.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all shadow-xs cursor-pointer border-none"
+              onClick={() => setShowAccountModal(true)}
+              className="px-2.5 py-1.5 rounded-md bg-card hover:bg-surface-muted border border-border flex items-center gap-2 text-[12px] text-foreground transition-all cursor-pointer shadow-xs"
+              title="Switch between Personal and College Google Account"
             >
-              <UserCheck className="w-3.5 h-3.5" />
-              <span>Connect Google Account</span>
+              <div className={cn("w-2 h-2 rounded-full shrink-0", isCollegeAccount ? "bg-emerald-500 ring-2 ring-emerald-500/30" : "bg-primary")} />
+              <span className="font-mono text-[11px] text-foreground max-w-[180px] sm:max-w-[220px] truncate">
+                {effectiveEmail}
+              </span>
+              <span className="text-[10px] text-primary font-medium pl-1 border-l border-border/80">
+                {isCollegeAccount ? "College" : "Personal"}
+              </span>
             </button>
-          )}
 
-          <button
-            onClick={() => setShowAddModal(true)}
-            className="px-3.5 py-1.5 rounded-lg bg-primary text-primary-foreground text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 hover:bg-primary/90 transition-all cursor-pointer border-none"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            <span>New Event</span>
-          </button>
-        </div>
+            <button
+              onClick={handleSync}
+              disabled={isSyncing}
+              className="px-3 py-1.5 rounded-md bg-surface-muted hover:bg-surface-muted/80 text-foreground text-[12px] font-medium flex items-center gap-1.5 transition-colors cursor-pointer border border-border"
+            >
+              <RefreshCw className={cn("w-3.5 h-3.5 text-primary", isSyncing && "animate-spin")} />
+              <span>{isSyncing ? "Syncing..." : "Sync"}</span>
+            </button>
+
+            <button
+              onClick={handleDisconnect}
+              className="p-1.5 rounded-md bg-surface-muted hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors cursor-pointer border border-border"
+              title="Disconnect Google Calendar"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+            </button>
+
+            <button
+              onClick={() => setShowAddModal(true)}
+              className="px-3 py-1.5 rounded-md bg-primary text-primary-foreground text-[12px] font-medium flex items-center gap-1.5 hover:opacity-95 transition-all cursor-pointer border-none shadow-xs"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>New event</span>
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Disconnected State Callout */}

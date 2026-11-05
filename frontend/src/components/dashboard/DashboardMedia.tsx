@@ -194,27 +194,22 @@ export const DashboardMedia: React.FC = () => {
     <div className="space-y-5 max-w-7xl mx-auto text-foreground">
       {/* Workspace Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-border gap-3">
-        <div>
-          <h2 className="text-[20px] font-semibold tracking-tight text-foreground m-0">Media & Resources</h2>
-          <p className="text-[12px] text-muted-foreground mt-0.5">
-            Store and review whiteboard diagrams, architecture notes, and reference courses
-          </p>
-        </div>
+        <h2 className="text-[18px] font-semibold tracking-tight text-foreground m-0">Media & resources</h2>
 
         <div className="flex items-center gap-2">
           <button
             onClick={() => setShowLinkForm(!showLinkForm)}
-            className="px-3 py-1.5 rounded-xl bg-secondary hover:bg-secondary/80 text-foreground text-[12px] font-medium flex items-center gap-1.5 transition-colors cursor-pointer border border-border"
+            className="px-3 py-1.5 rounded-md bg-surface-muted hover:bg-surface-muted/80 text-foreground text-[13px] font-medium flex items-center gap-1.5 transition-colors cursor-pointer border border-border"
           >
             <Plus className="w-3.5 h-3.5" />
-            <span>Add Link</span>
+            <span>Add link</span>
           </button>
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="px-3.5 py-1.5 rounded-xl bg-primary text-primary-foreground text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 hover:bg-primary/90 transition-all cursor-pointer border-none"
+            className="px-3.5 py-1.5 rounded-md bg-primary text-primary-foreground text-[13px] font-medium flex items-center gap-1.5 hover:opacity-95 transition-all cursor-pointer border-none shadow-xs"
           >
             <UploadCloud className="w-3.5 h-3.5" />
-            <span>Upload JPGs</span>
+            <span>Upload notes</span>
           </button>
         </div>
       </div>

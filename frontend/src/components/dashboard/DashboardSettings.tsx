@@ -55,37 +55,29 @@ export const DashboardSettings: React.FC = () => {
   return (
     <div className="space-y-6 max-w-4xl mx-auto text-foreground">
       {/* Header */}
-      <div className="pb-4 border-b border-border">
-        <h2 className="text-[24px] font-semibold tracking-tight text-foreground flex items-center gap-2.5">
-          <Settings className="w-5 h-5 text-primary" />
-          Settings & Preferences
+      <div className="pb-3 border-b border-border">
+        <h2 className="text-[18px] font-semibold tracking-tight text-foreground flex items-center gap-2 m-0">
+          <Settings className="w-4 h-4 text-primary" />
+          <span>Settings</span>
         </h2>
-        <p className="text-[12px] text-muted-foreground mt-1">
-          Customize your SkillSphere appearance, theme, dynamic wallpaper engine, and integrations
-        </p>
       </div>
 
       {/* ─── Appearance & Theme Section ─── */}
       <div className="p-4 sm:p-5 rounded-xl bg-card border border-border shadow-xs space-y-3.5">
-        <div>
-          <h3 className="text-[14px] font-semibold text-foreground flex items-center gap-2">
-            <Palette className="w-4 h-4 text-primary" />
-            Theme & Appearance
-          </h3>
-          <p className="text-[12px] text-muted-foreground mt-0.5">
-            Select your preferred color scheme. Standardized with crisp high-contrast text.
-          </p>
-        </div>
+        <h3 className="text-[15px] font-semibold text-foreground flex items-center gap-2 m-0">
+          <Palette className="w-4 h-4 text-muted-foreground" />
+          <span>Theme & appearance</span>
+        </h3>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {/* Light Theme Card */}
           <button
             onClick={() => setTheme("light")}
             className={cn(
-              "p-3.5 rounded-xl border text-left transition-all cursor-pointer relative shadow-xs flex flex-col justify-between h-24",
+              "p-3.5 rounded-lg border text-left transition-all cursor-pointer relative shadow-xs flex flex-col justify-between h-20",
               theme === "light"
-                ? "border-primary ring-2 ring-primary/30 bg-primary/5"
-                : "border-border bg-card hover:bg-secondary/40"
+                ? "border-primary ring-1 ring-primary/40 bg-surface-muted"
+                : "border-border bg-card hover:bg-surface-muted/60"
             )}
           >
             <div className="flex items-center justify-between">
@@ -93,8 +85,7 @@ export const DashboardSettings: React.FC = () => {
               {theme === "light" && <Check className="w-4 h-4 text-primary" />}
             </div>
             <div>
-              <div className="text-[14px] font-semibold text-foreground">Standard Light</div>
-              <div className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">Crisp pitch black text</div>
+              <div className="text-[14px] font-medium text-foreground">Light</div>
             </div>
           </button>
 
@@ -102,19 +93,18 @@ export const DashboardSettings: React.FC = () => {
           <button
             onClick={() => setTheme("dark")}
             className={cn(
-              "p-3.5 rounded-xl border text-left transition-all cursor-pointer relative shadow-xs flex flex-col justify-between h-24",
+              "p-3.5 rounded-lg border text-left transition-all cursor-pointer relative shadow-xs flex flex-col justify-between h-20",
               theme === "dark"
-                ? "border-primary ring-2 ring-primary/30 bg-primary/5"
-                : "border-border bg-card hover:bg-secondary/40"
+                ? "border-primary ring-1 ring-primary/40 bg-surface-muted"
+                : "border-border bg-card hover:bg-surface-muted/60"
             )}
           >
             <div className="flex items-center justify-between">
-              <Moon className="w-4 h-4 text-blue-400" />
+              <Moon className="w-4 h-4 text-muted-foreground" />
               {theme === "dark" && <Check className="w-4 h-4 text-primary" />}
             </div>
             <div>
-              <div className="text-[14px] font-semibold text-foreground">Midnight Dark</div>
-              <div className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">Deep black & cyan glow</div>
+              <div className="text-[14px] font-medium text-foreground">Dark</div>
             </div>
           </button>
 
@@ -122,10 +112,10 @@ export const DashboardSettings: React.FC = () => {
           <button
             onClick={() => setTheme("system")}
             className={cn(
-              "p-3.5 rounded-xl border text-left transition-all cursor-pointer relative shadow-xs flex flex-col justify-between h-24",
+              "p-3.5 rounded-lg border text-left transition-all cursor-pointer relative shadow-xs flex flex-col justify-between h-20",
               theme === "system"
-                ? "border-primary ring-2 ring-primary/30 bg-primary/5"
-                : "border-border bg-card hover:bg-secondary/40"
+                ? "border-primary ring-1 ring-primary/40 bg-surface-muted"
+                : "border-border bg-card hover:bg-surface-muted/60"
             )}
           >
             <div className="flex items-center justify-between">
@@ -133,8 +123,7 @@ export const DashboardSettings: React.FC = () => {
               {theme === "system" && <Check className="w-4 h-4 text-primary" />}
             </div>
             <div>
-              <div className="text-[14px] font-semibold text-foreground">System Default</div>
-              <div className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">Syncs with OS ({resolvedTheme})</div>
+              <div className="text-[14px] font-medium text-foreground">System ({resolvedTheme})</div>
             </div>
           </button>
         </div>
@@ -142,84 +131,71 @@ export const DashboardSettings: React.FC = () => {
 
       {/* ─── Wallpaper Engine Settings ─── */}
       <div className="p-4 sm:p-5 rounded-xl bg-card border border-border shadow-xs space-y-3.5">
-        <div>
-          <h3 className="text-[14px] font-semibold text-foreground flex items-center gap-2">
-            <Sliders className="w-4 h-4 text-primary" />
-            Dynamic Wallpaper Engine
-          </h3>
-          <p className="text-[12px] text-muted-foreground mt-0.5">
-            Configure the 3D procedural landscape scenes and meteorological particle simulation
-          </p>
-        </div>
+        <h3 className="text-[15px] font-semibold text-foreground flex items-center gap-2 m-0">
+          <Sliders className="w-4 h-4 text-muted-foreground" />
+          <span>Dynamic wallpaper engine</span>
+        </h3>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <button
             onClick={() => handleSceneChange("mountains")}
             className={cn(
-              "p-3 rounded-xl border text-left transition-all cursor-pointer flex items-center gap-3",
+              "p-3 rounded-lg border text-left transition-all cursor-pointer flex items-center gap-3",
               wallpaperScene === "mountains"
-                ? "border-primary bg-primary/5 ring-1 ring-primary/40"
-                : "border-border bg-card hover:bg-secondary/40"
+                ? "border-primary bg-surface-muted ring-1 ring-primary/40"
+                : "border-border bg-card hover:bg-surface-muted/60"
             )}
           >
             <Mountain className="w-4 h-4 text-primary" />
             <div>
-              <div className="text-[14px] font-semibold text-foreground">Alpine Mountains</div>
-              <div className="text-[12px] text-muted-foreground">High elevation ridge</div>
+              <div className="text-[14px] font-medium text-foreground">Alpine mountains</div>
             </div>
           </button>
 
           <button
             onClick={() => handleSceneChange("beaches")}
             className={cn(
-              "p-3 rounded-xl border text-left transition-all cursor-pointer flex items-center gap-3",
+              "p-3 rounded-lg border text-left transition-all cursor-pointer flex items-center gap-3",
               wallpaperScene === "beaches"
-                ? "border-primary bg-primary/5 ring-1 ring-primary/40"
-                : "border-border bg-card hover:bg-secondary/40"
+                ? "border-primary bg-surface-muted ring-1 ring-primary/40"
+                : "border-border bg-card hover:bg-surface-muted/60"
             )}
           >
-            <Waves className="w-5 h-5 text-cyan-500" />
+            <Waves className="w-4 h-4 text-primary" />
             <div>
-              <div className="text-xs font-bold text-foreground">Coastal Beach</div>
-              <div className="text-[10px] text-muted-foreground">Ocean waves & tide</div>
+              <div className="text-[14px] font-medium text-foreground">Coastal beach</div>
             </div>
           </button>
 
           <button
             onClick={() => handleSceneChange("plains")}
             className={cn(
-              "p-3.5 rounded-xl border text-left transition-all cursor-pointer flex items-center gap-3",
+              "p-3 rounded-lg border text-left transition-all cursor-pointer flex items-center gap-3",
               wallpaperScene === "plains"
-                ? "border-primary bg-primary/5 ring-1 ring-primary/40"
-                : "border-border bg-card hover:bg-secondary/40"
+                ? "border-primary bg-surface-muted ring-1 ring-primary/40"
+                : "border-border bg-card hover:bg-surface-muted/60"
             )}
           >
-            <Trees className="w-5 h-5 text-emerald-500" />
+            <Trees className="w-4 h-4 text-primary" />
             <div>
-              <div className="text-xs font-bold text-foreground">Open Plains</div>
-              <div className="text-[10px] text-muted-foreground">Grassland & horizon</div>
+              <div className="text-[14px] font-medium text-foreground">Open plains</div>
             </div>
           </button>
         </div>
 
-        <div className="pt-2 border-t border-border/60 flex items-center justify-between">
-          <div>
-            <div className="text-xs font-bold text-foreground">Particle Weather Effects</div>
-            <div className="text-[11px] text-muted-foreground">
-              Canvas particle simulation for rain, snow, wind gusts, and stars
-            </div>
-          </div>
+        <div className="pt-2 border-t border-border/50 flex items-center justify-between">
+          <div className="text-[13px] font-medium text-foreground">Particle weather effects</div>
           <button
             onClick={handleParticlesToggle}
             className={cn(
-              "w-11 h-6 rounded-full transition-colors relative cursor-pointer border-none",
-              particlesEnabled ? "bg-primary" : "bg-secondary"
+              "w-10 h-5 rounded-full transition-colors relative cursor-pointer border-none",
+              particlesEnabled ? "bg-primary" : "bg-surface-muted border border-border"
             )}
           >
             <div
               className={cn(
-                "w-4 h-4 rounded-full bg-white transition-transform absolute top-1",
-                particlesEnabled ? "left-6" : "left-1"
+                "w-3.5 h-3.5 rounded-full bg-white transition-transform absolute top-0.75",
+                particlesEnabled ? "left-5.5" : "left-1"
               )}
             />
           </button>
@@ -227,16 +203,11 @@ export const DashboardSettings: React.FC = () => {
       </div>
 
       {/* ─── Notifications Section ─── */}
-      <div className="p-5 rounded-2xl bg-card border border-border shadow-xs space-y-4">
-        <div>
-          <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
-            <Bell className="w-4 h-4 text-primary" />
-            Notifications & Integrations Alerts
-          </h3>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            Manage alerts for incoming coding duels, quiz battles, and assignments
-          </p>
-        </div>
+      <div className="p-4 sm:p-5 rounded-xl bg-card border border-border shadow-xs space-y-3.5">
+        <h3 className="text-[15px] font-semibold text-foreground flex items-center gap-2 m-0">
+          <Bell className="w-4 h-4 text-muted-foreground" />
+          <span>Notifications</span>
+        </h3>
 
         <div className="space-y-3">
           <div className="flex items-center justify-between py-1">

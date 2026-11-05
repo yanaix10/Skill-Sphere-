@@ -80,13 +80,10 @@ export const DashboardTodos: React.FC = () => {
     <div className="space-y-4 max-w-2xl mx-auto text-foreground">
       {/* Header */}
       <div className="flex items-center justify-between pb-3 border-b border-border">
-        <div>
-          <h2 className="text-[20px] font-semibold tracking-tight text-foreground m-0">To-Do Tasks</h2>
-          <p className="text-[12px] text-muted-foreground mt-0.5">Quick daily check-list & goals</p>
-        </div>
+        <h2 className="text-[18px] font-semibold tracking-tight text-foreground m-0">To-do tasks</h2>
 
         <div className="flex items-center gap-2">
-          <span className="text-[12px] font-mono tabular-nums font-semibold px-2.5 py-1 rounded-lg bg-secondary text-primary border border-border">
+          <span className="text-[12px] font-mono tabular-nums font-semibold px-2 py-0.5 rounded-md bg-surface-muted text-foreground border border-border">
             {completedCount} / {todos.length} done
           </span>
           {completedCount > 0 && (
@@ -102,7 +99,7 @@ export const DashboardTodos: React.FC = () => {
 
       {/* Progress Line */}
       {todos.length > 0 && (
-        <div className="w-full h-1.5 rounded-full bg-secondary overflow-hidden">
+        <div className="w-full h-1 rounded-full bg-surface-muted overflow-hidden">
           <div
             style={{ width: `${progressPct}%` }}
             className="h-full bg-primary rounded-full transition-all duration-300"
@@ -110,20 +107,20 @@ export const DashboardTodos: React.FC = () => {
         </div>
       )}
 
-      {/* Clean Android/Laptop Widget Card */}
-      <div className="rounded-2xl border border-border bg-card p-4 sm:p-5 shadow-xs space-y-4">
+      {/* Widget Card */}
+      <div className="rounded-xl border border-border bg-card p-4 sm:p-5 shadow-xs space-y-4">
         {/* Simple Input Bar */}
         <form onSubmit={handleAdd} className="flex gap-2">
           <input
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Add a new task and press enter..."
-            className="flex-1 px-3.5 py-2 rounded-xl bg-background border border-border text-[13px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+            placeholder="Add a task..."
+            className="flex-1 px-3 py-1.5 rounded-md bg-background border border-border text-[13px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
           />
           <button
             type="submit"
-            className="px-4 py-2 rounded-xl bg-primary text-primary-foreground text-[12px] font-bold uppercase tracking-wider flex items-center gap-1.5 hover:bg-primary/90 transition-all cursor-pointer border-none"
+            className="px-3.5 py-1.5 rounded-md bg-primary text-primary-foreground text-[13px] font-medium flex items-center gap-1.5 hover:opacity-95 transition-all cursor-pointer border-none"
           >
             <Plus className="w-4 h-4" />
             <span>Add</span>
@@ -137,10 +134,10 @@ export const DashboardTodos: React.FC = () => {
               key={tab}
               onClick={() => setFilter(tab)}
               className={cn(
-                "px-3 py-1 rounded-lg text-[12px] font-medium transition-all cursor-pointer border-none capitalize",
+                "px-2.5 py-1 rounded-md text-[12px] font-medium transition-all cursor-pointer border capitalize",
                 filter === tab
-                  ? "bg-secondary text-foreground font-semibold"
-                  : "text-muted-foreground hover:text-foreground bg-transparent"
+                  ? "bg-surface-muted border-border text-foreground font-semibold shadow-2xs"
+                  : "bg-surface text-muted-foreground hover:text-foreground border-border/60"
               )}
             >
               {tab}

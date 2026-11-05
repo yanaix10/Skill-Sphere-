@@ -211,72 +211,61 @@ export const DashboardClassroom: React.FC = () => {
       {/* Google Classroom Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-border gap-3">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center border border-emerald-500/20">
-            <GraduationCap className="w-4 h-4" />
+          <div className="w-8 h-8 rounded-md bg-surface-muted border border-border/50 text-muted-foreground flex items-center justify-center">
+            <GraduationCap className="w-4 h-4 text-primary" />
           </div>
           <div>
-            <h2 className="text-[20px] font-semibold tracking-tight text-foreground m-0">
+            <h2 className="text-[18px] font-semibold tracking-tight text-foreground m-0">
               Google Classroom
             </h2>
           </div>
         </div>
 
-        {/* Sync / Switch Account / Add Controls */}
-        <div className="flex flex-wrap items-center gap-2">
-          {isConnected ? (
-            <>
-              {/* Account Switcher Pill */}
-              <button
-                onClick={() => setShowAccountModal(true)}
-                className="px-2.5 py-1.5 rounded-lg bg-card hover:bg-secondary/70 border border-border flex items-center gap-2 text-[12px] text-foreground transition-all cursor-pointer shadow-xs"
-                title="Switch between Personal and College Google Account"
-              >
-                <div className={cn("w-2 h-2 rounded-full shrink-0", isCollegeAccount ? "bg-emerald-500 ring-2 ring-emerald-500/30" : "bg-blue-500")} />
-                <span className="font-mono text-[11px] text-foreground max-w-[180px] sm:max-w-[220px] truncate">
-                  {effectiveEmail}
-                </span>
-                <span className="text-[10px] text-primary font-bold uppercase tracking-wider pl-1 border-l border-border/80">
-                  {isCollegeAccount ? "College" : "Personal"}
-                </span>
-              </button>
-
-              <button
-                onClick={handleSync}
-                disabled={isSyncing}
-                className="px-3 py-1.5 rounded-lg bg-secondary hover:bg-secondary/80 text-foreground text-[12px] font-semibold flex items-center gap-1.5 transition-colors cursor-pointer border border-border"
-                title="Refresh Google Classroom sync"
-              >
-                <RefreshCw className={cn("w-3.5 h-3.5 text-emerald-500", isSyncing && "animate-spin")} />
-                <span>{isSyncing ? "Syncing..." : "Sync"}</span>
-              </button>
-
-              <button
-                onClick={handleDisconnect}
-                className="p-2 rounded-lg bg-secondary hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors cursor-pointer border border-border"
-                title="Disconnect Google Classroom"
-              >
-                <LogOut className="w-3.5 h-3.5" />
-              </button>
-            </>
-          ) : (
+        {/* Toolbar actions show ONLY when connected */}
+        {isConnected && (
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Account Switcher Pill */}
             <button
-              onClick={handleConnectGoogle}
-              disabled={isSyncing}
-              className="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all shadow-xs cursor-pointer border-none"
+              onClick={() => setShowAccountModal(true)}
+              className="px-2.5 py-1.5 rounded-md bg-card hover:bg-surface-muted border border-border flex items-center gap-2 text-[12px] text-foreground transition-all cursor-pointer shadow-xs"
+              title="Switch between Personal and College Google account"
             >
-              <UserCheck className="w-3.5 h-3.5" />
-              <span>Connect Google Account</span>
+              <div className={cn("w-2 h-2 rounded-full shrink-0", isCollegeAccount ? "bg-emerald-500 ring-2 ring-emerald-500/30" : "bg-primary")} />
+              <span className="font-mono text-[11px] text-foreground max-w-[180px] sm:max-w-[220px] truncate">
+                {effectiveEmail}
+              </span>
+              <span className="text-[10px] text-primary font-medium pl-1 border-l border-border/80">
+                {isCollegeAccount ? "College" : "Personal"}
+              </span>
             </button>
-          )}
 
-          <button
-            onClick={() => setShowAddModal(true)}
-            className="px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 hover:bg-primary/90 transition-all shadow-xs cursor-pointer border-none"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            <span>Add Task</span>
-          </button>
-        </div>
+            <button
+              onClick={handleSync}
+              disabled={isSyncing}
+              className="px-3 py-1.5 rounded-md bg-surface-muted hover:bg-surface-muted/80 text-foreground text-[12px] font-medium flex items-center gap-1.5 transition-colors cursor-pointer border border-border"
+              title="Refresh Google Classroom sync"
+            >
+              <RefreshCw className={cn("w-3.5 h-3.5 text-primary", isSyncing && "animate-spin")} />
+              <span>{isSyncing ? "Syncing..." : "Sync"}</span>
+            </button>
+
+            <button
+              onClick={handleDisconnect}
+              className="p-1.5 rounded-md bg-surface-muted hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors cursor-pointer border border-border"
+              title="Disconnect Google Classroom"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+            </button>
+
+            <button
+              onClick={() => setShowAddModal(true)}
+              className="px-3 py-1.5 rounded-md bg-primary text-primary-foreground text-[12px] font-medium flex items-center gap-1.5 hover:opacity-95 transition-all shadow-xs cursor-pointer border-none"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>Add task</span>
+            </button>
+          </div>
+        )}
       </div>
 
       {/* When Account Is NOT Connected: Clean Connect Callout */}

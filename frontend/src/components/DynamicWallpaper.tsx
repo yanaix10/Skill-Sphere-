@@ -528,31 +528,31 @@ export const DynamicWallpaper: React.FC<DynamicWallpaperProps> = ({ children }) 
         <button
           onClick={() => setIsControlsOpen(!isControlsOpen)}
           className={cn(
-            "flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium border shadow-sm transition-all duration-200 cursor-pointer backdrop-blur-md",
-            "bg-card/85 text-card-foreground border-border hover:bg-card hover:border-primary/50"
+            "flex items-center gap-2 px-2.5 py-1.5 rounded-md text-[12px] font-medium border border-border shadow-xs transition-all cursor-pointer backdrop-blur-md",
+            "bg-card/90 text-foreground hover:bg-surface-muted"
           )}
           title="Wallpaper & Weather Controls"
         >
           {location ? (
             <>
               <MapPin className="w-3.5 h-3.5 text-primary shrink-0" />
-              <span className="font-semibold">{location.city}</span>
+              <span className="font-medium text-foreground">{location.city}</span>
               <span className="text-muted-foreground">•</span>
-              <span>{weather.temperature}°C</span>
+              <span className="font-mono">{weather.temperature}°C</span>
               <span className="text-muted-foreground">•</span>
-              {activeCondition === "rain" && <CloudRain className="w-3.5 h-3.5 text-blue-400" />}
-              {activeCondition === "snow" && <Snowflake className="w-3.5 h-3.5 text-cyan-200" />}
-              {activeCondition === "wind" && <Wind className="w-3.5 h-3.5 text-amber-400" />}
-              {activeCondition === "cloudy" && <Cloud className="w-3.5 h-3.5 text-slate-400" />}
-              {activeCondition === "clear" && (activePhase === "night" ? <Moon className="w-3.5 h-3.5 text-indigo-400" /> : <Sun className="w-3.5 h-3.5 text-amber-500" />)}
+              {activeCondition === "rain" && <CloudRain className="w-3.5 h-3.5 text-muted-foreground" />}
+              {activeCondition === "snow" && <Snowflake className="w-3.5 h-3.5 text-muted-foreground" />}
+              {activeCondition === "wind" && <Wind className="w-3.5 h-3.5 text-muted-foreground" />}
+              {activeCondition === "cloudy" && <Cloud className="w-3.5 h-3.5 text-muted-foreground" />}
+              {activeCondition === "clear" && (activePhase === "night" ? <Moon className="w-3.5 h-3.5 text-muted-foreground" /> : <Sun className="w-3.5 h-3.5 text-amber-500" />)}
               <span className="capitalize text-muted-foreground text-[11px] hidden sm:inline">
                 {activeCondition}
               </span>
             </>
           ) : (
             <>
-              <Compass className="w-3.5 h-3.5 text-primary animate-pulse" />
-              <span>Set Location</span>
+              <Compass className="w-3.5 h-3.5 text-primary" />
+              <span>Set location</span>
             </>
           )}
           <Sliders className="w-3 h-3 text-muted-foreground ml-1" />
@@ -561,7 +561,7 @@ export const DynamicWallpaper: React.FC<DynamicWallpaperProps> = ({ children }) 
 
       {/* 7. Controls & Simulation Popout Menu */}
       {isControlsOpen && (
-        <div className="absolute bottom-12 right-4 z-40 w-80 p-3.5 rounded-2xl bg-card/95 border border-border shadow-2xl backdrop-blur-md text-card-foreground space-y-3.5 animate-in zoom-in-95 duration-150">
+        <div className="absolute bottom-12 right-4 z-40 w-80 p-3.5 rounded-xl bg-card border border-border shadow-2xl backdrop-blur-md text-foreground space-y-3.5 animate-in zoom-in-95 duration-150">
           <div className="flex items-center justify-between border-b border-border/80 pb-2">
             <div className="flex items-center gap-2">
               <Sliders className="w-4 h-4 text-primary" />

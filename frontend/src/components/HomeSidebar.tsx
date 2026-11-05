@@ -1,16 +1,14 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   LayoutDashboard,
   Settings,
   Briefcase,
   CheckSquare,
   Image as ImageIcon,
-  ChevronRight,
   Calendar,
   GraduationCap,
   TrendingUp,
   PanelLeftClose,
-  Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { auth } from "../firebase";
@@ -41,31 +39,57 @@ export const HomeSidebar: React.FC<HomeSidebarProps> = ({
   const user = auth.currentUser;
   const displayName = user?.displayName || "Naitik Yadav";
 
+  const [isClassroomConnected, setIsClassroomConnected] = useState(false);
+  const [isCalendarConnected, setIsCalendarConnected] = useState(false);
+
+  useEffect(() => {
+    const checkConnections = () => {
+      setIsClassroomConnected(
+        localStorage.getItem("skillsphere_classroom_connected") === "true"
+      );
+      setIsCalendarConnected(
+        localStorage.getItem("skillsphere_calendar_connected") === "true"
+      );
+    };
+    checkConnections();
+    window.addEventListener("storage", checkConnections);
+    return () => window.removeEventListener("storage", checkConnections);
+  }, []);
+
   if (!isOpen) return null;
+
+  const coreSections: { id: SidebarSection; label: string; icon: React.FC<{ className?: string }> }[] = [
+    { id: "overview", label: "Overview", icon: LayoutDashboard },
+    { id: "media", label: "Media & resources", icon: ImageIcon },
+    { id: "todo", label: "To-do tasks", icon: CheckSquare },
+    { id: "jobs", label: "Job applications", icon: Briefcase },
+    { id: "activity", label: "Profile & activity", icon: TrendingUp },
+    { id: "settings", label: "Settings", icon: Settings },
+  ];
 
   return (
     <aside
       className={cn(
-        "w-72 shrink-0 border-r border-border bg-card flex flex-col h-full select-none z-30 transition-all duration-300",
-        "shadow-xs text-foreground"
+        "w-64 shrink-0 border-r border-border bg-card flex flex-col h-full select-none z-30 transition-all duration-200",
+        "text-foreground"
       )}
     >
       {/* Sidebar Header */}
       <div className="h-14 px-4 border-b border-border flex items-center justify-between shrink-0">
-        <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-primary/10 text-primary flex items-center justify-center font-bold">
-            <LayoutDashboard className="w-4 h-4" />
+        <div className="flex items-center gap-2.5">
+          <div className="w-7 h-7 rounded-md bg-surface-muted border border-border/60 text-foreground flex items-center justify-center">
+            <LayoutDashboard className="w-4 h-4 text-primary" />
           </div>
-          <span className="font-semibold text-xs tracking-wide text-foreground">
-            Workspace
+          <span className="font-semibold text-[14px] text-foreground tracking-tight">
+            SkillSphere
           </span>
         </div>
 
         {onToggle && (
           <button
             onClick={onToggle}
-            className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors cursor-pointer border-none bg-transparent"
-            title="Collapse Sidebar"
+            className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-surface-muted transition-colors cursor-pointer border-none bg-transparent"
+            title="Collapse sidebar"
           >
             <PanelLeftClose className="w-4 h-4" />
           </button>
@@ -75,189 +99,115 @@ export const HomeSidebar: React.FC<HomeSidebarProps> = ({
       {/* Navigation List */}
       <div className="flex-1 overflow-y-auto p-3 space-y-5">
         {/* Core Sections */}
-        <div className="space-y-1">
-
-          {/* Overview */}
-          <button
-            onClick={() => onSelectSection("overview")}
-            className={cn(
-              "w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer border-none",
-              activeSection === "overview"
-                ? "bg-primary text-primary-foreground shadow-xs font-bold"
-                : "text-foreground/80 hover:text-foreground hover:bg-secondary bg-transparent"
-            )}
-          >
-            <div className="flex items-center gap-2.5">
-              <LayoutDashboard className="w-4 h-4 shrink-0" />
-              <span>Overview</span>
-            </div>
-            <ChevronRight className={cn("w-3.5 h-3.5 opacity-60", activeSection === "overview" && "opacity-100")} />
-          </button>
-
-          {/* Media & Resources (JPGs & Links) */}
-          <button
-            onClick={() => onSelectSection("media")}
-            className={cn(
-              "w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer border-none",
-              activeSection === "media"
-                ? "bg-primary text-primary-foreground shadow-xs font-bold"
-                : "text-foreground/80 hover:text-foreground hover:bg-secondary bg-transparent"
-            )}
-          >
-            <div className="flex items-center gap-2.5">
-              <ImageIcon className="w-4 h-4 shrink-0" />
-              <span>Media & Resources</span>
-            </div>
-            <ChevronRight className={cn("w-3.5 h-3.5 opacity-60", activeSection === "media" && "opacity-100")} />
-          </button>
-
-          {/* To Do Tasks */}
-          <button
-            onClick={() => onSelectSection("todo")}
-            className={cn(
-              "w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer border-none",
-              activeSection === "todo"
-                ? "bg-primary text-primary-foreground shadow-xs font-bold"
-                : "text-foreground/80 hover:text-foreground hover:bg-secondary bg-transparent"
-            )}
-          >
-            <div className="flex items-center gap-2.5">
-              <CheckSquare className="w-4 h-4 shrink-0" />
-              <span>To Do Tasks</span>
-            </div>
-            <ChevronRight className={cn("w-3.5 h-3.5 opacity-60", activeSection === "todo" && "opacity-100")} />
-          </button>
-
-          {/* Job Applications */}
-          <button
-            onClick={() => onSelectSection("jobs")}
-            className={cn(
-              "w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer border-none",
-              activeSection === "jobs"
-                ? "bg-primary text-primary-foreground shadow-xs font-bold"
-                : "text-foreground/80 hover:text-foreground hover:bg-secondary bg-transparent"
-            )}
-          >
-            <div className="flex items-center gap-2.5">
-              <Briefcase className="w-4 h-4 shrink-0" />
-              <span>Job Applications</span>
-            </div>
-            <ChevronRight className={cn("w-3.5 h-3.5 opacity-60", activeSection === "jobs" && "opacity-100")} />
-          </button>
-
-          {/* Profile & Developer Activity (GitHub + Chess.com) */}
-          <button
-            onClick={() => onSelectSection("activity")}
-            className={cn(
-              "w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer border-none",
-              activeSection === "activity"
-                ? "bg-primary text-primary-foreground shadow-xs font-bold"
-                : "text-foreground/80 hover:text-foreground hover:bg-secondary bg-transparent"
-            )}
-          >
-            <div className="flex items-center gap-2.5">
-              <TrendingUp className="w-4 h-4 shrink-0" />
-              <span>Profile & Activity</span>
-            </div>
-            <ChevronRight className={cn("w-3.5 h-3.5 opacity-60", activeSection === "activity" && "opacity-100")} />
-          </button>
-
-          {/* Settings */}
-          <button
-            onClick={() => onSelectSection("settings")}
-            className={cn(
-              "w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer border-none",
-              activeSection === "settings"
-                ? "bg-primary text-primary-foreground shadow-xs font-bold"
-                : "text-foreground/80 hover:text-foreground hover:bg-secondary bg-transparent"
-            )}
-          >
-            <div className="flex items-center gap-2.5">
-              <Settings className="w-4 h-4 shrink-0" />
-              <span>Settings</span>
-            </div>
-            <ChevronRight className={cn("w-3.5 h-3.5 opacity-60", activeSection === "settings" && "opacity-100")} />
-          </button>
+        <div className="space-y-0.5">
+          {coreSections.map(({ id, label, icon: Icon }) => {
+            const isActive = activeSection === id;
+            return (
+              <button
+                key={id}
+                onClick={() => onSelectSection(id)}
+                className={cn(
+                  "w-full flex items-center gap-2.5 px-3 py-2 rounded-md text-[13px] font-medium transition-all cursor-pointer border-none text-left",
+                  isActive
+                    ? "bg-surface-muted text-foreground font-semibold shadow-2xs"
+                    : "text-muted-foreground hover:text-foreground hover:bg-surface-muted/60 bg-transparent"
+                )}
+              >
+                <Icon
+                  className={cn(
+                    "w-4 h-4 shrink-0",
+                    isActive ? "text-primary" : "text-muted-foreground"
+                  )}
+                />
+                <span className="truncate">{label}</span>
+              </button>
+            );
+          })}
         </div>
 
-        {/* Live Integrations */}
-        <div className="space-y-1">
-          <div className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center justify-between">
-            <span>Integrations</span>
-            <span className="text-[9px] px-1.5 py-0.2 rounded-sm bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-mono font-bold">
-              ACTIVE
-            </span>
+        {/* Integrations Section */}
+        <div className="space-y-1 pt-2 border-t border-border/50">
+          <div className="px-3 py-1 text-[12px] font-medium text-muted-foreground">
+            Integrations
           </div>
 
           {/* Google Classroom */}
           <button
             onClick={() => onSelectSection("classroom")}
             className={cn(
-              "w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer border-none",
+              "w-full flex items-center justify-between px-3 py-2 rounded-md text-[13px] font-medium transition-all cursor-pointer border-none text-left",
               activeSection === "classroom"
-                ? "bg-emerald-600 text-white shadow-xs font-bold"
-                : "text-foreground/80 hover:text-foreground hover:bg-emerald-500/10 bg-transparent"
+                ? "bg-surface-muted text-foreground font-semibold shadow-2xs"
+                : "text-muted-foreground hover:text-foreground hover:bg-surface-muted/60 bg-transparent"
             )}
           >
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-2.5 min-w-0">
               <GraduationCap
                 className={cn(
                   "w-4 h-4 shrink-0",
-                  activeSection === "classroom" ? "text-white" : "text-emerald-600 dark:text-emerald-400"
+                  activeSection === "classroom" ? "text-primary" : "text-muted-foreground"
                 )}
               />
-              <span>Google Classroom</span>
+              <span className="truncate">Google Classroom</span>
             </div>
-            <span
-              className={cn(
-                "text-[10px] px-1.5 py-0.5 rounded-md font-mono font-bold",
-                activeSection === "classroom" ? "bg-white/20 text-white" : "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
-              )}
-            >
-              Sync
-            </span>
+
+            <div className="flex items-center gap-1.5 shrink-0 text-[11px] text-muted-foreground font-normal">
+              <span
+                className={cn(
+                  "w-1.5 h-1.5 rounded-full shrink-0",
+                  isClassroomConnected ? "bg-emerald-500" : "bg-zinc-400 dark:bg-zinc-600"
+                )}
+              />
+              <span className="hidden sm:inline">
+                {isClassroomConnected ? "Connected" : "Not connected"}
+              </span>
+            </div>
           </button>
 
           {/* Google Calendar */}
           <button
             onClick={() => onSelectSection("calendar")}
             className={cn(
-              "w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer border-none",
+              "w-full flex items-center justify-between px-3 py-2 rounded-md text-[13px] font-medium transition-all cursor-pointer border-none text-left",
               activeSection === "calendar"
-                ? "bg-blue-600 text-white shadow-xs font-bold"
-                : "text-foreground/80 hover:text-foreground hover:bg-blue-500/10 bg-transparent"
+                ? "bg-surface-muted text-foreground font-semibold shadow-2xs"
+                : "text-muted-foreground hover:text-foreground hover:bg-surface-muted/60 bg-transparent"
             )}
           >
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-2.5 min-w-0">
               <Calendar
                 className={cn(
                   "w-4 h-4 shrink-0",
-                  activeSection === "calendar" ? "text-white" : "text-blue-600 dark:text-blue-400"
+                  activeSection === "calendar" ? "text-primary" : "text-muted-foreground"
                 )}
               />
-              <span>Google Calendar</span>
+              <span className="truncate">Google Calendar</span>
             </div>
-            <span
-              className={cn(
-                "text-[10px] px-1.5 py-0.5 rounded-md font-mono font-bold",
-                activeSection === "calendar" ? "bg-white/20 text-white" : "bg-blue-500/15 text-blue-600 dark:text-blue-400"
-              )}
-            >
-              Meet
-            </span>
+
+            <div className="flex items-center gap-1.5 shrink-0 text-[11px] text-muted-foreground font-normal">
+              <span
+                className={cn(
+                  "w-1.5 h-1.5 rounded-full shrink-0",
+                  isCalendarConnected ? "bg-emerald-500" : "bg-zinc-400 dark:bg-zinc-600"
+                )}
+              />
+              <span className="hidden sm:inline">
+                {isCalendarConnected ? "Connected" : "Not connected"}
+              </span>
+            </div>
           </button>
         </div>
       </div>
 
-      {/* User Footer Card */}
-      <div className="p-3 border-t border-border bg-secondary/20">
-        <div className="flex items-center gap-2.5 p-2 rounded-xl bg-card border border-border">
-          <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center font-bold text-xs uppercase">
-            {displayName.slice(0, 2)}
+      {/* User Footer */}
+      <div className="p-3 border-t border-border bg-surface-muted/30">
+        <div className="flex items-center gap-2.5 p-2 rounded-md bg-card border border-border">
+          <div className="w-7 h-7 rounded-md bg-surface-muted border border-border text-foreground flex items-center justify-center font-semibold text-xs">
+            {displayName.slice(0, 2).toUpperCase()}
           </div>
           <div className="min-w-0 flex-1">
-            <div className="text-xs font-bold text-foreground truncate">{displayName}</div>
-            <div className="text-[10px] text-muted-foreground truncate font-mono">SkillSphere Pro</div>
+            <div className="text-[13px] font-medium text-foreground truncate">{displayName}</div>
+            <div className="text-[11px] text-muted-foreground truncate">SkillSphere Pro</div>
           </div>
         </div>
       </div>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   Briefcase,
   Plus,
@@ -11,9 +11,9 @@ import {
   Search,
   CheckCircle2,
   X,
-  Filter,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import StatChip, { ApplicationStatus } from "@/components/ui/stat-chip";
 
 export interface JobApplication {
   id: string;
@@ -27,61 +27,6 @@ export interface JobApplication {
   notes?: string;
 }
 
-const DEFAULT_JOBS: JobApplication[] = [
-  {
-    id: "job-1",
-    title: "Full Stack Engineer (Intern)",
-    company: "Google Cloud",
-    status: "interview",
-    location: "Bengaluru, India / Hybrid",
-    salary: "₹1,20,000 / month",
-    date: new Date(Date.now() - 86400000 * 4).toISOString().slice(0, 10),
-    link: "https://careers.google.com",
-    notes: "Round 2: System design & concurrency duel scheduled on Google Meet.",
-  },
-  {
-    id: "job-2",
-    title: "Software Development Engineer 1",
-    company: "Amazon Web Services",
-    status: "applied",
-    location: "Hyderabad, India",
-    salary: "₹24 LPA",
-    date: new Date(Date.now() - 86400000 * 7).toISOString().slice(0, 10),
-    link: "https://amazon.jobs",
-    notes: "Online assessment submitted with 100% test cases passing.",
-  },
-  {
-    id: "job-3",
-    title: "Junior Backend Developer",
-    company: "Stripe",
-    status: "saved",
-    location: "Remote",
-    salary: "$95,000 / year",
-    date: new Date().toISOString().slice(0, 10),
-    link: "https://stripe.com/jobs",
-    notes: "Requires strong TypeScript and socket architecture experience.",
-  },
-  {
-    id: "job-4",
-    title: "Systems Software Engineer",
-    company: "Bloomberg",
-    status: "offer",
-    location: "London / Remote",
-    salary: "£75,000",
-    date: new Date(Date.now() - 86400000 * 18).toISOString().slice(0, 10),
-    link: "https://bloomberg.com/careers",
-    notes: "Offer letter received. Decision deadline by end of next week.",
-  },
-];
-
-const STATUS_STYLES: Record<JobApplication["status"], { bg: string; text: string; label: string }> = {
-  saved:     { bg: "bg-zinc-500/15 border-zinc-500/30", text: "text-zinc-400", label: "Saved" },
-  applied:   { bg: "bg-blue-500/15 border-blue-500/30", text: "text-blue-500", label: "Applied" },
-  interview: { bg: "bg-amber-500/15 border-amber-500/30", text: "text-amber-500", label: "Interview" },
-  offer:     { bg: "bg-emerald-500/15 border-emerald-500/30", text: "text-emerald-500", label: "Offer" },
-  rejected:  { bg: "bg-red-500/15 border-red-500/30", text: "text-red-500", label: "Rejected" },
-};
-
 export const DashboardJobs: React.FC = () => {
   const [jobs, setJobs] = useState<JobApplication[]>(() => {
     try {
@@ -93,7 +38,7 @@ export const DashboardJobs: React.FC = () => {
     } catch (e) {}
     return [];
   });
-  const [filter, setFilter] = useState<string>("all");
+  const [filter, setFilter] = useState<ApplicationStatus>("all");
   const [search, setSearch] = useState("");
   const [showAddModal, setShowAddModal] = useState(false);
 
@@ -108,19 +53,10 @@ export const DashboardJobs: React.FC = () => {
     notes: "",
   });
 
-  useEffect(() => {
+  const saveJobs = (newJobs: JobApplication[]) => {
+    setJobs(newJobs);
     try {
-      const stored = localStorage.getItem("skillsphere_home_jobs");
-      if (stored) {
-        setJobs(JSON.parse(stored));
-      }
-    } catch (e) {}
-  }, []);
-
-  const saveJobs = (data: JobApplication[]) => {
-    setJobs(data);
-    try {
-      localStorage.setItem("skillsphere_home_jobs", JSON.stringify(data));
+      localStorage.setItem("skillsphere_home_jobs", JSON.stringify(newJobs));
     } catch (e) {}
   };
 
@@ -128,12 +64,12 @@ export const DashboardJobs: React.FC = () => {
     e.preventDefault();
     if (!form.title.trim() || !form.company.trim()) return;
 
-    const newItem: JobApplication = {
-      id: `job-${Date.now()}`,
+    const newJob: JobApplication = {
       ...form,
+      id: `job-${Date.now()}`,
     };
 
-    saveJobs([newItem, ...jobs]);
+    saveJobs([newJob, ...jobs]);
     setShowAddModal(false);
     setForm({
       title: "",
@@ -151,99 +87,63 @@ export const DashboardJobs: React.FC = () => {
     saveJobs(jobs.filter((j) => j.id !== id));
   };
 
-  const handleChangeStatus = (id: string, newStatus: JobApplication["status"]) => {
-    const updated = jobs.map((j) => (j.id === id ? { ...j, status: newStatus } : j));
-    saveJobs(updated);
+  const handleStatusChange = (id: string, newStatus: JobApplication["status"]) => {
+    saveJobs(
+      jobs.map((j) => (j.id === id ? { ...j, status: newStatus } : j))
+    );
   };
 
   const filteredJobs = jobs.filter((j) => {
     if (filter !== "all" && j.status !== filter) return false;
     if (
       search &&
-      !j.title.toLowerCase().includes(search.toLowerCase()) &&
-      !j.company.toLowerCase().includes(search.toLowerCase())
+      !j.company.toLowerCase().includes(search.toLowerCase()) &&
+      !j.title.toLowerCase().includes(search.toLowerCase())
     )
       return false;
     return true;
   });
 
+  const counts: Record<ApplicationStatus, number> = {
+    all: jobs.length,
+    saved: jobs.filter((j) => j.status === "saved").length,
+    applied: jobs.filter((j) => j.status === "applied").length,
+    interview: jobs.filter((j) => j.status === "interview").length,
+    offer: jobs.filter((j) => j.status === "offer").length,
+    rejected: jobs.filter((j) => j.status === "rejected").length,
+  };
+
   return (
-    <div className="space-y-6 max-w-7xl mx-auto text-foreground">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-border gap-4">
-        <div>
-          <h2 className="text-[20px] font-semibold tracking-tight text-foreground flex items-center gap-2.5">
-            <Briefcase className="w-5 h-5 text-primary" />
-            Job & Internship Applications
-          </h2>
-          <p className="text-[12px] text-muted-foreground mt-1">
-            Track interview pipelines, offers, salary details, and application links
-          </p>
-        </div>
+    <div className="space-y-5 max-w-7xl mx-auto text-foreground">
+      {/* Top Action Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-border gap-3">
+        <h2 className="text-[18px] font-semibold tracking-tight text-foreground m-0">
+          Job applications
+        </h2>
 
         <button
           onClick={() => setShowAddModal(true)}
-          className="px-3.5 py-1.5 rounded-lg bg-primary text-primary-foreground text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 hover:bg-primary/90 transition-all shadow-xs cursor-pointer border-none self-start sm:self-auto"
+          className="px-3 py-1.5 rounded-md bg-primary text-primary-foreground text-[13px] font-medium flex items-center gap-1.5 hover:opacity-95 transition-all shadow-xs cursor-pointer border-none self-start sm:self-auto"
         >
-          <Plus className="w-3.5 h-3.5" />
-          <span>New Application</span>
+          <Plus className="w-4 h-4" />
+          <span>New application</span>
         </button>
       </div>
 
-      {/* Status Pipeline Summary Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-        {(["saved", "applied", "interview", "offer", "rejected"] as const).map((st) => {
-          const style = STATUS_STYLES[st];
-          const count = jobs.filter((j) => j.status === st).length;
-
-          return (
-            <button
-              key={st}
-              onClick={() => setFilter(filter === st ? "all" : st)}
-              className={cn(
-                "p-3 rounded-xl bg-card border text-left transition-all cursor-pointer shadow-xs",
-                filter === st ? "ring-2 ring-primary border-primary" : "border-border hover:border-primary/40"
-              )}
-            >
-              <div className="flex items-center justify-between text-xs font-bold">
-                <span className={cn("px-2 py-0.5 rounded-md border text-[10px] uppercase font-bold tracking-wider", style.bg, style.text)}>
-                  {style.label}
-                </span>
-                <span className="text-[16px] font-semibold text-foreground tabular-nums">{count}</span>
-              </div>
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Filter & Search Bar */}
+      {/* Unified Status Chips & Search Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
-          <button
-            onClick={() => setFilter("all")}
-            className={cn(
-              "px-3 py-1 rounded-lg text-[12px] font-semibold transition-all cursor-pointer border",
-              filter === "all"
-                ? "bg-foreground text-background border-foreground font-bold shadow-xs"
-                : "bg-card text-muted-foreground hover:text-foreground border-border"
-            )}
-          >
-            All Applications ({jobs.length})
-          </button>
-          {(["applied", "interview", "offer"] as const).map((st) => (
-            <button
-              key={st}
-              onClick={() => setFilter(st)}
-              className={cn(
-                "px-3 py-1 rounded-lg text-[12px] font-semibold transition-all cursor-pointer border",
-                filter === st
-                  ? "bg-foreground text-background border-foreground font-bold shadow-xs"
-                  : "bg-card text-muted-foreground hover:text-foreground border-border"
-              )}
-            >
-              {STATUS_STYLES[st].label} ({jobs.filter((j) => j.status === st).length})
-            </button>
-          ))}
+        <div className="flex items-center gap-1.5 flex-wrap">
+          {(["all", "saved", "applied", "interview", "offer", "rejected"] as const).map(
+            (st) => (
+              <StatChip
+                key={st}
+                status={st}
+                count={counts[st]}
+                active={filter === st}
+                onClick={() => setFilter(st)}
+              />
+            )
+          )}
         </div>
 
         <div className="relative w-full sm:w-64">
@@ -253,7 +153,7 @@ export const DashboardJobs: React.FC = () => {
             placeholder="Search company or role..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-8 pr-3 py-1.5 bg-background border border-border rounded-lg text-[12px] text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+            className="w-full pl-8 pr-3 py-1.5 bg-background border border-border rounded-md text-[13px] text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
           />
         </div>
       </div>
@@ -261,161 +161,155 @@ export const DashboardJobs: React.FC = () => {
       {/* Job Cards Grid */}
       <div className="space-y-3">
         {filteredJobs.length === 0 ? (
-          <div className="p-10 text-center rounded-xl bg-card border border-border text-muted-foreground">
+          <div className="p-12 text-center rounded-xl bg-card border border-border text-muted-foreground">
             <Briefcase className="w-8 h-8 mx-auto text-muted-foreground/40 mb-2" />
             <p className="text-[14px] font-semibold text-foreground">No applications found</p>
-            <p className="text-[12px] text-muted-foreground mt-0.5">Add your target roles and track your application milestones</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-            {filteredJobs.map((job) => {
-              const style = STATUS_STYLES[job.status] || STATUS_STYLES.saved;
-
-              return (
-                <div
-                  key={job.id}
-                  className="p-4 rounded-xl bg-card border border-border hover:border-primary/50 transition-all shadow-xs flex flex-col justify-between space-y-3 group"
-                >
-                  <div className="space-y-1.5">
-                    <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <div className="flex items-center gap-1.5">
-                          <Building2 className="w-3.5 h-3.5 text-primary" />
-                          <span className="text-[10px] font-bold text-primary uppercase tracking-wider">
-                            {job.company}
-                          </span>
-                        </div>
-                        <h4 className="text-[14px] font-semibold text-foreground mt-0.5">{job.title}</h4>
+            {filteredJobs.map((job) => (
+              <div
+                key={job.id}
+                className="p-4 rounded-xl bg-card border border-border hover:border-border/80 transition-all shadow-xs flex flex-col justify-between space-y-3 group"
+              >
+                <div className="space-y-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <h4 className="text-[15px] font-semibold text-foreground">{job.title}</h4>
+                      <div className="flex items-center gap-2 text-[13px] text-muted-foreground mt-0.5">
+                        <Building2 className="w-3.5 h-3.5" />
+                        <span className="font-medium text-foreground/90">{job.company}</span>
                       </div>
-
-                      {/* Status selector */}
-                      <select
-                        value={job.status}
-                        onChange={(e) => handleChangeStatus(job.id, e.target.value as any)}
-                        className={cn(
-                          "px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider border cursor-pointer bg-background focus:outline-none",
-                          style.text,
-                          style.bg
-                        )}
-                      >
-                        <option value="saved">Saved</option>
-                        <option value="applied">Applied</option>
-                        <option value="interview">Interview</option>
-                        <option value="offer">Offer</option>
-                        <option value="rejected">Rejected</option>
-                      </select>
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-2.5 text-[12px] text-muted-foreground pt-1">
-                      {job.location && (
-                        <span className="flex items-center gap-1">
-                          <MapPin className="w-3.5 h-3.5 text-muted-foreground" />
-                          {job.location}
-                        </span>
-                      )}
-                      {job.salary && (
-                        <span className="flex items-center gap-1 text-foreground font-semibold tabular-nums">
-                          <DollarSign className="w-3.5 h-3.5 text-emerald-400" />
-                          {job.salary}
-                        </span>
-                      )}
-                      <span className="flex items-center gap-1 tabular-nums">
-                        <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
-                        {job.date}
-                      </span>
-                    </div>
-
-                    {job.notes && (
-                      <p className="text-[12px] text-muted-foreground pt-1 border-t border-border/60">
-                        {job.notes}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="flex items-center justify-between pt-2 border-t border-border/60">
-                    {job.link ? (
-                      <a
-                        href={job.link}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-[12px] text-primary hover:underline flex items-center gap-1 font-semibold no-underline"
-                      >
-                        <span>View Job Posting</span>
-                        <ExternalLink className="w-3 h-3" />
-                      </a>
-                    ) : (
-                      <span className="text-[12px] text-muted-foreground">No link attached</span>
-                    )}
-
-                    <button
-                      onClick={() => handleDeleteJob(job.id)}
-                      className="p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors cursor-pointer border-none bg-transparent"
-                      title="Delete Application"
+                    <select
+                      value={job.status}
+                      onChange={(e) =>
+                        handleStatusChange(job.id, e.target.value as JobApplication["status"])
+                      }
+                      className="text-[12px] font-medium px-2 py-1 rounded-md border border-border bg-surface-muted text-foreground cursor-pointer focus:outline-none"
                     >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                      <option value="saved">Saved</option>
+                      <option value="applied">Applied</option>
+                      <option value="interview">Interview</option>
+                      <option value="offer">Offer</option>
+                      <option value="rejected">Rejected</option>
+                    </select>
                   </div>
+
+                  <div className="flex flex-wrap items-center gap-3 text-[12px] text-muted-foreground pt-1">
+                    {job.location && (
+                      <span className="flex items-center gap-1">
+                        <MapPin className="w-3.5 h-3.5 text-muted-foreground" />
+                        {job.location}
+                      </span>
+                    )}
+                    {job.salary && (
+                      <span className="flex items-center gap-1 font-mono">
+                        <DollarSign className="w-3.5 h-3.5 text-muted-foreground" />
+                        {job.salary}
+                      </span>
+                    )}
+                    <span className="flex items-center gap-1 font-mono">
+                      <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
+                      {job.date}
+                    </span>
+                  </div>
+
+                  {job.notes && (
+                    <p className="text-[12px] text-muted-foreground p-2 rounded-md bg-surface-muted/60 border border-border/40 mt-1 line-clamp-2">
+                      {job.notes}
+                    </p>
+                  )}
                 </div>
-              );
-            })}
+
+                <div className="flex items-center justify-between pt-2 border-t border-border/50 text-[12px]">
+                  {job.link ? (
+                    <a
+                      href={job.link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-primary hover:underline flex items-center gap-1 font-medium"
+                    >
+                      <span>Posting link</span>
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+                  ) : (
+                    <span />
+                  )}
+
+                  <button
+                    onClick={() => handleDeleteJob(job.id)}
+                    className="p-1 rounded-md text-muted-foreground hover:text-destructive transition-colors cursor-pointer border-none bg-transparent"
+                    title="Delete application"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>
 
-      {/* Add Job Modal */}
+      {/* Add Application Modal */}
       {showAddModal && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <form
-            onSubmit={handleAddJob}
-            className="w-full max-w-lg rounded-2xl bg-card border border-border p-6 space-y-4 shadow-2xl animate-in zoom-in-95 duration-150"
-          >
-            <div className="flex items-center justify-between pb-2 border-b border-border">
-              <h3 className="text-base font-bold text-foreground flex items-center gap-2">
-                <Plus className="w-4 h-4 text-primary" />
-                Add Job Application
-              </h3>
+          <div className="bg-card border border-border rounded-xl w-full max-w-lg p-5 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between border-b border-border pb-3">
+              <h3 className="text-[16px] font-semibold text-foreground">Track new application</h3>
               <button
-                type="button"
                 onClick={() => setShowAddModal(false)}
-                className="p-1 rounded-md text-muted-foreground hover:text-foreground cursor-pointer border-none bg-transparent"
+                className="p-1 text-muted-foreground hover:text-foreground cursor-pointer border-none bg-transparent"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="space-y-3">
-              <div className="grid grid-cols-2 gap-3">
+            <form onSubmit={handleAddJob} className="space-y-3.5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs font-semibold text-foreground mb-1 block">Role / Title</label>
+                  <label className="text-[12px] font-medium text-muted-foreground block mb-1">
+                    Job title *
+                  </label>
                   <input
-                    type="text"
                     required
+                    type="text"
                     placeholder="e.g. Frontend Engineer"
                     value={form.title}
                     onChange={(e) => setForm({ ...form, title: e.target.value })}
-                    className="w-full px-3 py-2 bg-background border border-border rounded-xl text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                    className="w-full px-3 py-1.5 bg-background border border-border rounded-md text-[13px] text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-semibold text-foreground mb-1 block">Company</label>
+                  <label className="text-[12px] font-medium text-muted-foreground block mb-1">
+                    Company *
+                  </label>
                   <input
-                    type="text"
                     required
-                    placeholder="e.g. Google Cloud"
+                    type="text"
+                    placeholder="e.g. Vercel"
                     value={form.company}
                     onChange={(e) => setForm({ ...form, company: e.target.value })}
-                    className="w-full px-3 py-2 bg-background border border-border rounded-xl text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                    className="w-full px-3 py-1.5 bg-background border border-border rounded-md text-[13px] text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
-                  <label className="text-xs font-semibold text-foreground mb-1 block">Status</label>
+                  <label className="text-[12px] font-medium text-muted-foreground block mb-1">
+                    Status
+                  </label>
                   <select
                     value={form.status}
-                    onChange={(e) => setForm({ ...form, status: e.target.value as any })}
-                    className="w-full px-3 py-2 bg-background border border-border rounded-xl text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                    onChange={(e) =>
+                      setForm({
+                        ...form,
+                        status: e.target.value as JobApplication["status"],
+                      })
+                    }
+                    className="w-full px-3 py-1.5 bg-background border border-border rounded-md text-[13px] text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                   >
                     <option value="saved">Saved</option>
                     <option value="applied">Applied</option>
@@ -424,79 +318,77 @@ export const DashboardJobs: React.FC = () => {
                     <option value="rejected">Rejected</option>
                   </select>
                 </div>
-                <div>
-                  <label className="text-xs font-semibold text-foreground mb-1 block">Date</label>
-                  <input
-                    type="date"
-                    value={form.date}
-                    onChange={(e) => setForm({ ...form, date: e.target.value })}
-                    className="w-full px-3 py-2 bg-background border border-border rounded-xl text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-                  />
-                </div>
-              </div>
 
-              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs font-semibold text-foreground mb-1 block">Location</label>
+                  <label className="text-[12px] font-medium text-muted-foreground block mb-1">
+                    Location
+                  </label>
                   <input
                     type="text"
-                    placeholder="e.g. Remote / Bengaluru"
+                    placeholder="e.g. Remote"
                     value={form.location}
                     onChange={(e) => setForm({ ...form, location: e.target.value })}
-                    className="w-full px-3 py-2 bg-background border border-border rounded-xl text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                    className="w-full px-3 py-1.5 bg-background border border-border rounded-md text-[13px] text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                   />
                 </div>
+
                 <div>
-                  <label className="text-xs font-semibold text-foreground mb-1 block">Salary / Stipend</label>
+                  <label className="text-[12px] font-medium text-muted-foreground block mb-1">
+                    Salary / Compensation
+                  </label>
                   <input
                     type="text"
-                    placeholder="e.g. ₹20 LPA"
+                    placeholder="e.g. $120k / ₹20 LPA"
                     value={form.salary}
                     onChange={(e) => setForm({ ...form, salary: e.target.value })}
-                    className="w-full px-3 py-2 bg-background border border-border rounded-xl text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                    className="w-full px-3 py-1.5 bg-background border border-border rounded-md text-[13px] text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-foreground mb-1 block">Application Link</label>
+                <label className="text-[12px] font-medium text-muted-foreground block mb-1">
+                  Posting or application URL
+                </label>
                 <input
-                  type="text"
+                  type="url"
                   placeholder="https://..."
                   value={form.link}
                   onChange={(e) => setForm({ ...form, link: e.target.value })}
-                  className="w-full px-3 py-2 bg-background border border-border rounded-xl text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                  className="w-full px-3 py-1.5 bg-background border border-border rounded-md text-[13px] text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                 />
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-foreground mb-1 block">Notes / Follow-ups</label>
+                <label className="text-[12px] font-medium text-muted-foreground block mb-1">
+                  Notes
+                </label>
                 <textarea
                   rows={2}
-                  placeholder="Interview dates, referral contacts, or requirements..."
+                  placeholder="Next steps, interview round details, recruiter contact..."
                   value={form.notes}
                   onChange={(e) => setForm({ ...form, notes: e.target.value })}
-                  className="w-full px-3 py-2 bg-background border border-border rounded-xl text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none"
+                  className="w-full px-3 py-1.5 bg-background border border-border rounded-md text-[13px] text-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none"
                 />
               </div>
-            </div>
 
-            <div className="flex justify-end gap-2 pt-2 border-t border-border">
-              <button
-                type="button"
-                onClick={() => setShowAddModal(false)}
-                className="px-4 py-2 rounded-xl text-xs font-semibold text-muted-foreground hover:text-foreground cursor-pointer border-none bg-transparent"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="px-5 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-bold uppercase tracking-wider hover:bg-primary/90 transition-colors shadow-xs cursor-pointer border-none"
-              >
-                Save Application
-              </button>
-            </div>
-          </form>
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-border">
+                <button
+                  type="button"
+                  onClick={() => setShowAddModal(false)}
+                  className="px-3 py-1.5 rounded-md border border-border text-foreground hover:bg-surface-muted text-[13px] font-medium cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-1.5 rounded-md bg-primary text-primary-foreground text-[13px] font-medium hover:opacity-95 cursor-pointer border-none shadow-xs"
+                >
+                  Save application
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>
@@ -504,4 +396,3 @@ export const DashboardJobs: React.FC = () => {
 };
 
 export default DashboardJobs;
-

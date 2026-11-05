@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { GitHubCalendar } from "react-github-calendar";
 import {
   Trophy,
   ExternalLink,
@@ -7,14 +8,13 @@ import {
   GitFork,
   AlertCircle,
   TrendingUp,
-  Award,
-  UserCheck,
   Edit2,
   X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { auth, db } from "../../firebase";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { doc, getDoc } from "firebase/firestore";
+import { useTheme } from "../../context/ThemeContext";
 
 const GithubIcon: React.FC<{ className?: string }> = ({ className }) => (
   <svg className={className} viewBox="0 0 24 24" fill="currentColor">
@@ -77,9 +77,11 @@ interface ChessStats {
 }
 
 export const DeveloperActivityCard: React.FC<{ compact?: boolean }> = ({ compact = false }) => {
-  // GitHub State - checks local storage / user profile
+  const { resolvedTheme } = useTheme();
+
+  // GitHub State
   const [githubUsername, setGithubUsername] = useState<string>(() => {
-    return localStorage.getItem("skillsphere_github_username") || "";
+    return localStorage.getItem("skillsphere_github_username") || "yanaix10";
   });
   const [githubInput, setGithubInput] = useState("");
   const [githubData, setGithubData] = useState<GitHubUser | null>(null);
@@ -105,7 +107,7 @@ export const DeveloperActivityCard: React.FC<{ compact?: boolean }> = ({ compact
   // Load from user profile on mount
   useEffect(() => {
     const initProfiles = async () => {
-      let savedGh = localStorage.getItem("skillsphere_github_username") || "";
+      let savedGh = localStorage.getItem("skillsphere_github_username") || "yanaix10";
       let savedChess = localStorage.getItem("skillsphere_chess_username") || "";
 
       const user = auth.currentUser;
@@ -147,12 +149,16 @@ export const DeveloperActivityCard: React.FC<{ compact?: boolean }> = ({ compact
       setGithubData(userData);
 
       const reposRes = await fetch(
-        `https://api.github.com/users/${encodeURIComponent(username.trim())}/repos?sort=updated&per_page=3`
+        `https://api.github.com/users/${encodeURIComponent(username.trim())}/repos?sort=updated&per_page=6`
       );
       if (reposRes.ok) {
         const reposData = await reposRes.json();
         if (Array.isArray(reposData)) {
-          setGithubRepos(reposData);
+          // Filter out user's profile README repo (repo name matches username) and keep top 3 active repos
+          const filtered = reposData
+            .filter((r: GitHubRepo) => r.name.toLowerCase() !== username.trim().toLowerCase())
+            .slice(0, 3);
+          setGithubRepos(filtered);
         }
       }
       localStorage.setItem("skillsphere_github_username", username.trim());
@@ -197,27 +203,22 @@ export const DeveloperActivityCard: React.FC<{ compact?: boolean }> = ({ compact
   };
 
   return (
-    <div className="w-full rounded-2xl bg-card border border-border overflow-hidden shadow-xs text-foreground transition-colors">
-      {/* Bento Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border-b border-border bg-secondary/30 gap-3">
-        <div>
-          <h3 className="text-[14px] font-semibold text-foreground flex items-center gap-2">
-            <TrendingUp className="w-4 h-4 text-primary" />
-            Developer & Gaming Activity
-          </h3>
-          <p className="text-[12px] text-muted-foreground">
-            Connected GitHub contribution metrics and Chess.com performance
-          </p>
-        </div>
+    <div className="w-full rounded-xl bg-card border border-border overflow-hidden shadow-xs text-foreground transition-colors">
+      {/* Header Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border-b border-border bg-surface-muted/40 gap-3">
+        <h3 className="text-[16px] font-semibold text-foreground flex items-center gap-2 m-0">
+          <TrendingUp className="w-4 h-4 text-primary" />
+          <span>Developer activity</span>
+        </h3>
 
-        {/* Tab Buttons */}
-        <div className="flex items-center gap-1 p-1 rounded-xl bg-secondary border border-border shrink-0">
+        {/* Tab Switcher */}
+        <div className="flex items-center gap-1 p-0.5 rounded-md bg-surface-muted border border-border shrink-0">
           <button
             onClick={() => setActiveTab("github")}
             className={cn(
-              "flex items-center gap-1.5 px-3 py-1 rounded-lg text-[12px] font-medium transition-all cursor-pointer border-none",
+              "flex items-center gap-1.5 px-3 py-1 rounded text-[13px] font-medium transition-all cursor-pointer border-none",
               activeTab === "github"
-                ? "bg-card text-foreground shadow-xs font-semibold"
+                ? "bg-card text-foreground shadow-2xs font-semibold"
                 : "text-muted-foreground hover:text-foreground bg-transparent"
             )}
           >
@@ -227,13 +228,13 @@ export const DeveloperActivityCard: React.FC<{ compact?: boolean }> = ({ compact
           <button
             onClick={() => setActiveTab("chess")}
             className={cn(
-              "flex items-center gap-1.5 px-3 py-1 rounded-lg text-[12px] font-medium transition-all cursor-pointer border-none",
+              "flex items-center gap-1.5 px-3 py-1 rounded text-[13px] font-medium transition-all cursor-pointer border-none",
               activeTab === "chess"
-                ? "bg-card text-foreground shadow-xs font-semibold"
+                ? "bg-card text-foreground shadow-2xs font-semibold"
                 : "text-muted-foreground hover:text-foreground bg-transparent"
             )}
           >
-            <Trophy className="w-3.5 h-3.5 text-amber-500" />
+            <Trophy className="w-3.5 h-3.5 text-muted-foreground" />
             <span>Chess.com</span>
           </button>
         </div>
@@ -243,13 +244,12 @@ export const DeveloperActivityCard: React.FC<{ compact?: boolean }> = ({ compact
         {/* ─── GITHUB SECTION ─── */}
         {activeTab === "github" && (
           <div className="space-y-4">
-            {/* If no GitHub username set or editing, show connect prompt */}
             {(!githubUsername || isEditingGithub) ? (
-              <div className="p-4 rounded-xl border border-dashed border-border bg-secondary/20 space-y-3">
+              <div className="p-4 rounded-lg border border-dashed border-border bg-surface-muted/30 space-y-3">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-xs font-semibold text-foreground">
+                  <div className="flex items-center gap-2 text-[13px] font-semibold text-foreground">
                     <GithubIcon className="w-4 h-4 text-primary" />
-                    <span>Connect your GitHub Account</span>
+                    <span>Connect your GitHub account</span>
                   </div>
                   {githubUsername && (
                     <button
@@ -260,9 +260,6 @@ export const DeveloperActivityCard: React.FC<{ compact?: boolean }> = ({ compact
                     </button>
                   )}
                 </div>
-                <p className="text-[12px] text-muted-foreground">
-                  Enter your GitHub username to display your annual contribution heatmap and repos.
-                </p>
                 <form
                   onSubmit={(e) => {
                     e.preventDefault();
@@ -274,13 +271,13 @@ export const DeveloperActivityCard: React.FC<{ compact?: boolean }> = ({ compact
                     type="text"
                     value={githubInput}
                     onChange={(e) => setGithubInput(e.target.value)}
-                    placeholder="e.g. torvalds or your username"
-                    className="flex-1 px-3 py-1.5 rounded-xl bg-background border border-border text-[12px] text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                    placeholder="Enter GitHub username"
+                    className="flex-1 px-3 py-1.5 rounded-md bg-background border border-border text-[13px] text-foreground focus:outline-none focus:ring-1 focus:ring-primary font-mono"
                   />
                   <button
                     type="submit"
                     disabled={githubLoading}
-                    className="px-4 py-1.5 rounded-xl bg-primary text-primary-foreground text-[10px] font-bold uppercase tracking-wider hover:bg-primary/90 transition-all cursor-pointer border-none"
+                    className="px-4 py-1.5 rounded-md bg-primary text-primary-foreground text-[13px] font-medium hover:opacity-95 transition-all cursor-pointer border-none"
                   >
                     {githubLoading ? "Loading..." : "Connect"}
                   </button>
@@ -289,17 +286,16 @@ export const DeveloperActivityCard: React.FC<{ compact?: boolean }> = ({ compact
             ) : null}
 
             {githubError && (
-              <div className="p-2.5 rounded-xl bg-destructive/10 border border-destructive/30 text-destructive text-[12px] flex items-center gap-2">
+              <div className="p-2.5 rounded-md bg-destructive/10 border border-destructive/30 text-destructive text-[13px] flex items-center gap-2">
                 <AlertCircle className="w-4 h-4 shrink-0" />
                 <span>{githubError}</span>
               </div>
             )}
 
-            {/* Concise GitHub Display */}
             {githubData && (
-              <div className="space-y-3">
-                {/* Compact Identity Row */}
-                <div className="flex items-center justify-between p-3 rounded-xl bg-secondary/30 border border-border">
+              <div className="space-y-3.5">
+                {/* Identity Bar */}
+                <div className="flex items-center justify-between p-3 rounded-lg bg-surface-muted/30 border border-border">
                   <div className="flex items-center gap-3">
                     <img
                       src={githubData.avatar_url}
@@ -308,10 +304,14 @@ export const DeveloperActivityCard: React.FC<{ compact?: boolean }> = ({ compact
                     />
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="text-[14px] font-semibold text-foreground">{githubData.name || githubData.login}</span>
-                        <span className="text-[11px] text-muted-foreground font-mono">@{githubData.login}</span>
+                        <span className="text-[14px] font-semibold text-foreground">
+                          {githubData.name || githubData.login}
+                        </span>
+                        <span className="text-[12px] text-muted-foreground font-mono">
+                          @{githubData.login}
+                        </span>
                       </div>
-                      <div className="flex items-center gap-3 text-[11px] text-muted-foreground font-mono tabular-nums mt-0.5">
+                      <div className="flex items-center gap-2.5 text-[12px] text-muted-foreground font-mono tabular-nums mt-0.5">
                         <span>{githubData.public_repos} repos</span>
                         <span>•</span>
                         <span>{githubData.followers} followers</span>
@@ -325,8 +325,8 @@ export const DeveloperActivityCard: React.FC<{ compact?: boolean }> = ({ compact
                         setGithubInput(githubUsername);
                         setIsEditingGithub(true);
                       }}
-                      className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors cursor-pointer border-none bg-transparent"
-                      title="Switch GitHub Account"
+                      className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-surface-muted transition-colors cursor-pointer border-none bg-transparent"
+                      title="Switch GitHub account"
                     >
                       <Edit2 className="w-3.5 h-3.5" />
                     </button>
@@ -334,7 +334,7 @@ export const DeveloperActivityCard: React.FC<{ compact?: boolean }> = ({ compact
                       href={githubData.html_url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+                      className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-surface-muted transition-colors"
                       title="Open on GitHub"
                     >
                       <ExternalLink className="w-3.5 h-3.5" />
@@ -342,39 +342,36 @@ export const DeveloperActivityCard: React.FC<{ compact?: boolean }> = ({ compact
                   </div>
                 </div>
 
-                {/* Short Contribution Heatmap */}
-                <div className="p-3 rounded-xl bg-secondary/20 border border-border overflow-x-auto">
-                  <div className="min-w-[500px]">
-                    <img
-                      src={`https://ghchart.rshah.org/00f2fe/${githubData.login}`}
-                      alt={`${githubData.login}'s Contribution Chart`}
-                      className="w-full h-auto dark:invert dark:hue-rotate-180"
-                      onError={(e) => {
-                        (e.target as HTMLElement).style.display = "none";
-                      }}
-                    />
-                  </div>
-                  <div className="flex items-center justify-between text-[10px] text-muted-foreground mt-2 pt-1.5 border-t border-border/50 font-mono">
-                    <span>12-Month Contribution Timeline</span>
-                    <span>Active Developer Heatmap</span>
-                  </div>
+                {/* React GitHub Calendar Heatmap (Real Component, Zero Image Hacks) */}
+                <div className="p-4 rounded-lg bg-surface-muted/20 border border-border overflow-x-auto flex justify-center">
+                  <GitHubCalendar
+                    username={githubData.login}
+                    blockSize={11}
+                    blockMargin={3}
+                    fontSize={12}
+                    colorScheme={resolvedTheme === "dark" ? "dark" : "light"}
+                    theme={{
+                      light: ["#ebedf0", "#9be9a8", "#40c463", "#30a14e", "#216e39"],
+                      dark: ["#161b22", "#0e4429", "#006d32", "#26a641", "#39d353"],
+                    }}
+                  />
                 </div>
 
-                {/* Compact Recent Repositories */}
+                {/* Filtered Recent Repositories */}
                 {githubRepos.length > 0 && (
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                     {githubRepos.map((repo) => (
                       <a
                         key={repo.id}
                         href={repo.html_url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="p-2.5 rounded-lg bg-secondary/30 border border-border hover:border-primary/40 transition-colors block no-underline group"
+                        className="p-3 rounded-lg bg-surface-muted/30 border border-border hover:border-primary/50 transition-colors block no-underline group"
                       >
-                        <div className="text-[12px] font-semibold text-foreground group-hover:text-primary transition-colors truncate">
+                        <div className="text-[13px] font-semibold text-foreground group-hover:text-primary transition-colors truncate font-mono">
                           {repo.name}
                         </div>
-                        <div className="flex items-center gap-2 mt-1.5 text-[10px] text-muted-foreground font-mono tabular-nums">
+                        <div className="flex items-center gap-2 mt-1.5 text-[11px] text-muted-foreground font-mono tabular-nums">
                           {repo.language && <span>{repo.language}</span>}
                           <span>★ {repo.stargazers_count}</span>
                         </div>
@@ -391,11 +388,11 @@ export const DeveloperActivityCard: React.FC<{ compact?: boolean }> = ({ compact
         {activeTab === "chess" && (
           <div className="space-y-4">
             {(!chessUsername || isEditingChess) ? (
-              <div className="p-4 rounded-xl border border-dashed border-border bg-secondary/20 space-y-3">
+              <div className="p-4 rounded-lg border border-dashed border-border bg-surface-muted/30 space-y-3">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-xs font-semibold text-foreground">
-                    <Trophy className="w-4 h-4 text-amber-500" />
-                    <span>Connect your Chess.com Profile</span>
+                  <div className="flex items-center gap-2 text-[13px] font-semibold text-foreground">
+                    <Trophy className="w-4 h-4 text-muted-foreground" />
+                    <span>Connect your Chess.com profile</span>
                   </div>
                   {chessUsername && (
                     <button
@@ -406,9 +403,6 @@ export const DeveloperActivityCard: React.FC<{ compact?: boolean }> = ({ compact
                     </button>
                   )}
                 </div>
-                <p className="text-[12px] text-muted-foreground">
-                  Enter your Chess.com handle to fetch real-time Rapid, Blitz, Bullet ratings and win ratios.
-                </p>
                 <form
                   onSubmit={(e) => {
                     e.preventDefault();
@@ -420,13 +414,13 @@ export const DeveloperActivityCard: React.FC<{ compact?: boolean }> = ({ compact
                     type="text"
                     value={chessInput}
                     onChange={(e) => setChessInput(e.target.value)}
-                    placeholder="e.g. hikaru or your username"
-                    className="flex-1 px-3 py-1.5 rounded-xl bg-background border border-border text-[12px] text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                    placeholder="Enter Chess.com username"
+                    className="flex-1 px-3 py-1.5 rounded-md bg-background border border-border text-[13px] text-foreground focus:outline-none focus:ring-1 focus:ring-primary font-mono"
                   />
                   <button
                     type="submit"
                     disabled={chessLoading}
-                    className="px-4 py-1.5 rounded-xl bg-primary text-primary-foreground text-[10px] font-bold uppercase tracking-wider hover:bg-primary/90 transition-all cursor-pointer border-none"
+                    className="px-4 py-1.5 rounded-md bg-primary text-primary-foreground text-[13px] font-medium hover:opacity-95 transition-all cursor-pointer border-none"
                   >
                     {chessLoading ? "Loading..." : "Connect"}
                   </button>
@@ -435,7 +429,7 @@ export const DeveloperActivityCard: React.FC<{ compact?: boolean }> = ({ compact
             ) : null}
 
             {chessError && (
-              <div className="p-2.5 rounded-xl bg-destructive/10 border border-destructive/30 text-destructive text-[12px] flex items-center gap-2">
+              <div className="p-2.5 rounded-md bg-destructive/10 border border-destructive/30 text-destructive text-[13px] flex items-center gap-2">
                 <AlertCircle className="w-4 h-4 shrink-0" />
                 <span>{chessError}</span>
               </div>
@@ -443,31 +437,33 @@ export const DeveloperActivityCard: React.FC<{ compact?: boolean }> = ({ compact
 
             {chessUser && (
               <div className="space-y-3">
-                {/* Identity Header */}
-                <div className="flex items-center justify-between p-3 rounded-xl bg-secondary/30 border border-border">
+                <div className="flex items-center justify-between p-3 rounded-lg bg-surface-muted/30 border border-border">
                   <div className="flex items-center gap-3">
                     {chessUser.avatar ? (
                       <img
                         src={chessUser.avatar}
                         alt={chessUser.username}
-                        className="w-10 h-10 rounded-xl border border-border object-cover"
+                        className="w-10 h-10 rounded-md border border-border object-cover"
                       />
                     ) : (
-                      <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-border flex items-center justify-center text-amber-500 font-bold text-sm">
+                      <div className="w-10 h-10 rounded-md bg-surface-muted border border-border flex items-center justify-center text-foreground font-semibold text-sm">
                         ♟
                       </div>
                     )}
                     <div>
                       <div className="flex items-center gap-2">
                         {chessUser.title && (
-                          <span className="px-1.5 py-0.2 rounded-sm bg-destructive text-destructive-foreground text-[9px] font-bold uppercase">
+                          <span className="px-1.5 py-0.2 rounded-sm bg-destructive text-destructive-foreground text-[10px] font-bold font-mono uppercase">
                             {chessUser.title}
                           </span>
                         )}
-                        <span className="text-[14px] font-semibold text-foreground">{chessUser.name || chessUser.username}</span>
-                        <span className="text-[11px] text-muted-foreground font-mono">@{chessUser.username}</span>
+                        <span className="text-[14px] font-semibold text-foreground">
+                          {chessUser.name || chessUser.username}
+                        </span>
+                        <span className="text-[12px] text-muted-foreground font-mono">
+                          @{chessUser.username}
+                        </span>
                       </div>
-                      <p className="text-[11px] text-muted-foreground">Verified Chess.com Player Profile</p>
                     </div>
                   </div>
 
@@ -477,8 +473,8 @@ export const DeveloperActivityCard: React.FC<{ compact?: boolean }> = ({ compact
                         setChessInput(chessUsername);
                         setIsEditingChess(true);
                       }}
-                      className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors cursor-pointer border-none bg-transparent"
-                      title="Switch Chess.com Account"
+                      className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-surface-muted transition-colors cursor-pointer border-none bg-transparent"
+                      title="Switch Chess.com account"
                     >
                       <Edit2 className="w-3.5 h-3.5" />
                     </button>
@@ -486,7 +482,7 @@ export const DeveloperActivityCard: React.FC<{ compact?: boolean }> = ({ compact
                       href={chessUser.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+                      className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-surface-muted transition-colors"
                       title="View on Chess.com"
                     >
                       <ExternalLink className="w-3.5 h-3.5" />
@@ -496,43 +492,43 @@ export const DeveloperActivityCard: React.FC<{ compact?: boolean }> = ({ compact
 
                 {/* Ratings Grid */}
                 {chessStats && (
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                    <div className="p-3 rounded-xl bg-secondary/30 border border-border text-center">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Rapid</span>
-                      <div className="text-[20px] font-bold font-mono tabular-nums text-emerald-500 dark:text-emerald-400 mt-0.5">
-                        {chessStats.chess_rapid?.last?.rating || "N/A"}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                    <div className="p-3 rounded-lg bg-surface-muted/30 border border-border text-center">
+                      <span className="text-[12px] font-medium text-muted-foreground">Rapid</span>
+                      <div className="text-[22px] font-semibold font-mono tabular-nums text-foreground mt-0.5">
+                        {chessStats.chess_rapid?.last?.rating || "—"}
                       </div>
-                      <div className="text-[10px] font-mono tabular-nums text-muted-foreground">
+                      <div className="text-[11px] font-mono tabular-nums text-muted-foreground">
                         Peak: {chessStats.chess_rapid?.best?.rating || "—"}
                       </div>
                     </div>
 
-                    <div className="p-3 rounded-xl bg-secondary/30 border border-border text-center">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Blitz</span>
-                      <div className="text-[20px] font-bold font-mono tabular-nums text-amber-500 dark:text-amber-400 mt-0.5">
-                        {chessStats.chess_blitz?.last?.rating || "N/A"}
+                    <div className="p-3 rounded-lg bg-surface-muted/30 border border-border text-center">
+                      <span className="text-[12px] font-medium text-muted-foreground">Blitz</span>
+                      <div className="text-[22px] font-semibold font-mono tabular-nums text-foreground mt-0.5">
+                        {chessStats.chess_blitz?.last?.rating || "—"}
                       </div>
-                      <div className="text-[10px] font-mono tabular-nums text-muted-foreground">
+                      <div className="text-[11px] font-mono tabular-nums text-muted-foreground">
                         Peak: {chessStats.chess_blitz?.best?.rating || "—"}
                       </div>
                     </div>
 
-                    <div className="p-3 rounded-xl bg-secondary/30 border border-border text-center">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Bullet</span>
-                      <div className="text-[20px] font-bold font-mono tabular-nums text-sky-500 dark:text-cyan-400 mt-0.5">
-                        {chessStats.chess_bullet?.last?.rating || "N/A"}
+                    <div className="p-3 rounded-lg bg-surface-muted/30 border border-border text-center">
+                      <span className="text-[12px] font-medium text-muted-foreground">Bullet</span>
+                      <div className="text-[22px] font-semibold font-mono tabular-nums text-foreground mt-0.5">
+                        {chessStats.chess_bullet?.last?.rating || "—"}
                       </div>
-                      <div className="text-[10px] font-mono tabular-nums text-muted-foreground">
+                      <div className="text-[11px] font-mono tabular-nums text-muted-foreground">
                         Peak: {chessStats.chess_bullet?.best?.rating || "—"}
                       </div>
                     </div>
 
-                    <div className="p-3 rounded-xl bg-secondary/30 border border-border text-center">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Tactics</span>
-                      <div className="text-[20px] font-bold font-mono tabular-nums text-purple-500 dark:text-purple-400 mt-0.5">
-                        {chessStats.tactics?.highest?.rating || "N/A"}
+                    <div className="p-3 rounded-lg bg-surface-muted/30 border border-border text-center">
+                      <span className="text-[12px] font-medium text-muted-foreground">Tactics</span>
+                      <div className="text-[22px] font-semibold font-mono tabular-nums text-foreground mt-0.5">
+                        {chessStats.tactics?.highest?.rating || "—"}
                       </div>
-                      <div className="text-[10px] text-muted-foreground">Puzzle Rating</div>
+                      <div className="text-[11px] text-muted-foreground">Puzzle rating</div>
                     </div>
                   </div>
                 )}

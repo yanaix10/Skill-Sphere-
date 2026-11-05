@@ -64,7 +64,7 @@ const DEFAULT_NOTIFICATIONS: FriendMessageNotification[] = [
 
 const navigationLinks = [
   { href: "/dashboard", label: "Home" },
-  { href: "/quizzes", label: "Quizzes & Duels" },
+  { href: "/quizzes", label: "Quizzes & duels" },
   { href: "/friends", label: "Friends" },
 ];
 
@@ -199,26 +199,26 @@ export default function Navbar() {
             {/* Logo */}
             <Link
               to="/"
-              className="flex items-center gap-2.5 text-foreground hover:opacity-95 font-bold text-xl no-underline tracking-tight group"
+              className="flex items-center gap-2.5 text-foreground hover:opacity-95 font-semibold text-base no-underline tracking-tight group shrink-0"
             >
               <img
                 src="/logo.png"
                 alt="SkillSphere Logo"
-                className="size-7 rounded-full object-contain shrink-0 transition-transform duration-200 group-hover:scale-105 shadow-xs"
+                className="size-6 rounded-full object-contain shrink-0 transition-transform duration-200 group-hover:scale-105"
               />
-              <span className="font-display font-bold tracking-tight text-foreground text-lg">
+              <span className="font-semibold tracking-tight text-foreground text-[16px]">
                 SkillSphere
               </span>
             </Link>
 
-            {/* Desktop Navigation menu from navbar.txt */}
+            {/* Desktop Navigation menu */}
             <NavigationMenu className="max-md:hidden">
-              <NavigationMenuList className="gap-2">
+              <NavigationMenuList className="gap-1 sm:gap-2">
                 {navigationLinks.map((link, index) => (
                   <NavigationMenuItem key={index}>
                     <Link
                       to={link.href}
-                      className="text-foreground/80 hover:text-foreground hover:border-b-primary border-b-2 border-transparent px-3 py-2 font-medium transition-colors text-sm no-underline"
+                      className="text-foreground/80 hover:text-foreground hover:border-b-primary border-b-2 border-transparent px-3 py-1.5 font-medium transition-colors text-[13px] whitespace-nowrap no-underline"
                     >
                       {link.label}
                     </Link>
