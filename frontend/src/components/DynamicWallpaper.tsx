@@ -764,3 +764,4 @@ export const DynamicWallpaper: React.FC<DynamicWallpaperProps> = ({ children }) 
 };
 
 export default DynamicWallpaper;
+
