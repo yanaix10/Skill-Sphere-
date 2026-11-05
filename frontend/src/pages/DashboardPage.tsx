@@ -83,21 +83,21 @@ export const DashboardPage: React.FC = () => {
   const getSectionTitle = (sec: SidebarSection) => {
     switch (sec) {
       case "overview":
-        return "Workspace Overview";
+        return "Overview";
       case "media":
-        return "Media & Study Resources";
+        return "Media & Resources";
       case "todo":
-        return "To-Do Tasks & Milestones";
+        return "To-Do Tasks";
       case "jobs":
-        return "Job & Internship Tracker";
+        return "Job Applications";
       case "classroom":
-        return "Google Classroom Sync";
+        return "Google Classroom";
       case "calendar":
-        return "Google Calendar & Meetings";
+        return "Google Calendar";
       case "activity":
-        return "Developer & Gaming Activity";
+        return "Developer Activity";
       case "settings":
-        return "Settings & Preferences";
+        return "Settings";
       default:
         return "Dashboard";
     }
@@ -131,10 +131,8 @@ export const DashboardPage: React.FC = () => {
               </Button>
             )}
 
-            <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground">
-              <span className="hidden sm:inline">Dashboard</span>
-              <ChevronRight className="w-3.5 h-3.5 hidden sm:inline" />
-              <span className="text-foreground font-bold">{getSectionTitle(activeSection)}</span>
+            <div className="flex items-center gap-2 text-[13px] font-semibold text-foreground">
+              <span>{getSectionTitle(activeSection)}</span>
             </div>
           </div>
 

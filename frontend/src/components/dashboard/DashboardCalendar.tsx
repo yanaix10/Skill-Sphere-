@@ -119,7 +119,40 @@ export const DashboardCalendar: React.FC = () => {
   });
 
   const user = auth.currentUser;
-  const userEmail = user?.email || "naitik.yadav@university.edu";
+  const personalEmail = user?.email || "naitik.yadav641@gmail.com";
+
+  const [calendarEmail, setCalendarEmail] = useState<string>(() => {
+    return localStorage.getItem("skillsphere_calendar_email") || "";
+  });
+  const [isCollegeAccount, setIsCollegeAccount] = useState<boolean>(() => {
+    return localStorage.getItem("skillsphere_calendar_is_college") === "true";
+  });
+  const [showAccountModal, setShowAccountModal] = useState<boolean>(false);
+  const [collegeEmailInput, setCollegeEmailInput] = useState<string>(
+    localStorage.getItem("skillsphere_calendar_email") || "naitik.yadav@vitstudent.ac.in"
+  );
+
+  const effectiveEmail = calendarEmail || personalEmail;
+
+  const handleSaveCollegeEmail = () => {
+    if (!collegeEmailInput.trim()) return;
+    const clean = collegeEmailInput.trim().toLowerCase();
+    setCalendarEmail(clean);
+    setIsCollegeAccount(true);
+    localStorage.setItem("skillsphere_calendar_email", clean);
+    localStorage.setItem("skillsphere_calendar_is_college", "true");
+    setShowAccountModal(false);
+    handleSync();
+  };
+
+  const handleUsePersonalEmail = () => {
+    setCalendarEmail(personalEmail);
+    setIsCollegeAccount(false);
+    localStorage.setItem("skillsphere_calendar_email", personalEmail);
+    localStorage.setItem("skillsphere_calendar_is_college", "false");
+    setShowAccountModal(false);
+    handleSync();
+  };
 
   const saveEvents = (data: CalendarEvent[]) => {
     setEvents(data);
@@ -202,32 +235,44 @@ export const DashboardCalendar: React.FC = () => {
 
   return (
     <div className="space-y-4 max-w-7xl mx-auto text-foreground">
-      {/* 24px Workspace Header */}
+      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-border gap-3">
-        <div>
-          <div className="flex items-center gap-2">
-            <h2 className="text-[24px] font-semibold tracking-tight text-white m-0">Google Calendar</h2>
-            <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-400 border border-blue-500/30">
-              LIVE SYNC
-            </span>
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-400 flex items-center justify-center border border-blue-500/20">
+            <CalendarIcon className="w-4 h-4" />
           </div>
-          <p className="text-[12px] text-[#94A3B8] mt-0.5">
-            Synchronized with Google Calendar for project syncs, coding duels, and deadlines
-          </p>
+          <div>
+            <h2 className="text-[20px] font-semibold tracking-tight text-white m-0">Google Calendar</h2>
+          </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Account Switcher Pill */}
+          <button
+            onClick={() => setShowAccountModal(true)}
+            className="px-2.5 py-1.5 rounded-lg bg-card hover:bg-secondary/70 border border-border flex items-center gap-2 text-[12px] text-foreground transition-all cursor-pointer shadow-xs"
+            title="Switch between Personal and College Google Account"
+          >
+            <div className={cn("w-2 h-2 rounded-full shrink-0", isCollegeAccount ? "bg-emerald-400 ring-2 ring-emerald-500/30" : "bg-blue-400")} />
+            <span className="font-mono text-[11px] text-[#E2E8F0] max-w-[180px] sm:max-w-[220px] truncate">
+              {effectiveEmail}
+            </span>
+            <span className="text-[10px] text-primary font-bold uppercase tracking-wider pl-1 border-l border-border/80">
+              {isCollegeAccount ? "College" : "Personal"}
+            </span>
+          </button>
+
           <button
             onClick={handleSync}
             disabled={isSyncing}
-            className="px-3 py-1.5 rounded-xl bg-secondary hover:bg-secondary/80 text-white text-[12px] font-medium flex items-center gap-1.5 transition-colors cursor-pointer border border-border"
+            className="px-3 py-1.5 rounded-lg bg-secondary hover:bg-secondary/80 text-white text-[12px] font-semibold flex items-center gap-1.5 transition-colors cursor-pointer border border-border"
           >
             <RefreshCw className={cn("w-3.5 h-3.5 text-blue-400", isSyncing && "animate-spin")} />
             <span>{isSyncing ? "Syncing..." : "Sync"}</span>
           </button>
           <button
             onClick={() => setShowAddModal(true)}
-            className="px-3.5 py-1.5 rounded-xl bg-primary text-primary-foreground text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 hover:bg-primary/90 transition-all cursor-pointer border-none"
+            className="px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 hover:bg-primary/90 transition-all cursor-pointer border-none"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>New Event</span>
@@ -556,6 +601,76 @@ export const DashboardCalendar: React.FC = () => {
               </button>
             </div>
           </form>
+        </div>
+      )}
+
+      {/* Switch / Link College Google Account Modal */}
+      {showAccountModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="w-full max-w-md rounded-2xl bg-card border border-border p-5 space-y-4 shadow-2xl animate-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between pb-2 border-b border-border">
+              <div className="flex items-center gap-2">
+                <CalendarIcon className="w-4 h-4 text-blue-400" />
+                <h3 className="text-[14px] font-semibold text-white">
+                  Link College / University Google Calendar
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowAccountModal(false)}
+                className="p-1 rounded-lg text-[#94A3B8] hover:text-white hover:bg-secondary cursor-pointer border-none bg-transparent"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <p className="text-[12px] text-[#94A3B8]">
+              Link your college / institutional Google Calendar account to pull classes, exams, lab schedules, and meetings into SkillSphere.
+            </p>
+
+            <div className="space-y-3">
+              <div>
+                <label className="text-[10px] font-bold uppercase tracking-wider text-[#94A3B8] block mb-1">
+                  College Institutional Email Address
+                </label>
+                <input
+                  type="email"
+                  placeholder="e.g. naitik.yadav@vitstudent.ac.in"
+                  value={collegeEmailInput}
+                  onChange={(e) => setCollegeEmailInput(e.target.value)}
+                  className="w-full px-3 py-2 bg-background border border-border rounded-lg text-[13px] text-white focus:outline-none focus:ring-1 focus:ring-primary font-mono"
+                />
+              </div>
+
+              <div className="p-3 rounded-lg bg-secondary/30 border border-border text-[12px] space-y-1">
+                <div className="text-[#94A3B8]">Currently Active Calendar Account:</div>
+                <div className="font-mono text-white text-[12px] font-medium break-all">
+                  {effectiveEmail} {isCollegeAccount && <span className="text-blue-400 font-semibold">(College Linked)</span>}
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-2 flex flex-col gap-2">
+              <button
+                type="button"
+                onClick={handleSaveCollegeEmail}
+                className="w-full py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-[12px] font-semibold flex items-center justify-center gap-2 cursor-pointer border-none transition-colors"
+              >
+                <CalendarIcon className="w-4 h-4" />
+                <span>Save & Connect College Calendar</span>
+              </button>
+
+              {user?.email && isCollegeAccount && (
+                <button
+                  type="button"
+                  onClick={handleUsePersonalEmail}
+                  className="w-full py-2 rounded-lg bg-secondary hover:bg-secondary/80 text-[#E2E8F0] text-[12px] font-semibold cursor-pointer border border-border transition-colors"
+                >
+                  Switch back to Personal Account ({personalEmail})
+                </button>
+              )}
+            </div>
+          </div>
         </div>
       )}
     </div>

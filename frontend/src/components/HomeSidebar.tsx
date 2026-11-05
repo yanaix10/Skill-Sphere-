@@ -56,8 +56,8 @@ export const HomeSidebar: React.FC<HomeSidebarProps> = ({
           <div className="w-7 h-7 rounded-lg bg-primary/10 text-primary flex items-center justify-center font-bold">
             <LayoutDashboard className="w-4 h-4" />
           </div>
-          <span className="font-bold text-xs uppercase tracking-wider text-foreground">
-            Workspace Hub
+          <span className="font-semibold text-xs tracking-wide text-foreground">
+            Workspace
           </span>
         </div>
 
@@ -73,12 +73,9 @@ export const HomeSidebar: React.FC<HomeSidebarProps> = ({
       </div>
 
       {/* Navigation List */}
-      <div className="flex-1 overflow-y-auto p-3 space-y-6">
-        {/* Core Workspace Sections */}
+      <div className="flex-1 overflow-y-auto p-3 space-y-5">
+        {/* Core Sections */}
         <div className="space-y-1">
-          <div className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-            Workspace
-          </div>
 
           {/* Overview */}
           <button

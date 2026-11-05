@@ -3,7 +3,6 @@ import { db, auth } from '../firebase';
 import { doc, getDoc, onSnapshot } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import ProfileDialog from '@/components/ui/profile-dialog';
 import {
   Award,
   Code2,
@@ -71,7 +70,6 @@ const renderTierIcon = (iconName: string, className?: string) => {
 
 const ProfileView: React.FC<ProfileViewProps> = ({ data, userId, onEdit }) => {
   const [userData, setUserData] = useState<ProfileData | null>(data || null);
-  const [isProfileOpen, setIsProfileOpen] = useState(false);
 
   useEffect(() => {
     if (data) {
@@ -366,23 +364,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ data, userId, onEdit }) => {
             </div>
           )}
         </div>
-
-        {/* Single Edit Profile Button docked nicely */}
-        <div className="mt-auto pt-5">
-          <Button
-            variant="outline"
-            className="w-full text-xs font-semibold border-border hover:bg-secondary hover:text-foreground"
-            onClick={() => {
-              if (onEdit) onEdit();
-              else setIsProfileOpen(true);
-            }}
-          >
-            Edit Profile
-          </Button>
-        </div>
       </div>
-
-      <ProfileDialog open={isProfileOpen} onOpenChange={setIsProfileOpen} />
     </aside>
   );
 };

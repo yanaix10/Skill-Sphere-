@@ -24,31 +24,28 @@ interface DashboardOverviewProps {
 export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ userName, onNavigate }) => {
   return (
     <div className="space-y-6 max-w-7xl mx-auto text-foreground">
-      {/* Hero Welcome Banner */}
-      <div className="p-5 sm:p-6 rounded-2xl bg-gradient-to-r from-primary/10 via-secondary/30 to-background border border-border/80 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-5">
+      {/* Welcome Bar */}
+      <div className="p-4 sm:p-5 rounded-xl bg-card border border-border shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <span className="text-[10px] font-bold uppercase tracking-wider text-primary font-mono">
-            SkillSphere Command Center
-          </span>
-          <h2 className="text-[24px] font-semibold tracking-tight text-white dark:text-white mt-1">
+          <h2 className="text-[20px] font-semibold tracking-tight text-white">
             Welcome back, {userName}
           </h2>
-          <p className="text-[12px] text-[#94A3B8] mt-1 max-w-xl">
-            Here is your daily pulse across your coursework, upcoming coding meetings, study media, and developer activity.
+          <p className="text-[12px] text-[#94A3B8] mt-0.5">
+            Overview of your coursework, meetings, and developer activity.
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
           <button
             onClick={() => onNavigate("calendar")}
-            className="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all shadow-xs cursor-pointer border-none"
+            className="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-[12px] font-semibold flex items-center gap-1.5 transition-all shadow-xs cursor-pointer border-none"
           >
             <Video className="w-3.5 h-3.5" />
             <span>Join Meeting</span>
           </button>
           <button
             onClick={() => onNavigate("media")}
-            className="px-3.5 py-2 rounded-xl bg-primary text-primary-foreground text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 hover:bg-primary/90 transition-all shadow-xs cursor-pointer border-none"
+            className="px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-[12px] font-semibold flex items-center gap-1.5 hover:bg-primary/90 transition-all shadow-xs cursor-pointer border-none"
           >
             <ImageIcon className="w-3.5 h-3.5" />
             <span>Upload JPGs</span>

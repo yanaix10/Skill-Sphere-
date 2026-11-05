@@ -20,9 +20,47 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Sun, Moon, Laptop, Check } from "lucide-react";
+import { Sun, Moon, Laptop, Check, Bell, MessageSquare, ExternalLink, CheckCheck } from "lucide-react";
 import ProfileDialog from "@/components/ui/profile-dialog";
 import { useTheme } from "../context/ThemeContext";
+import { cn } from "@/lib/utils";
+
+interface FriendMessageNotification {
+  id: string;
+  friendId: string;
+  friendName: string;
+  avatarUrl?: string;
+  messageText: string;
+  timestamp: string;
+  isRead: boolean;
+}
+
+const DEFAULT_NOTIFICATIONS: FriendMessageNotification[] = [
+  {
+    id: "notif-1",
+    friendId: "friend-soul",
+    friendName: "Soul Honest",
+    messageText: "Hey Naitik, did you check out the dynamic programming problem set?",
+    timestamp: "10:42 AM",
+    isRead: false,
+  },
+  {
+    id: "notif-2",
+    friendId: "friend-kritika",
+    friendName: "Kritika",
+    messageText: "Ready for our 1v1 speed duel today?",
+    timestamp: "Yesterday",
+    isRead: false,
+  },
+  {
+    id: "notif-3",
+    friendId: "friend-izuku",
+    friendName: "Izuku Namida",
+    messageText: "Sent you the project sprint notes on Classroom.",
+    timestamp: "Nov 4",
+    isRead: true,
+  },
+];
 
 const navigationLinks = [
   { href: "/dashboard", label: "Home" },
@@ -35,6 +73,33 @@ export default function Navbar() {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const { theme, setTheme, resolvedTheme } = useTheme();
   const navigate = useNavigate();
+
+  const [notifications, setNotifications] = useState<FriendMessageNotification[]>(() => {
+    try {
+      const stored = localStorage.getItem("skillsphere_friend_notifications");
+      if (stored) return JSON.parse(stored);
+    } catch {}
+    return DEFAULT_NOTIFICATIONS;
+  });
+
+  const unreadCount = notifications.filter((n) => !n.isRead).length;
+
+  const handleMarkAllAsRead = () => {
+    const updated = notifications.map((n) => ({ ...n, isRead: true }));
+    setNotifications(updated);
+    try {
+      localStorage.setItem("skillsphere_friend_notifications", JSON.stringify(updated));
+    } catch {}
+  };
+
+  const handleOpenFriendChat = (notifId: string, _friendId: string) => {
+    const updated = notifications.map((n) => (n.id === notifId ? { ...n, isRead: true } : n));
+    setNotifications(updated);
+    try {
+      localStorage.setItem("skillsphere_friend_notifications", JSON.stringify(updated));
+    } catch {}
+    navigate("/friends");
+  };
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -164,7 +229,120 @@ export default function Navbar() {
           </div>
 
           {/* Right side - User actions & Theme Toggle docked to the right */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            {/* Notification Bell Dropdown / Popover (Tabular Form) to the left of Theme Icon */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-muted-foreground hover:text-foreground cursor-pointer relative"
+                  title="Friend Messages Notifications"
+                >
+                  <Bell className="h-4 w-4" />
+                  {unreadCount > 0 && (
+                    <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-primary ring-2 ring-card" />
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent align="end" className="w-[340px] sm:w-[420px] p-0 bg-card border-border shadow-2xl">
+                {/* Popover Header */}
+                <div className="px-3.5 py-2.5 border-b border-border flex items-center justify-between bg-card">
+                  <div className="flex items-center gap-2">
+                    <MessageSquare className="w-4 h-4 text-primary" />
+                    <span className="text-[13px] font-semibold text-foreground">Friend Messages</span>
+                    {unreadCount > 0 && (
+                      <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-primary/15 text-primary tabular-nums">
+                        {unreadCount} new
+                      </span>
+                    )}
+                  </div>
+                  {unreadCount > 0 && (
+                    <button
+                      onClick={handleMarkAllAsRead}
+                      className="text-[11px] text-muted-foreground hover:text-primary transition-colors flex items-center gap-1 cursor-pointer border-none bg-transparent"
+                    >
+                      <CheckCheck className="w-3.5 h-3.5" />
+                      <span>Mark all read</span>
+                    </button>
+                  )}
+                </div>
+
+                {/* Tabular Notification Content */}
+                <div className="overflow-x-auto max-h-[300px] overflow-y-auto">
+                  {notifications.length === 0 ? (
+                    <div className="p-8 text-center text-xs text-muted-foreground">
+                      No message notifications yet.
+                    </div>
+                  ) : (
+                    <table className="w-full text-left text-xs border-collapse">
+                      <thead>
+                        <tr className="border-b border-border/60 text-[10px] uppercase font-bold text-muted-foreground tracking-wider bg-secondary/30">
+                          <th className="px-3 py-2">Friend</th>
+                          <th className="px-3 py-2">Message</th>
+                          <th className="px-3 py-2 text-right">Time</th>
+                          <th className="px-3 py-2 text-center">Action</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-border/40">
+                        {notifications.map((notif) => (
+                          <tr
+                            key={notif.id}
+                            onClick={() => handleOpenFriendChat(notif.id, notif.friendId)}
+                            className={cn(
+                              "hover:bg-secondary/40 transition-colors cursor-pointer group",
+                              !notif.isRead ? "bg-primary/5 font-medium" : "text-muted-foreground"
+                            )}
+                          >
+                            <td className="px-3 py-2.5 whitespace-nowrap">
+                              <div className="flex items-center gap-2">
+                                <div className="w-6 h-6 rounded-full bg-secondary flex items-center justify-center font-bold text-[10px] text-foreground shrink-0 border border-border">
+                                  {notif.friendName.charAt(0)}
+                                </div>
+                                <span className="font-semibold text-foreground text-xs truncate max-w-[85px]">
+                                  {notif.friendName}
+                                </span>
+                              </div>
+                            </td>
+                            <td className="px-3 py-2.5 max-w-[140px] truncate">
+                              <span className={cn("text-xs truncate block", !notif.isRead ? "text-foreground" : "text-muted-foreground")}>
+                                {notif.messageText}
+                              </span>
+                            </td>
+                            <td className="px-3 py-2.5 text-right whitespace-nowrap tabular-nums text-[11px] text-muted-foreground">
+                              {notif.timestamp}
+                            </td>
+                            <td className="px-3 py-2.5 text-center whitespace-nowrap">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleOpenFriendChat(notif.id, notif.friendId);
+                                }}
+                                className="px-2 py-0.5 rounded-md bg-secondary hover:bg-primary hover:text-primary-foreground text-foreground text-[10px] font-semibold transition-all cursor-pointer border border-border group-hover:border-primary/50"
+                              >
+                                Chat
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
+
+                {/* Footer Link */}
+                <div className="p-2 border-t border-border bg-secondary/10 flex justify-center">
+                  <Link
+                    to="/friends"
+                    className="text-[11px] text-primary hover:underline font-semibold flex items-center gap-1 no-underline"
+                  >
+                    <span>Open Friends & Chats</span>
+                    <ExternalLink className="w-3 h-3" />
+                  </Link>
+                </div>
+              </PopoverContent>
+            </Popover>
+
             {/* Theme Selector Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

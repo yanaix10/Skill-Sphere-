@@ -202,8 +202,8 @@ const Friends: React.FC = () => {
   return (
     <div className="h-full w-full bg-background text-foreground overflow-hidden">
       <ResizablePanelGroup direction="horizontal" className="h-full">
-        {/* Left Panel: Chats List from chattemplate.txt */}
-        <ResizablePanel defaultSize="25%" minSize="20%" maxSize="35%">
+        {/* Left Panel: Chats List */}
+        <ResizablePanel defaultSize="18%" minSize="14%" maxSize="24%">
           <div className="flex flex-col h-full border-r border-border bg-card/50">
             {/* Header */}
             <div className="h-14 px-4 py-3 flex items-center justify-between border-b border-border shrink-0">
@@ -329,7 +329,7 @@ const Friends: React.FC = () => {
 
         {/* Center Panel: Chat Window or Views */}
         <ResizablePanel
-          defaultSize={selectedUser && activeTab === "chat" ? "50%" : "75%"}
+          defaultSize={selectedUser && activeTab === "chat" ? "57%" : "82%"}
           minSize="30%"
         >
           {activeTab === "chat" ? (
