@@ -99,3 +99,4 @@ export const StatChip: React.FC<StatChipProps> = ({
 };
 
 export default StatChip;
+

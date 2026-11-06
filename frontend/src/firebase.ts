@@ -22,6 +22,3 @@ export const storage = getStorage(app);
 
 export const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({ prompt: "select_account" });
-googleProvider.addScope("https://www.googleapis.com/auth/classroom.courses.readonly");
-googleProvider.addScope("https://www.googleapis.com/auth/classroom.coursework.me");
-googleProvider.addScope("https://www.googleapis.com/auth/calendar.events.readonly");
