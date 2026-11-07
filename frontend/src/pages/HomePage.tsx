@@ -7,6 +7,14 @@ export const HomePage: React.FC = () => {
   const [fullName, setFullName] = useState<string>("Naitik");
   const [displayName, setDisplayName] = useState<string>("Naitik Yadav");
 
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour >= 5 && hour < 12) return "Good Morning";
+    if (hour >= 12 && hour < 17) return "Good Afternoon";
+    if (hour >= 17 && hour < 22) return "Good Evening";
+    return "Good Night";
+  };
+
   useEffect(() => {
     const fetchUser = async () => {
       const currentUser = auth.currentUser;
@@ -51,12 +59,15 @@ export const HomePage: React.FC = () => {
       {/* Full Screen Dynamic Wallpaper Canvas */}
       <div className="flex-1 flex flex-col h-full overflow-hidden relative">
         <DynamicWallpaper>
-          {/* Clean minimal greeting matching user specification */}
+          {/* Time-based Greeting & User Welcome */}
           <div className="flex-1 flex flex-col items-center justify-start pt-20 sm:pt-24 text-center p-6 select-none z-10 pointer-events-none">
-            <div className="backdrop-blur-md px-6 py-3 rounded-2xl bg-black/30 dark:bg-black/50 border border-white/10 shadow-2xl animate-in fade-in duration-500">
-              <h1 className="text-white text-xl sm:text-2xl md:text-3xl font-medium tracking-tight m-0 drop-shadow-md">
-                Hi {fullName} , Welcome {displayName}
+            <div className="backdrop-blur-md px-6 py-3.5 rounded-2xl bg-black/40 border border-white/15 shadow-2xl animate-in fade-in duration-500">
+              <h1 className="text-white text-xl sm:text-2xl md:text-3xl font-semibold tracking-tight m-0 drop-shadow-lg">
+                {getGreeting()}, {fullName}
               </h1>
+              <p className="text-white/80 text-xs sm:text-sm font-normal mt-0.5 m-0 drop-shadow-md">
+                Welcome {displayName}
+              </p>
             </div>
           </div>
         </DynamicWallpaper>

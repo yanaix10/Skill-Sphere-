@@ -125,10 +125,8 @@ export const DynamicWallpaper: React.FC<DynamicWallpaperProps> = ({ children }) 
   const [isControlsOpen, setIsControlsOpen] = useState(false);
   const [detectingLocation, setDetectingLocation] = useState(false);
 
-  // Landscape Scene
-  const [scene, setScene] = useState<LandscapeScene>(() => {
-    return (localStorage.getItem("skillsphere_wallpaper_scene") as LandscapeScene) || "mountains";
-  });
+  // Landscape Scene (Always defaults to 6K Big Sur Nature Mountains)
+  const [scene, setScene] = useState<LandscapeScene>("mountains");
 
   // Weather & Time Engine State
   const [weather, setWeather] = useState<WeatherData>({
@@ -468,6 +466,29 @@ export const DynamicWallpaper: React.FC<DynamicWallpaperProps> = ({ children }) 
     }
   };
 
+  useEffect(() => {
+    localStorage.setItem("skillsphere_wallpaper_scene", "mountains");
+  }, []);
+
+  const getWallpaperImage = () => {
+    if (simulationMode) {
+      if (overridePhase === "day") return "/wallpapers/nature-mountains/assets/aet2mvheu7.jpg";
+      if (overridePhase === "sunset") return "/wallpapers/nature-mountains/assets/a9utu601up.jpg";
+      return "/wallpapers/nature-mountains/assets/amhxxzhji0.jpg";
+    }
+    const hour = new Date().getHours();
+    if (hour >= 5 && hour < 11) {
+      return "/wallpapers/nature-mountains/assets/awv9qd8b44.jpg"; // Morning
+    }
+    if (hour >= 11 && hour < 17) {
+      return "/wallpapers/nature-mountains/assets/aet2mvheu7.jpg"; // Day
+    }
+    if (hour >= 17 && hour < 20) {
+      return "/wallpapers/nature-mountains/assets/a9utu601up.jpg"; // Sunset
+    }
+    return "/wallpapers/nature-mountains/assets/amhxxzhji0.jpg"; // Night
+  };
+
   /* ─── Sky Background Gradients by Phase & Theme ───────────── */
   const getSkyGradient = () => {
     if (isDark) {
@@ -493,51 +514,33 @@ export const DynamicWallpaper: React.FC<DynamicWallpaperProps> = ({ children }) 
   };
 
   return (
-    <div className="relative w-full h-full flex flex-col overflow-hidden">
-      {/* 1. Base Sky Gradient */}
-      <div
-        className={cn(
-          "absolute inset-0 pointer-events-none transition-colors duration-1000",
-          getSkyGradient()
-        )}
-      />
-
-      {/* 2. 6K Nature Mountains Live Day/Night Cycle or Custom Asset */}
-      {scene === "mountains" ? (
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          {/* Base 6K Mountain Fallback */}
-          <div
-            className="absolute inset-0 bg-cover bg-center transition-opacity duration-700"
-            style={{
-              backgroundImage: `url(${LANDSCAPE_ASSET_PATHS.mountains[activePhase]})`,
-            }}
-          />
-          {/* Real Day/Night Cycle 6K Nature Mountains Live Wallpaper */}
-          <iframe
-            src="/wallpapers/nature-mountains/index.html"
-            className="absolute inset-0 w-full h-full border-0 pointer-events-none select-none"
-            style={{ border: "none", width: "100%", height: "100%" }}
-            title="Real Day/Night Cycle Nature Mountains Wallpaper"
-          />
-          {/* Subtle contrast vignette */}
-          <div className="absolute inset-0 bg-gradient-to-b from-black/35 via-transparent to-black/35 pointer-events-none" />
-        </div>
-      ) : hasCustomAsset ? (
-        <div
-          className="absolute inset-0 bg-cover bg-center pointer-events-none opacity-80 transition-opacity duration-700"
-          style={{
-            backgroundImage: `url(${LANDSCAPE_ASSET_PATHS[scene][activePhase]})`,
-          }}
+    <div className="relative w-full h-full flex flex-col overflow-hidden bg-black">
+      {/* 1. 6K Nature Mountains Live Day/Night Cycle Wallpaper */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden select-none z-0">
+        {/* Crisp Native 6K Photographic Layer */}
+        <img
+          key={getWallpaperImage()}
+          src={getWallpaperImage()}
+          alt="6K Nature Mountains Day/Night Wallpaper"
+          className="w-full h-full object-cover object-center transition-all duration-1000"
         />
-      ) : (
-        /* 3. High-Quality Procedural Vector Landscape */
-        renderLandscapeSvg()
-      )}
 
-      {/* 4. Canvas Weather Particles (Rain / Snow / Wind / Stars) */}
+        {/* Live Interactive DesktopHut Engine Overlay (Drifting Clouds & Depth) */}
+        <iframe
+          src="/wallpapers/nature-mountains/index.html"
+          className="absolute inset-0 w-full h-full border-none pointer-events-none select-none opacity-85"
+          style={{ width: "100%", height: "100%", border: 0 }}
+          title="Real Day/Night Cycle Nature Mountains"
+        />
+
+        {/* Subtle Dark Vignette so Navbar and Greeting Text Pop */}
+        <div className="absolute inset-0 bg-black/25 pointer-events-none" />
+      </div>
+
+      {/* 2. Canvas Weather Particles (Rain / Snow / Wind / Stars) */}
       <canvas ref={canvasRef} className="absolute inset-0 pointer-events-none z-0" />
 
-      {/* 5. Main Foreground Content */}
+      {/* 3. Main Foreground Content */}
       <div className="relative z-10 flex-1 flex flex-col overflow-hidden min-h-0">
         {children}
       </div>
