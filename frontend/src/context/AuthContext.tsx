@@ -19,7 +19,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const getInitialUser = (): User | null => {
         if (typeof window !== "undefined") {
             const params = new URLSearchParams(window.location.search);
-            if (params.get('dev') === 'true' || localStorage.getItem('skillsphere_dev_auth') === 'true') {
+            if (params.get('dev') === 'true') {
                 return {
                     uid: "test-user-123",
                     displayName: "TestAgent",
@@ -37,8 +37,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     useEffect(() => {
         const params = new URLSearchParams(window.location.search);
-        if (params.get('dev') === 'true' || localStorage.getItem('skillsphere_dev_auth') === 'true') {
-            localStorage.setItem('skillsphere_dev_auth', 'true');
+        if (params.get('dev') === 'true') {
             setCurrentUser({
                 uid: "test-user-123",
                 displayName: "TestAgent",

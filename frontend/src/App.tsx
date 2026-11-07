@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { createBrowserRouter, RouterProvider, Outlet, Navigate } from 'react-router-dom';
-import { app } from './firebase';
-import { getAuth, onAuthStateChanged, User } from 'firebase/auth';
+import { auth } from './firebase';
+import { onAuthStateChanged, User } from 'firebase/auth';
 import SignupCard from './components/SignupCard';
 import HomePage from './pages/HomePage';
 import DashboardPage from './pages/DashboardPage';
@@ -10,8 +10,6 @@ import Navbar from './components/Navbar';
 import Friends from './pages/Friends';
 import Quizzes from './pages/Quizzes';
 import { ThemeProvider } from './context/ThemeContext';
-
-const auth = getAuth(app);
 
 function RootErrorBoundary() {
   return (
@@ -61,7 +59,7 @@ function AppContent() {
   const getInitialUser = (): User | null => {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
-      if (params.get('dev') === 'true' || localStorage.getItem('skillsphere_dev_auth') === 'true') {
+      if (params.get('dev') === 'true') {
         return {
           uid: "test-user-123",
           displayName: "TestAgent",
@@ -78,8 +76,7 @@ function AppContent() {
   
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    if (params.get('dev') === 'true' || localStorage.getItem('skillsphere_dev_auth') === 'true') {
-      localStorage.setItem('skillsphere_dev_auth', 'true');
+    if (params.get('dev') === 'true') {
       setUser({
         uid: "test-user-123",
         displayName: "TestAgent",
@@ -90,11 +87,19 @@ function AppContent() {
       return;
     }
 
+    const timeout = setTimeout(() => {
+      setLoading(false);
+    }, 500);
+
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      clearTimeout(timeout);
       setUser(currentUser);
       setLoading(false);
     });
-    return () => unsubscribe();
+    return () => {
+      clearTimeout(timeout);
+      unsubscribe();
+    };
   },[]);
   
   if(loading) return <div className="bg-background text-foreground h-screen w-screen flex items-center justify-center text-xl font-bold">Loading SkillSphere...</div>;
