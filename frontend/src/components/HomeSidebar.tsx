@@ -56,8 +56,6 @@ export const HomeSidebar: React.FC<HomeSidebarProps> = ({
     return () => window.removeEventListener("storage", checkConnections);
   }, []);
 
-  if (!isOpen) return null;
-
   const coreSections: { id: SidebarSection; label: string; icon: React.FC<{ className?: string }> }[] = [
     { id: "overview", label: "Overview", icon: LayoutDashboard },
     { id: "media", label: "Media & resources", icon: ImageIcon },
@@ -66,6 +64,140 @@ export const HomeSidebar: React.FC<HomeSidebarProps> = ({
     { id: "activity", label: "Profile & activity", icon: TrendingUp },
     { id: "settings", label: "Settings", icon: Settings },
   ];
+
+  /* ─── Compact Gemini-Style Icon Rail when Closed ───────────── */
+  if (!isOpen) {
+    return (
+      <aside
+        className={cn(
+          "w-16 shrink-0 border-r border-border bg-card flex flex-col items-center justify-between h-full py-3 select-none z-30 transition-all duration-200",
+          "text-foreground"
+        )}
+      >
+        {/* Top: App Symbol & Toggle */}
+        <div className="flex flex-col items-center gap-4 w-full">
+          {onToggle && (
+            <button
+              onClick={onToggle}
+              className="w-10 h-10 rounded-xl flex items-center justify-center hover:bg-surface-muted transition-all cursor-pointer border-none bg-transparent group"
+              title="Expand sidebar"
+            >
+              <img
+                src="/logo.png"
+                alt="SkillSphere"
+                className="w-7 h-7 rounded-full object-contain group-hover:scale-110 transition-transform shadow-xs"
+              />
+            </button>
+          )}
+
+          {/* Navigation Icons Rail */}
+          <div className="flex flex-col items-center gap-1.5 w-full px-2">
+            {coreSections.map(({ id, label, icon: Icon }) => {
+              const isActive = activeSection === id;
+              return (
+                <button
+                  key={id}
+                  onClick={() => onSelectSection(id)}
+                  className={cn(
+                    "w-10 h-10 rounded-xl flex items-center justify-center transition-all cursor-pointer border-none relative group",
+                    isActive
+                      ? "bg-surface-muted text-primary shadow-xs font-semibold"
+                      : "text-muted-foreground hover:text-foreground hover:bg-surface-muted/60 bg-transparent"
+                  )}
+                  title={label}
+                >
+                  <Icon
+                    className={cn(
+                      "w-4 h-4",
+                      isActive ? "text-primary" : "text-muted-foreground"
+                    )}
+                  />
+                  {isActive && (
+                    <span className="absolute left-0 top-2 bottom-2 w-0.5 rounded-r bg-primary" />
+                  )}
+                </button>
+              );
+            })}
+
+            <div className="w-6 h-px bg-border/60 my-1" />
+
+            {/* Google Classroom */}
+            <button
+              onClick={() => onSelectSection("classroom")}
+              className={cn(
+                "w-10 h-10 rounded-xl flex items-center justify-center transition-all cursor-pointer border-none relative group",
+                activeSection === "classroom"
+                  ? "bg-surface-muted text-primary shadow-xs"
+                  : "text-muted-foreground hover:text-foreground hover:bg-surface-muted/60 bg-transparent"
+              )}
+              title="Google Classroom"
+            >
+              <GraduationCap
+                className={cn(
+                  "w-4 h-4",
+                  activeSection === "classroom" ? "text-primary" : "text-muted-foreground"
+                )}
+              />
+              {isClassroomConnected && (
+                <span className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full bg-emerald-500 ring-2 ring-card" />
+              )}
+              {activeSection === "classroom" && (
+                <span className="absolute left-0 top-2 bottom-2 w-0.5 rounded-r bg-primary" />
+              )}
+            </button>
+
+            {/* Google Calendar */}
+            <button
+              onClick={() => onSelectSection("calendar")}
+              className={cn(
+                "w-10 h-10 rounded-xl flex items-center justify-center transition-all cursor-pointer border-none relative group",
+                activeSection === "calendar"
+                  ? "bg-surface-muted text-primary shadow-xs"
+                  : "text-muted-foreground hover:text-foreground hover:bg-surface-muted/60 bg-transparent"
+              )}
+              title="Google Calendar"
+            >
+              <Calendar
+                className={cn(
+                  "w-4 h-4",
+                  activeSection === "calendar" ? "text-primary" : "text-muted-foreground"
+                )}
+              />
+              {isCalendarConnected && (
+                <span className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full bg-emerald-500 ring-2 ring-card" />
+              )}
+              {activeSection === "calendar" && (
+                <span className="absolute left-0 top-2 bottom-2 w-0.5 rounded-r bg-primary" />
+              )}
+            </button>
+          </div>
+        </div>
+
+        {/* Bottom Rail: Settings & User Avatar */}
+        <div className="flex flex-col items-center gap-2.5 w-full px-2">
+          <button
+            onClick={() => onSelectSection("settings")}
+            className={cn(
+              "w-10 h-10 rounded-xl flex items-center justify-center transition-all cursor-pointer border-none",
+              activeSection === "settings"
+                ? "bg-surface-muted text-primary shadow-xs"
+                : "text-muted-foreground hover:text-foreground hover:bg-surface-muted/60 bg-transparent"
+            )}
+            title="Settings"
+          >
+            <Settings className="w-4 h-4" />
+          </button>
+
+          <div
+            className="w-8 h-8 rounded-full bg-surface-muted border border-border text-foreground flex items-center justify-center font-semibold text-[11px] cursor-default shadow-xs"
+            title={`${displayName} (SkillSphere Pro)`}
+          >
+            {displayName.slice(0, 2).toUpperCase()}
+          </div>
+        </div>
+      </aside>
+    );
+  }
 
   return (
     <aside
@@ -77,9 +209,11 @@ export const HomeSidebar: React.FC<HomeSidebarProps> = ({
       {/* Sidebar Header */}
       <div className="h-14 px-4 border-b border-border flex items-center justify-between shrink-0">
         <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded-md bg-surface-muted border border-border/60 text-foreground flex items-center justify-center">
-            <LayoutDashboard className="w-4 h-4 text-primary" />
-          </div>
+          <img
+            src="/logo.png"
+            alt="SkillSphere"
+            className="w-6 h-6 rounded-full object-contain shrink-0"
+          />
           <span className="font-semibold text-[14px] text-foreground tracking-tight">
             SkillSphere
           </span>
@@ -89,7 +223,7 @@ export const HomeSidebar: React.FC<HomeSidebarProps> = ({
           <button
             onClick={onToggle}
             className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-surface-muted transition-colors cursor-pointer border-none bg-transparent"
-            title="Collapse sidebar"
+            title="Collapse sidebar to icon rail"
           >
             <PanelLeftClose className="w-4 h-4" />
           </button>

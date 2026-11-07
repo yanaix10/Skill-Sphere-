@@ -57,9 +57,9 @@ export const LANDSCAPE_ASSET_PATHS: Record<
   Record<TimePhase, string>
 > = {
   mountains: {
-    day: "/assets/landscapes/mountains-day.jpg",
-    sunset: "/assets/landscapes/mountains-sunset.jpg",
-    night: "/assets/landscapes/mountains-night.jpg",
+    day: "/wallpapers/nature-mountains/assets/aet2mvheu7.jpg",
+    sunset: "/wallpapers/nature-mountains/assets/a9utu601up.jpg",
+    night: "/wallpapers/nature-mountains/assets/amhxxzhji0.jpg",
   },
   beaches: {
     day: "/assets/landscapes/beaches-day.jpg",
@@ -502,10 +502,29 @@ export const DynamicWallpaper: React.FC<DynamicWallpaperProps> = ({ children }) 
         )}
       />
 
-      {/* 2. Custom User Asset (Prioritized if uploaded into /public/assets/landscapes/) */}
-      {hasCustomAsset ? (
+      {/* 2. 6K Nature Mountains Live Day/Night Cycle or Custom Asset */}
+      {scene === "mountains" ? (
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          {/* Base 6K Mountain Fallback */}
+          <div
+            className="absolute inset-0 bg-cover bg-center transition-opacity duration-700"
+            style={{
+              backgroundImage: `url(${LANDSCAPE_ASSET_PATHS.mountains[activePhase]})`,
+            }}
+          />
+          {/* Real Day/Night Cycle 6K Nature Mountains Live Wallpaper */}
+          <iframe
+            src="/wallpapers/nature-mountains/index.html"
+            className="absolute inset-0 w-full h-full border-0 pointer-events-none select-none"
+            style={{ border: "none", width: "100%", height: "100%" }}
+            title="Real Day/Night Cycle Nature Mountains Wallpaper"
+          />
+          {/* Subtle contrast vignette */}
+          <div className="absolute inset-0 bg-gradient-to-b from-black/35 via-transparent to-black/35 pointer-events-none" />
+        </div>
+      ) : hasCustomAsset ? (
         <div
-          className="absolute inset-0 bg-cover bg-center pointer-events-none opacity-40 transition-opacity duration-700"
+          className="absolute inset-0 bg-cover bg-center pointer-events-none opacity-80 transition-opacity duration-700"
           style={{
             backgroundImage: `url(${LANDSCAPE_ASSET_PATHS[scene][activePhase]})`,
           }}

@@ -118,20 +118,7 @@ export const DashboardPage: React.FC = () => {
         {/* Top Mini Header / Breadcrumb */}
         <div className="h-14 px-4 sm:px-6 border-b border-border bg-card/60 backdrop-blur-md flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
-            {!isSidebarOpen && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={toggleSidebar}
-                className="gap-1.5 border-border bg-card text-foreground hover:bg-secondary text-xs font-semibold cursor-pointer h-8 px-2.5"
-                title="Open Sidebar"
-              >
-                <PanelLeftOpen className="w-4 h-4 text-primary shrink-0" />
-                <span className="hidden sm:inline">Sidebar</span>
-              </Button>
-            )}
-
-            <div className="flex items-center gap-2 text-[13px] font-semibold text-foreground">
+            <div className="flex items-center gap-2 text-[14px] font-semibold text-foreground">
               <span>{getSectionTitle(activeSection)}</span>
             </div>
           </div>
