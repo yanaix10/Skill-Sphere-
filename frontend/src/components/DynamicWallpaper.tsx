@@ -11,19 +11,17 @@ import {
   Sliders,
   Check,
   RefreshCw,
-  Eye,
-  Mountain,
-  Waves,
-  Trees,
   X,
+  Sunrise,
+  Sunset as SunsetIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTheme } from "../context/ThemeContext";
 
 /* ─── Types & Configuration ──────────────────────────────────── */
 
-export type LandscapeScene = "mountains" | "beaches" | "plains";
-export type TimePhase = "day" | "sunset" | "night";
+export type TimePhase = "morning" | "day" | "sunset" | "night";
+export type WallpaperMode = "auto" | "morning" | "day" | "sunset" | "night";
 export type WeatherCondition = "clear" | "cloudy" | "rain" | "snow" | "wind";
 
 export interface UserLocation {
@@ -47,30 +45,13 @@ export interface WeatherData {
 }
 
 /**
- * ASSET SLOTS:
- * Placeholders for user-uploaded assets in `/public/assets/landscapes/`.
- * When assets are dropped into `/public/assets/landscapes/`, the engine
- * immediately loads and prioritizes them over the built-in procedural SVG scenery.
+ * 6K Big Sur Nature Mountains Day / Night cycle photographic assets
  */
-export const LANDSCAPE_ASSET_PATHS: Record<
-  LandscapeScene,
-  Record<TimePhase, string>
-> = {
-  mountains: {
-    day: "/wallpapers/nature-mountains/assets/aet2mvheu7.jpg",
-    sunset: "/wallpapers/nature-mountains/assets/a9utu601up.jpg",
-    night: "/wallpapers/nature-mountains/assets/amhxxzhji0.jpg",
-  },
-  beaches: {
-    day: "/assets/landscapes/beaches-day.jpg",
-    sunset: "/assets/landscapes/beaches-sunset.jpg",
-    night: "/assets/landscapes/beaches-night.jpg",
-  },
-  plains: {
-    day: "/assets/landscapes/plains-day.jpg",
-    sunset: "/assets/landscapes/plains-sunset.jpg",
-    night: "/assets/landscapes/plains-night.jpg",
-  },
+export const MOUNTAIN_WALLPAPERS: Record<TimePhase, { url: string; label: string }> = {
+  morning: { url: "/wallpapers/nature-mountains/assets/awv9qd8b44.jpg", label: "Morning" },
+  day: { url: "/wallpapers/nature-mountains/assets/aet2mvheu7.jpg", label: "Day" },
+  sunset: { url: "/wallpapers/nature-mountains/assets/a9utu601up.jpg", label: "Sunset" },
+  night: { url: "/wallpapers/nature-mountains/assets/amhxxzhji0.jpg", label: "Night" },
 };
 
 export const POPULAR_LOCATIONS: UserLocation[] = [
@@ -95,9 +76,9 @@ const parseWmoWeather = (code: number, windSpeed: number): WeatherCondition => {
 };
 
 const calculateTimePhase = (hour: number): TimePhase => {
-  if (hour >= 5 && hour < 7) return "sunset"; // dawn / golden hour
-  if (hour >= 7 && hour < 17) return "day";
-  if (hour >= 17 && hour < 20) return "sunset"; // dusk
+  if (hour >= 5 && hour < 11) return "morning";
+  if (hour >= 11 && hour < 17) return "day";
+  if (hour >= 17 && hour < 20) return "sunset";
   return "night";
 };
 
@@ -125,30 +106,42 @@ export const DynamicWallpaper: React.FC<DynamicWallpaperProps> = ({ children }) 
   const [isControlsOpen, setIsControlsOpen] = useState(false);
   const [detectingLocation, setDetectingLocation] = useState(false);
 
-  // Landscape Scene (Always defaults to 6K Big Sur Nature Mountains)
-  const [scene, setScene] = useState<LandscapeScene>("mountains");
+  // Wallpaper Mode: Auto (syncs with real clock) or manual freeze (Morning / Day / Sunset / Night)
+  const [wallpaperMode, setWallpaperMode] = useState<WallpaperMode>(() => {
+    try {
+      return (localStorage.getItem("skillsphere_wallpaper_mode") as WallpaperMode) || "auto";
+    } catch {
+      return "auto";
+    }
+  });
 
   // Weather & Time Engine State
-  const [weather, setWeather] = useState<WeatherData>({
-    temperature: 20,
-    weatherCode: 0,
-    condition: "clear",
-    isDay: true,
-    windSpeed: 8,
-    precipitation: 0,
-    timePhase: "day",
-    updatedAt: Date.now(),
+  const [weather, setWeather] = useState<WeatherData>(() => {
+    const hour = new Date().getHours();
+    return {
+      temperature: 24,
+      weatherCode: 0,
+      condition: "clear",
+      isDay: hour >= 6 && hour < 18,
+      windSpeed: 8,
+      precipitation: 0,
+      timePhase: calculateTimePhase(hour),
+      updatedAt: Date.now(),
+    };
   });
 
   // Simulation / Manual overrides
   const [simulationMode, setSimulationMode] = useState(false);
   const [overrideWeather, setOverrideWeather] = useState<WeatherCondition>("clear");
-  const [overridePhase, setOverridePhase] = useState<TimePhase>("day");
+  const [overridePhase, setOverridePhase] = useState<TimePhase>("sunset");
   const [enableParticles, setEnableParticles] = useState(true);
 
-  // Asset load state (checks if user has uploaded image assets)
-  const [hasCustomAsset, setHasCustomAsset] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+
+  /* ─── Clean legacy storage keys ────────────────────────────── */
+  useEffect(() => {
+    localStorage.removeItem("skillsphere_wallpaper_scene");
+  }, []);
 
   /* ─── Save location ────────────────────────────────────────── */
   const selectLocation = (loc: UserLocation) => {
@@ -172,7 +165,6 @@ export const DynamicWallpaper: React.FC<DynamicWallpaperProps> = ({ children }) 
         let country = "";
 
         try {
-          // Reverse geocoding via Open-Meteo or free nominatim
           const res = await fetch(
             `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=10`
           );
@@ -197,8 +189,7 @@ export const DynamicWallpaper: React.FC<DynamicWallpaperProps> = ({ children }) 
       (err) => {
         console.warn("Geolocation permission denied or failed:", err);
         setDetectingLocation(false);
-        // Default to Tokyo if location denied
-        selectLocation(POPULAR_LOCATIONS[0]);
+        selectLocation(POPULAR_LOCATIONS[4]); // Default to Delhi
       },
       { timeout: 8000 }
     );
@@ -212,8 +203,7 @@ export const DynamicWallpaper: React.FC<DynamicWallpaperProps> = ({ children }) 
       if (res.ok) {
         const data = await res.json();
         const current = data.current;
-        const now = new Date();
-        const localHour = now.getHours();
+        const localHour = new Date().getHours();
         const phase = calculateTimePhase(localHour);
         const condition = parseWmoWeather(current.weather_code, current.wind_speed_10m);
 
@@ -235,7 +225,7 @@ export const DynamicWallpaper: React.FC<DynamicWallpaperProps> = ({ children }) 
         ...prev,
         timePhase: calculateTimePhase(localHour),
         condition: "clear",
-        temperature: 21,
+        temperature: 24,
       }));
     }
   }, []);
@@ -243,26 +233,21 @@ export const DynamicWallpaper: React.FC<DynamicWallpaperProps> = ({ children }) 
   useEffect(() => {
     if (location) {
       fetchWeather(location);
-      const interval = setInterval(() => fetchWeather(location), 15 * 60 * 1000); // 15 mins
+      const interval = setInterval(() => fetchWeather(location), 15 * 60 * 1000);
       return () => clearInterval(interval);
     }
   }, [location, fetchWeather]);
 
-  /* ─── Check custom asset availability ──────────────────────── */
-  const activePhase = simulationMode ? overridePhase : weather.timePhase;
-  const activeCondition = simulationMode ? overrideWeather : weather.condition;
+  /* ─── Active Phase Resolution ──────────────────────────────── */
+  const getActivePhase = (): TimePhase => {
+    if (simulationMode) return overridePhase;
+    if (wallpaperMode !== "auto") return wallpaperMode;
+    return weather.timePhase;
+  };
 
-  useEffect(() => {
-    const assetUrl = LANDSCAPE_ASSET_PATHS[scene]?.[activePhase];
-    if (assetUrl) {
-      const img = new Image();
-      img.src = assetUrl;
-      img.onload = () => setHasCustomAsset(true);
-      img.onerror = () => setHasCustomAsset(false);
-    } else {
-      setHasCustomAsset(false);
-    }
-  }, [scene, activePhase]);
+  const activePhase = getActivePhase();
+  const activeCondition = simulationMode ? overrideWeather : weather.condition;
+  const currentWallpaperUrl = MOUNTAIN_WALLPAPERS[activePhase]?.url || MOUNTAIN_WALLPAPERS.sunset.url;
 
   /* ─── Canvas Particle Weather Animation ────────────────────── */
   useEffect(() => {
@@ -284,7 +269,6 @@ export const DynamicWallpaper: React.FC<DynamicWallpaperProps> = ({ children }) 
     };
     window.addEventListener("resize", onResize);
 
-    // Particle instances
     interface Particle {
       x: number;
       y: number;
@@ -296,7 +280,7 @@ export const DynamicWallpaper: React.FC<DynamicWallpaperProps> = ({ children }) 
       swing?: number;
     }
 
-    const count = activeCondition === "rain" ? 140 : activeCondition === "snow" ? 80 : activeCondition === "wind" ? 50 : activePhase === "night" ? 60 : 0;
+    const count = activeCondition === "rain" ? 140 : activeCondition === "snow" ? 80 : activeCondition === "wind" ? 50 : activePhase === "night" ? 50 : 0;
     const particles: Particle[] = [];
 
     for (let i = 0; i < count; i++) {
@@ -354,7 +338,7 @@ export const DynamicWallpaper: React.FC<DynamicWallpaperProps> = ({ children }) 
         particles.forEach((p) => {
           ctx.beginPath();
           ctx.moveTo(p.x, p.y);
-          ctx.lineTo(p.x + 35, p.y + (Math.sin(p.x * 0.02) * 4));
+          ctx.lineTo(p.x + 35, p.y + Math.sin(p.x * 0.02) * 4);
           ctx.stroke();
 
           p.x += p.speedX;
@@ -364,11 +348,11 @@ export const DynamicWallpaper: React.FC<DynamicWallpaperProps> = ({ children }) 
           }
         });
       } else if (activePhase === "night") {
-        // Twinkling night stars
+        // Subtle twinkling stars
         particles.forEach((p) => {
           if (p.swing !== undefined) p.swing += 0.03;
-          const alpha = 0.2 + Math.abs(Math.sin(p.swing || 0)) * 0.6;
-          ctx.fillStyle = isDark ? `rgba(255, 255, 255, ${alpha})` : `rgba(70, 90, 140, ${alpha * 0.7})`;
+          const alpha = 0.2 + Math.abs(Math.sin(p.swing || 0)) * 0.5;
+          ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
           ctx.beginPath();
           ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
           ctx.fill();
@@ -383,158 +367,22 @@ export const DynamicWallpaper: React.FC<DynamicWallpaperProps> = ({ children }) 
       cancelAnimationFrame(animId);
       window.removeEventListener("resize", onResize);
     };
-  }, [activeCondition, activePhase, enableParticles]);
-
-  /* ─── Procedural Vector Landscapes (Fallback when custom assets absent) ─── */
-  const renderLandscapeSvg = () => {
-    if (scene === "mountains") {
-      return (
-        <svg
-          className="absolute inset-0 w-full h-full object-cover pointer-events-none opacity-25 dark:opacity-30 transition-opacity duration-700"
-          viewBox="0 0 1440 900"
-          preserveAspectRatio="none"
-        >
-          {/* Distant mountain ridge */}
-          <polygon
-            points="0,900 0,550 180,440 380,590 620,400 850,560 1100,430 1320,580 1440,510 1440,900"
-            className={activePhase === "night" ? "fill-indigo-950/60" : activePhase === "sunset" ? "fill-orange-900/30" : "fill-sky-800/20"}
-          />
-          {/* Midground peaks */}
-          <polygon
-            points="0,900 0,640 220,530 460,670 730,500 980,680 1200,540 1440,660 1440,900"
-            className={activePhase === "night" ? "fill-indigo-950/80" : activePhase === "sunset" ? "fill-amber-900/40" : "fill-slate-800/30"}
-          />
-          {/* Foreground foothills */}
-          <polygon
-            points="0,900 0,740 320,680 640,780 1020,700 1340,760 1440,720 1440,900"
-            className={activePhase === "night" ? "fill-slate-950/90" : activePhase === "sunset" ? "fill-stone-900/50" : "fill-zinc-800/40"}
-          />
-        </svg>
-      );
-    } else if (scene === "beaches") {
-      return (
-        <svg
-          className="absolute inset-0 w-full h-full object-cover pointer-events-none opacity-25 dark:opacity-30 transition-opacity duration-700"
-          viewBox="0 0 1440 900"
-          preserveAspectRatio="none"
-        >
-          {/* Ocean horizon & calm waters */}
-          <rect
-            x="0"
-            y="520"
-            width="1440"
-            height="380"
-            className={activePhase === "night" ? "fill-blue-950/40" : activePhase === "sunset" ? "fill-amber-700/20" : "fill-cyan-800/20"}
-          />
-          {/* Wave contours */}
-          <path
-            d="M 0,620 Q 360,590 720,620 T 1440,620 L 1440,900 L 0,900 Z"
-            className={activePhase === "night" ? "fill-indigo-950/70" : activePhase === "sunset" ? "fill-rose-900/30" : "fill-teal-800/25"}
-          />
-          {/* Shoreline sand contour */}
-          <path
-            d="M 0,720 Q 420,670 880,730 T 1440,710 L 1440,900 L 0,900 Z"
-            className={activePhase === "night" ? "fill-slate-950/80" : activePhase === "sunset" ? "fill-amber-950/40" : "fill-emerald-950/20"}
-          />
-        </svg>
-      );
-    } else {
-      // Plains
-      return (
-        <svg
-          className="absolute inset-0 w-full h-full object-cover pointer-events-none opacity-20 dark:opacity-30 transition-opacity duration-700"
-          viewBox="0 0 1440 900"
-          preserveAspectRatio="none"
-        >
-          {/* Distant rolling hills */}
-          <path
-            d="M 0,580 Q 400,510 800,570 T 1440,540 L 1440,900 L 0,900 Z"
-            className={activePhase === "night" ? "fill-indigo-950/50" : activePhase === "sunset" ? "fill-amber-800/30" : "fill-emerald-800/20"}
-          />
-          {/* Midground rolling meadows */}
-          <path
-            d="M 0,670 Q 320,620 740,680 T 1440,650 L 1440,900 L 0,900 Z"
-            className={activePhase === "night" ? "fill-slate-950/70" : activePhase === "sunset" ? "fill-amber-900/40" : "fill-green-900/25"}
-          />
-          {/* Foreground slopes */}
-          <path
-            d="M 0,760 Q 520,700 1050,780 T 1440,750 L 1440,900 L 0,900 Z"
-            className={activePhase === "night" ? "fill-zinc-950/90" : activePhase === "sunset" ? "fill-stone-950/60" : "fill-stone-900/30"}
-          />
-        </svg>
-      );
-    }
-  };
-
-  useEffect(() => {
-    localStorage.setItem("skillsphere_wallpaper_scene", "mountains");
-  }, []);
-
-  const getWallpaperImage = () => {
-    if (simulationMode) {
-      if (overridePhase === "day") return "/wallpapers/nature-mountains/assets/aet2mvheu7.jpg";
-      if (overridePhase === "sunset") return "/wallpapers/nature-mountains/assets/a9utu601up.jpg";
-      return "/wallpapers/nature-mountains/assets/amhxxzhji0.jpg";
-    }
-    const hour = new Date().getHours();
-    if (hour >= 5 && hour < 11) {
-      return "/wallpapers/nature-mountains/assets/awv9qd8b44.jpg"; // Morning
-    }
-    if (hour >= 11 && hour < 17) {
-      return "/wallpapers/nature-mountains/assets/aet2mvheu7.jpg"; // Day
-    }
-    if (hour >= 17 && hour < 20) {
-      return "/wallpapers/nature-mountains/assets/a9utu601up.jpg"; // Sunset
-    }
-    return "/wallpapers/nature-mountains/assets/amhxxzhji0.jpg"; // Night
-  };
-
-  /* ─── Sky Background Gradients by Phase & Theme ───────────── */
-  const getSkyGradient = () => {
-    if (isDark) {
-      if (activePhase === "night") {
-        return "bg-gradient-to-b from-[#050814] via-[#090e1f] to-[#0d142b]";
-      }
-      if (activePhase === "sunset") {
-        return "bg-gradient-to-b from-[#3b0d3c]/50 via-[#270b22]/40 to-[#09090b]";
-      }
-      // Day (Dark Mode)
-      return "bg-gradient-to-b from-[#0e213b]/60 via-[#0a1626]/40 to-[#09090b]";
-    } else {
-      // Light Mode
-      if (activePhase === "night") {
-        return "bg-gradient-to-b from-slate-200/90 via-indigo-50/70 to-background";
-      }
-      if (activePhase === "sunset") {
-        return "bg-gradient-to-b from-amber-100/80 via-rose-50/70 to-background";
-      }
-      // Day (Light Mode)
-      return "bg-gradient-to-b from-sky-200/70 via-sky-100/40 to-background";
-    }
-  };
+  }, [activeCondition, activePhase, enableParticles, isDark]);
 
   return (
-    <div className="relative w-full h-full flex flex-col overflow-hidden bg-black">
+    <div className="relative w-full h-full flex flex-col overflow-hidden bg-background">
       {/* 1. 6K Nature Mountains Live Day/Night Cycle Wallpaper */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden select-none z-0">
         {/* Crisp Native 6K Photographic Layer */}
         <img
-          key={getWallpaperImage()}
-          src={getWallpaperImage()}
-          alt="6K Nature Mountains Day/Night Wallpaper"
-          className="w-full h-full object-cover object-center transition-all duration-1000"
+          key={currentWallpaperUrl}
+          src={currentWallpaperUrl}
+          alt={`6K Nature Mountains (${activePhase})`}
+          className={cn(
+            "w-full h-full object-cover object-center transition-opacity duration-1000",
+            activePhase === "night" && "brightness-110 contrast-105"
+          )}
         />
-
-        {/* Live Interactive DesktopHut Engine Overlay (Drifting Clouds & Depth) */}
-        <iframe
-          src="/wallpapers/nature-mountains/index.html"
-          className="absolute inset-0 w-full h-full border-none pointer-events-none select-none opacity-85"
-          style={{ width: "100%", height: "100%", border: 0 }}
-          title="Real Day/Night Cycle Nature Mountains"
-        />
-
-        {/* Subtle Dark Vignette so Navbar and Greeting Text Pop */}
-        <div className="absolute inset-0 bg-black/25 pointer-events-none" />
       </div>
 
       {/* 2. Canvas Weather Particles (Rain / Snow / Wind / Stars) */}
@@ -545,13 +393,13 @@ export const DynamicWallpaper: React.FC<DynamicWallpaperProps> = ({ children }) 
         {children}
       </div>
 
-      {/* 6. Live Location & Weather Status Pill (Bottom Right) */}
+      {/* 4. Live Location & Weather Status Pill (Bottom Right) */}
       <div className="absolute bottom-3 right-4 z-30 flex items-center gap-2">
         <button
           onClick={() => setIsControlsOpen(!isControlsOpen)}
           className={cn(
-            "flex items-center gap-2 px-2.5 py-1.5 rounded-md text-[12px] font-medium border border-border shadow-xs transition-all cursor-pointer backdrop-blur-md",
-            "bg-card/90 text-foreground hover:bg-surface-muted"
+            "flex items-center gap-2 px-3 py-1.5 rounded-full text-[12px] font-medium border border-border/80 shadow-md transition-all cursor-pointer backdrop-blur-md",
+            "bg-card/85 text-foreground hover:bg-card hover:border-primary/50"
           )}
           title="Wallpaper & Weather Controls"
         >
@@ -568,7 +416,7 @@ export const DynamicWallpaper: React.FC<DynamicWallpaperProps> = ({ children }) 
               {activeCondition === "cloudy" && <Cloud className="w-3.5 h-3.5 text-muted-foreground" />}
               {activeCondition === "clear" && (activePhase === "night" ? <Moon className="w-3.5 h-3.5 text-muted-foreground" /> : <Sun className="w-3.5 h-3.5 text-amber-500" />)}
               <span className="capitalize text-muted-foreground text-[11px] hidden sm:inline">
-                {activeCondition}
+                {activePhase}
               </span>
             </>
           ) : (
@@ -581,13 +429,13 @@ export const DynamicWallpaper: React.FC<DynamicWallpaperProps> = ({ children }) 
         </button>
       </div>
 
-      {/* 7. Controls & Simulation Popout Menu */}
+      {/* 5. Controls & Simulation Popout Menu */}
       {isControlsOpen && (
         <div className="absolute bottom-12 right-4 z-40 w-80 p-3.5 rounded-xl bg-card border border-border shadow-2xl backdrop-blur-md text-foreground space-y-3.5 animate-in zoom-in-95 duration-150">
           <div className="flex items-center justify-between border-b border-border/80 pb-2">
             <div className="flex items-center gap-2">
               <Sliders className="w-4 h-4 text-primary" />
-              <span className="text-xs font-bold uppercase tracking-wider">Dynamic Wallpaper Engine</span>
+              <span className="text-xs font-bold uppercase tracking-wider">6K Big Sur Wallpaper Engine</span>
             </div>
             <button
               onClick={() => setIsControlsOpen(false)}
@@ -625,44 +473,48 @@ export const DynamicWallpaper: React.FC<DynamicWallpaperProps> = ({ children }) 
             </div>
           </div>
 
-          {/* Landscape Scene Picker */}
+          {/* 6K Nature Mountains Cycle Picker */}
           <div className="space-y-1.5">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Landscape Scene</span>
-            <div className="grid grid-cols-3 gap-1.5">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                Day / Night Cycle
+              </span>
+              <span className="text-[10px] text-primary font-medium capitalize">
+                {wallpaperMode === "auto" ? `Auto (${activePhase})` : wallpaperMode}
+              </span>
+            </div>
+            <div className="grid grid-cols-5 gap-1">
               {(
                 [
-                  { id: "mountains", label: "Mountains", icon: Mountain },
-                  { id: "beaches", label: "Beaches", icon: Waves },
-                  { id: "plains", label: "Plains", icon: Trees },
+                  { id: "auto", label: "Auto" },
+                  { id: "morning", label: "Dawn" },
+                  { id: "day", label: "Day" },
+                  { id: "sunset", label: "Sunset" },
+                  { id: "night", label: "Night" },
                 ] as const
-              ).map((item) => {
-                const Icon = item.icon;
-                const isSelected = scene === item.id;
-                return (
-                  <button
-                    key={item.id}
-                    onClick={() => {
-                      setScene(item.id);
-                      localStorage.setItem("skillsphere_wallpaper_scene", item.id);
-                    }}
-                    className={cn(
-                      "py-2 px-2 rounded-lg border text-center flex flex-col items-center gap-1 text-xs font-semibold transition-all cursor-pointer",
-                      isSelected
-                        ? "bg-primary text-primary-foreground border-primary"
-                        : "bg-secondary text-muted-foreground border-border hover:text-foreground hover:bg-secondary/80"
-                    )}
-                  >
-                    <Icon className="w-3.5 h-3.5" />
-                    <span className="text-[10px]">{item.label}</span>
-                  </button>
-                );
-              })}
+              ).map((item) => (
+                <button
+                  key={item.id}
+                  onClick={() => {
+                    setWallpaperMode(item.id);
+                    localStorage.setItem("skillsphere_wallpaper_mode", item.id);
+                  }}
+                  className={cn(
+                    "py-1.5 rounded-md text-center text-[10px] font-semibold transition-all cursor-pointer border",
+                    wallpaperMode === item.id
+                      ? "bg-primary text-primary-foreground border-primary shadow-xs"
+                      : "bg-secondary text-muted-foreground border-border hover:text-foreground hover:bg-secondary/80"
+                  )}
+                >
+                  {item.label}
+                </button>
+              ))}
             </div>
           </div>
 
           {/* Particle Effects Toggle */}
           <div className="flex items-center justify-between pt-1">
-            <span className="text-xs text-foreground font-medium">Weather Animations</span>
+            <span className="text-xs text-foreground font-medium">Atmospheric Weather</span>
             <button
               onClick={() => setEnableParticles(!enableParticles)}
               className={cn(
@@ -679,11 +531,11 @@ export const DynamicWallpaper: React.FC<DynamicWallpaperProps> = ({ children }) 
             </button>
           </div>
 
-          {/* Simulation Mode Toggle (Test day, night, rain, snow, wind immediately) */}
+          {/* Simulator */}
           <div className="pt-2 border-t border-border space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                Simulator (Preview Effects)
+                Simulator (Weather Overrides)
               </span>
               <button
                 onClick={() => setSimulationMode(!simulationMode)}
@@ -700,24 +552,6 @@ export const DynamicWallpaper: React.FC<DynamicWallpaperProps> = ({ children }) 
 
             {simulationMode && (
               <div className="space-y-2 p-2 rounded-lg bg-secondary/40 border border-border">
-                {/* Time of day */}
-                <div className="flex gap-1">
-                  {(["day", "sunset", "night"] as const).map((ph) => (
-                    <button
-                      key={ph}
-                      onClick={() => setOverridePhase(ph)}
-                      className={cn(
-                        "flex-1 py-1 rounded text-[10px] font-semibold capitalize border cursor-pointer",
-                        overridePhase === ph
-                          ? "bg-primary text-primary-foreground border-primary"
-                          : "bg-background text-muted-foreground border-border"
-                      )}
-                    >
-                      {ph}
-                    </button>
-                  ))}
-                </div>
-
                 {/* Weather condition */}
                 <div className="grid grid-cols-5 gap-1">
                   {(["clear", "cloudy", "rain", "snow", "wind"] as const).map((cond) => (
@@ -741,14 +575,14 @@ export const DynamicWallpaper: React.FC<DynamicWallpaperProps> = ({ children }) 
         </div>
       )}
 
-      {/* 8. Location Selection Modal */}
+      {/* 6. Location Selection Modal */}
       {isLocationModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="w-full max-w-sm rounded-2xl bg-card border border-border p-5 text-card-foreground shadow-2xl space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <MapPin className="w-4 h-4 text-primary" />
-                <h3 className="text-sm font-bold m-0 text-foreground">Select Your Location</h3>
+                <h3 className="text-sm font-semibold text-foreground">Select Location</h3>
               </div>
               <button
                 onClick={() => setIsLocationModalOpen(false)}
@@ -758,24 +592,20 @@ export const DynamicWallpaper: React.FC<DynamicWallpaperProps> = ({ children }) 
               </button>
             </div>
 
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              We sync your wallpaper lighting, time of day, and weather effects to your local time and forecast.
-            </p>
-
-            {/* Geolocation Button */}
+            {/* Geolocation Auto-detect */}
             <button
               onClick={detectLocation}
               disabled={detectingLocation}
-              className="w-full py-2.5 px-3 rounded-xl bg-primary text-primary-foreground text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 hover:bg-primary/90 transition-all cursor-pointer border-none"
+              className="w-full py-2.5 px-3 rounded-xl bg-primary text-primary-foreground font-semibold text-xs flex items-center justify-center gap-2 hover:bg-primary/90 transition-colors cursor-pointer disabled:opacity-50 border-none shadow-sm"
             >
               <Compass className={cn("w-4 h-4", detectingLocation && "animate-spin")} />
-              <span>{detectingLocation ? "Detecting Coordinates..." : "Use Current Location"}</span>
+              <span>{detectingLocation ? "Detecting GPS location..." : "Auto-detect My Location"}</span>
             </button>
 
-            {/* Popular City Presets */}
-            <div className="space-y-1.5 pt-1">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                Or choose a city:
+            {/* Popular Cities */}
+            <div className="space-y-2">
+              <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+                Popular Cities
               </span>
               <div className="max-h-48 overflow-y-auto space-y-1 pr-1">
                 {POPULAR_LOCATIONS.map((loc) => (
@@ -801,4 +631,3 @@ export const DynamicWallpaper: React.FC<DynamicWallpaperProps> = ({ children }) 
 };
 
 export default DynamicWallpaper;
-

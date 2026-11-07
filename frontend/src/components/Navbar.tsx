@@ -142,7 +142,7 @@ export default function Navbar() {
 
   return (
     <>
-      <header className="border-b border-border bg-card px-4 md:px-6 shrink-0 transition-colors duration-200">
+      <header className="border-b border-border/60 bg-card/80 backdrop-blur-md px-4 md:px-6 shrink-0 transition-colors duration-200 z-20">
         <div className="flex h-16 justify-between items-center gap-4">
           {/* Left side */}
           <div className="flex items-center gap-4">
