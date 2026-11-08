@@ -217,7 +217,7 @@ export const Ripple = memo(function Ripple({
               animationDelay: animationDelay,
               borderStyle: borderStyle,
               borderWidth: '1px',
-              borderColor: `rgba(13, 148, 136, ${borderOpacity / 100})`,
+              borderColor: 'var(--border)',
               top: '50%',
               left: '50%',
               transform: 'translate(-50%, -50%)',
@@ -272,12 +272,13 @@ export const OrbitingCircles = memo(function OrbitingCircles({
           {
             '--duration': duration,
             '--radius': radius,
-            '--delay': -delay,
+            animationDelay: `${-delay}s`,
+            animationDuration: `${duration}s`,
+            animationDirection: reverse ? 'reverse' : 'normal',
           } as React.CSSProperties
         }
         className={cn(
-          'absolute flex size-full transform-gpu animate-orbit items-center justify-center rounded-full border border-border/40 bg-card/60 [animation-delay:calc(var(--delay)*1000ms)] shadow-sm backdrop-blur-xs',
-          { '[animation-direction:reverse]': reverse },
+          'absolute flex transform-gpu animate-orbit items-center justify-center rounded-xl border border-border/60 bg-card/90 shadow-md backdrop-blur-md',
           className
         )}
       >
@@ -365,14 +366,12 @@ export const TechOrbitDisplay = memo(function TechOrbitDisplay({
       {/* Background ripple pulses */}
       <Ripple />
 
-      {/* Center Circular Logo (No text) */}
+      {/* Center Circular Logo (No text, no perimeter glow) */}
       <div className="relative z-10 flex items-center justify-center pointer-events-none select-none">
-        {/* Soft emerald radial glow aura */}
-        <div className="absolute inset-0 rounded-full bg-emerald-500/25 blur-xl scale-125 pointer-events-none" />
         <img
           src="/logo.png"
           alt="SkillSphere Logo"
-          className="w-24 h-24 sm:w-28 sm:h-28 object-contain rounded-full shadow-[0_0_35px_rgba(34,197,94,0.35)] relative z-10"
+          className="w-24 h-24 sm:w-28 sm:h-28 object-contain rounded-full relative z-10 drop-shadow-sm"
         />
       </div>
 
@@ -411,22 +410,22 @@ const TECH_ORBIT_ICONS: IconConfig[] = [
   // Inner Orbit (Radius 135): React, TypeScript, Express
   {
     radius: 135,
-    duration: 22,
+    duration: 24,
     delay: 0,
     className: 'size-10 rounded-xl bg-card/90 border border-border shadow-md flex items-center justify-center p-2 backdrop-blur-md',
     component: () => <ReactBadge />,
   },
   {
     radius: 135,
-    duration: 22,
-    delay: 7.33,
+    duration: 24,
+    delay: 8,
     className: 'size-10 rounded-xl bg-card/90 border border-border shadow-md flex items-center justify-center p-2 backdrop-blur-md',
     component: () => <TypeScriptBadge />,
   },
   {
     radius: 135,
-    duration: 22,
-    delay: 14.67,
+    duration: 24,
+    delay: 16,
     className: 'size-10 rounded-xl bg-card/90 border border-border shadow-md flex items-center justify-center p-2 backdrop-blur-md',
     component: () => <ExpressBadge />,
   },
@@ -435,7 +434,7 @@ const TECH_ORBIT_ICONS: IconConfig[] = [
   {
     radius: 215,
     duration: 32,
-    delay: 0,
+    delay: 4,
     reverse: true,
     className: 'size-11 rounded-xl bg-card/90 border border-border shadow-md flex items-center justify-center p-2.5 backdrop-blur-md',
     component: () => <DockerBadge />,
@@ -443,7 +442,7 @@ const TECH_ORBIT_ICONS: IconConfig[] = [
   {
     radius: 215,
     duration: 32,
-    delay: 16,
+    delay: 20,
     reverse: true,
     className: 'size-11 rounded-xl bg-card/90 border border-border shadow-md flex items-center justify-center p-2.5 backdrop-blur-md',
     component: () => <GitBadge />,
