@@ -287,6 +287,60 @@ export const OrbitingCircles = memo(function OrbitingCircles({
   );
 });
 
+// ==================== Tech Stack Icons ====================
+
+const ReactIcon = () => (
+  <svg viewBox="-11.5 -10.23174 23 20.46348" className="w-5 h-5 drop-shadow-xs">
+    <title>React</title>
+    <circle cx="0" cy="0" r="2.05" fill="#61DAFB" />
+    <g stroke="#61DAFB" strokeWidth="1" fill="none">
+      <ellipse rx="11" ry="4.2" />
+      <ellipse rx="11" ry="4.2" transform="rotate(60)" />
+      <ellipse rx="11" ry="4.2" transform="rotate(120)" />
+    </g>
+  </svg>
+);
+
+const TypeScriptIcon = () => (
+  <svg viewBox="0 0 32 32" className="w-5 h-5 rounded-[3px] overflow-hidden drop-shadow-xs">
+    <title>TypeScript</title>
+    <rect width="32" height="32" fill="#3178C6" />
+    <path d="M7 11h9v3.2h-3v11h-3v-11h-3V11zm10.5 4.8c.8-.8 1.8-1.2 3.1-1.2 1.4 0 2.5.4 3.3 1.2.8.8 1.2 1.8 1.2 3.1v.2h-2.9v-.2c0-.5-.1-.9-.4-1.2-.3-.3-.7-.4-1.2-.4s-.9.1-1.2.4c-.3.3-.4.7-.4 1.2 0 .4.1.7.3.9.2.2.6.5 1.3.8l1.4.6c1.1.5 2 1.1 2.6 1.8.6.7.9 1.6.9 2.7 0 1.4-.4 2.5-1.3 3.3-.9.8-2 1.2-3.5 1.2-1.5 0-2.7-.4-3.6-1.3-.9-.9-1.3-2.1-1.3-3.6v-.3h2.9v.3c0 .6.2 1.1.5 1.4.3.3.8.5 1.4.5s1.1-.2 1.4-.5c.3-.3.5-.8.5-1.4 0-.4-.1-.8-.4-1.1-.3-.3-.8-.6-1.5-.9l-1.3-.5c-1-.4-1.8-1-2.4-1.6-.6-.7-.9-1.6-.9-2.7.1-1.3.6-2.4 1.4-3.2z" fill="#FFFFFF" />
+  </svg>
+);
+
+const NextJsIcon = () => (
+  <svg viewBox="0 0 32 32" className="w-5 h-5 drop-shadow-xs">
+    <title>Next.js</title>
+    <circle cx="16" cy="16" r="15" fill="#000000" stroke="#404040" strokeWidth="1" />
+    <path d="M21.5 22.8L12.7 11.2h-1.9v10.9h1.7v-8.8l8 10.4c.3-.3.7-.6 1-.9zm-1.8-11.6h1.7v6.8h-1.7v-6.8z" fill="#FFFFFF" />
+  </svg>
+);
+
+const NodeIcon = () => (
+  <svg viewBox="0 0 32 32" className="w-5 h-5 drop-shadow-xs">
+    <title>Node.js</title>
+    <path d="M16 2.5L3.5 9.7v14.6L16 31.5l12.5-7.2V9.7L16 2.5zm8.9 19.8l-8.9 5.2-8.9-5.2V11.4l8.9-5.1 8.9 5.1v10.9z" fill="#68A063"/>
+    <path d="M16 7.5L8.5 11.8v8.6L16 24.7l7.5-4.3v-8.6L16 7.5z" fill="#339933" opacity="0.4"/>
+  </svg>
+);
+
+const PythonIcon = () => (
+  <svg viewBox="0 0 32 32" className="w-5 h-5 drop-shadow-xs">
+    <title>Python</title>
+    <path d="M15.9 3c-6.8 0-6.4 3-6.4 3l.01 3.1h6.5v.9H6.9s-4.3-.5-4.3 6.3c0 6.9 3.8 6.6 3.8 6.6h2.3v-3.2s-.1-3.8 3.8-3.8h6.5s3.6.1 3.6-3.6V6.6s.5-3.6-6.7-3.6zm-3.7 2c.6 0 1.1.5 1.1 1.1 0 .6-.5 1.1-1.1 1.1-.6 0-1.1-.5-1.1-1.1 0-.6.5-1.1 1.1-1.1z" fill="#3776AB"/>
+    <path d="M16.1 29c6.8 0 6.4-3 6.4-3l-.01-3.1h-6.5v-.9h9.1s4.3.5 4.3-6.3c0-6.9-3.8-6.6-3.8-6.6h-2.3v3.2s.1 3.8-3.8 3.8h-6.5s-3.6-.1-3.6 3.6v5.7s-.5 3.6 6.7 3.6zm3.7-2c-.6 0-1.1-.5-1.1-1.1 0-.6.5-1.1 1.1-1.1.6 0 1.1.5 1.1 1.1 0 .6-.5 1.1-1.1 1.1z" fill="#FFD438"/>
+  </svg>
+);
+
+const PostgresIcon = () => (
+  <svg viewBox="0 0 32 32" className="w-5 h-5 drop-shadow-xs">
+    <title>PostgreSQL</title>
+    <circle cx="16" cy="16" r="15" fill="#336791" />
+    <path d="M16 6c-4.4 0-8 3.1-8 7.5 0 2.8 1.5 5.3 3.8 6.5v4.2c0 .5.4.8.8.8h1.2c.4 0 .8-.3.8-.8v-3.2h2.8v3.2c0 .5.4.8.8.8h1.2c.4 0 .8-.3.8-.8v-4.2c2.3-1.2 3.8-3.7 3.8-6.5C24 9.1 20.4 6 16 6zm-2.8 9.5c-.8 0-1.5-.7-1.5-1.5s.7-1.5 1.5-1.5 1.5.7 1.5 1.5-.7 1.5-1.5 1.5zm5.6 0c-.8 0-1.5-.7-1.5-1.5s.7-1.5 1.5-1.5 1.5.7 1.5 1.5-.7 1.5-1.5 1.5z" fill="#FFFFFF"/>
+  </svg>
+);
+
 // ==================== TechOrbitDisplay Component ====================
 
 type IconConfig = {
@@ -311,26 +365,23 @@ export const TechOrbitDisplay = memo(function TechOrbitDisplay({
       {/* Background ripple pulses */}
       <Ripple />
 
-      {/* Center Logo & Brand Typography */}
-      <div className="relative z-10 flex flex-col items-center justify-center gap-3 pointer-events-none select-none text-center px-4">
-        <div className="w-20 h-20 md:w-24 md:h-24 rounded-2xl bg-gradient-to-tr from-primary/20 via-primary/10 to-transparent p-3.5 border border-primary/30 shadow-2xl backdrop-blur-md flex items-center justify-center">
+      {/* Center Logo in pure sphere form & Brand Typography */}
+      <div className="relative z-10 flex flex-col items-center justify-center gap-2 pointer-events-none select-none text-center px-4">
+        <div className="relative flex items-center justify-center">
+          {/* Subtle cyan glow aura */}
+          <div className="absolute inset-0 rounded-full bg-cyan-400/25 blur-xl scale-125 pointer-events-none" />
           <img
             src="/logo.svg"
-            alt="SkillSphere Logo"
-            className="w-full h-full object-contain filter drop-shadow-md"
+            alt="SkillSphere Sphere"
+            className="w-24 h-24 sm:w-28 sm:h-28 object-contain rounded-full shadow-[0_0_35px_rgba(0,242,254,0.4)] relative z-10"
           />
         </div>
-        <div>
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-foreground">
-            SkillSphere
-          </h1>
-          <p className="text-xs sm:text-sm text-muted-foreground font-medium mt-1">
-            Real-Time Coding Duels • Quizzes • Skill Arena
-          </p>
-        </div>
+        <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-foreground m-0">
+          SkillSphere
+        </h1>
       </div>
 
-      {/* Orbiting Tech Icons */}
+      {/* Orbiting Tech Stack Icons */}
       {iconsArray.map((icon, index) => (
         <OrbitingCircles
           key={index}
@@ -362,70 +413,53 @@ export const BottomGradient = () => {
 // ==================== Main SignupCard Component ====================
 
 const TECH_ORBIT_ICONS: IconConfig[] = [
-  // Inner Orbit (Radius 140)
+  // Inner Orbit: Frontend Tech Stacks (Radius 135)
   {
-    radius: 140,
-    duration: 20,
+    radius: 135,
+    duration: 22,
     delay: 0,
-    className: 'size-10 text-primary border-primary/30',
-    component: () => <Code2 className="w-5 h-5" />,
+    className: 'size-10 rounded-full bg-card/90 border border-border shadow-md flex items-center justify-center p-2 backdrop-blur-md',
+    component: () => <ReactIcon />,
   },
   {
-    radius: 140,
-    duration: 20,
-    delay: 5,
-    className: 'size-10 text-blue-500 border-blue-500/30',
-    component: () => <Terminal className="w-5 h-5" />,
+    radius: 135,
+    duration: 22,
+    delay: 7.33,
+    className: 'size-10 rounded-full bg-card/90 border border-border shadow-md flex items-center justify-center p-2 backdrop-blur-md',
+    component: () => <TypeScriptIcon />,
   },
   {
-    radius: 140,
-    duration: 20,
-    delay: 10,
-    className: 'size-10 text-amber-500 border-amber-500/30',
-    component: () => <Cpu className="w-5 h-5" />,
-  },
-  {
-    radius: 140,
-    duration: 20,
-    delay: 15,
-    className: 'size-10 text-emerald-500 border-emerald-500/30',
-    component: () => <GitBranch className="w-5 h-5" />,
+    radius: 135,
+    duration: 22,
+    delay: 14.67,
+    className: 'size-10 rounded-full bg-card/90 border border-border shadow-md flex items-center justify-center p-2 backdrop-blur-md',
+    component: () => <NextJsIcon />,
   },
 
-  // Outer Orbit (Radius 225)
+  // Outer Orbit: Backend Tech Stacks & Database (Radius 215)
   {
-    radius: 225,
-    duration: 36,
+    radius: 215,
+    duration: 30,
     delay: 0,
     reverse: true,
-    className: 'size-11 text-rose-500 border-rose-500/30',
-    component: () => <Swords className="w-5.5 h-5.5" />,
+    className: 'size-11 rounded-full bg-card/90 border border-border shadow-md flex items-center justify-center p-2.5 backdrop-blur-md',
+    component: () => <NodeIcon />,
   },
   {
-    radius: 225,
-    duration: 36,
-    delay: 9,
+    radius: 215,
+    duration: 30,
+    delay: 10,
     reverse: true,
-    className: 'size-11 text-amber-400 border-amber-400/30',
-    component: () => <Trophy className="w-5.5 h-5.5" />,
+    className: 'size-11 rounded-full bg-card/90 border border-border shadow-md flex items-center justify-center p-2.5 backdrop-blur-md',
+    component: () => <PythonIcon />,
   },
   {
-    radius: 225,
-    duration: 36,
-    delay: 18,
+    radius: 215,
+    duration: 30,
+    delay: 20,
     reverse: true,
-    className: 'size-11 text-teal-400 border-teal-400/30',
-    component: () => (
-      <img src="/logo.svg" alt="SkillSphere" className="w-6 h-6 object-contain" />
-    ),
-  },
-  {
-    radius: 225,
-    duration: 36,
-    delay: 27,
-    reverse: true,
-    className: 'size-11 text-indigo-400 border-indigo-400/30',
-    component: () => <ShieldCheck className="w-5.5 h-5.5" />,
+    className: 'size-11 rounded-full bg-card/90 border border-border shadow-md flex items-center justify-center p-2.5 backdrop-blur-md',
+    component: () => <PostgresIcon />,
   },
 ];
 
