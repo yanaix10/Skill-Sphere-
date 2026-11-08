@@ -287,102 +287,6 @@ export const OrbitingCircles = memo(function OrbitingCircles({
   );
 });
 
-// ==================== Tech Stack Icons (From Portfolio Categories) ====================
-
-// Frontend: React
-const ReactBadge = () => (
-  <div className="w-full h-full flex items-center justify-center" title="React">
-    <svg viewBox="-11.5 -10.23174 23 20.46348" className="w-5.5 h-5.5">
-      <circle cx="0" cy="0" r="2.05" fill="#00d8ff" />
-      <g stroke="#00d8ff" strokeWidth="1" fill="none">
-        <ellipse rx="11" ry="4.2" />
-        <ellipse rx="11" ry="4.2" transform="rotate(60)" />
-        <ellipse rx="11" ry="4.2" transform="rotate(120)" />
-      </g>
-    </svg>
-  </div>
-);
-
-// Frontend: Tailwind CSS
-const TailwindBadge = () => (
-  <div className="w-full h-full flex items-center justify-center" title="Tailwind CSS">
-    <svg viewBox="0 0 24 24" className="w-5.5 h-5.5" fill="#38bdf8">
-      <path d="M12.001 4.8c-3.2 0-5.2 1.6-6 4.8 1.2-1.6 2.6-2.2 4.2-1.8.913.228 1.565.89 2.288 1.624C13.666 10.618 15.027 12 18.001 12c3.2 0 5.2-1.6 6-4.8-1.2 1.6-2.6 2.2-4.2 1.8-.913-.228-1.565-.89-2.288-1.624C16.336 6.182 14.975 4.8 12.001 4.8zm-6 7.2c-3.2 0-5.2 1.6-6 4.8 1.2-1.6 2.6-2.2 4.2-1.8.913.228 1.565.89 2.288 1.624 1.177 1.194 2.538 2.576 5.512 2.576 3.2 0 5.2-1.6 6-4.8-1.2 1.6-2.6 2.2-4.2 1.8-.913-.228-1.565-.89-2.288-1.624C10.336 13.382 8.975 12 6.001 12z" />
-    </svg>
-  </div>
-);
-
-// Backend: Express
-const ExpressBadge = () => (
-  <div className="w-full h-full flex items-center justify-center" title="Express.js">
-    <span className="font-mono text-sm font-bold tracking-tighter text-foreground select-none">
-      ex
-    </span>
-  </div>
-);
-
-// Backend: Node.js
-const NodeBadge = () => (
-  <div className="w-full h-full flex items-center justify-center" title="Node.js">
-    <svg viewBox="0 0 32 32" className="w-5.5 h-5.5">
-      <path
-        d="M16 2.5L3.5 9.7v14.6L16 31.5l12.5-7.2V9.7L16 2.5z"
-        fill="none"
-        stroke="#68A063"
-        strokeWidth="2.4"
-        strokeLinejoin="round"
-      />
-      <text
-        x="16"
-        y="21"
-        textAnchor="middle"
-        fill="#68A063"
-        fontSize="12"
-        fontWeight="bold"
-        fontFamily="sans-serif"
-      >
-        JS
-      </text>
-    </svg>
-  </div>
-);
-
-// Database: MongoDB
-const MongoBadge = () => (
-  <div className="w-full h-full flex items-center justify-center" title="MongoDB">
-    <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none">
-      <path
-        d="M12 2C12 2 6 7.5 6 13.5C6 17.5 8.7 20.8 12 22C15.3 20.8 18 17.5 18 13.5C18 7.5 12 2 12 2Z"
-        fill="#13AA52"
-      />
-      <path
-        d="M12 2V22C12.3 22 12.6 21.9 12.8 21.8C15.8 20.5 18 17.3 18 13.5C18 7.5 12 2 12 2Z"
-        fill="#00ED64"
-        opacity="0.65"
-      />
-      <path d="M12 22V13" stroke="#FFFFFF" strokeWidth="1" strokeLinecap="round" />
-    </svg>
-  </div>
-);
-
-// Database: PostgreSQL
-const PostgresBadge = () => (
-  <div className="w-full h-full flex items-center justify-center" title="PostgreSQL">
-    <svg viewBox="0 0 24 24" className="w-5.5 h-5.5" fill="#336791">
-      <path d="M12 3c-4.4 0-8 3.1-8 7.5 0 2.8 1.5 5.3 3.8 6.5v4c0 .5.4 1 1 1h1c.5 0 1-.5 1-1v-3h2v3c0 .5.5 1 1 1h1c.5 0 1-.5 1-1v-4c2.3-1.2 3.8-3.7 3.8-6.5C20 6.1 16.4 3 12 3zm-2.8 9.5c-.8 0-1.5-.7-1.5-1.5s.7-1.5 1.5-1.5 1.5.7 1.5 1.5-.7 1.5-1.5 1.5zm5.6 0c-.8 0-1.5-.7-1.5-1.5s.7-1.5 1.5-1.5 1.5.7 1.5 1.5-.7 1.5-1.5 1.5z" />
-    </svg>
-  </div>
-);
-
-// DevOps: Docker
-const DockerBadge = () => (
-  <div className="w-full h-full flex items-center justify-center" title="Docker">
-    <svg viewBox="0 0 24 24" className="w-5.5 h-5.5" fill="#2496ED">
-      <path d="M13 8h2v2h-2V8zm-3 0h2v2h-2V8zm-3 0h2v2H7V8zm6-3h2v2h-2V5zm-3 0h2v2h-2V5zm-3 0h2v2H7V5zm15.8 7.2c-.4-.3-1.2-.4-1.9-.2-.3-.5-.7-.9-1.2-1.2l-.6-.4-.4.6c-.3.5-.4 1.1-.3 1.7-.8.5-1.8.6-2.8.5H1.6c-.4 1.3-.3 3.5.7 5.1 1.3 2.1 3.5 3.3 6.7 3.3 5.4 0 9.8-3.3 11.4-8.8.7.2 1.5.1 2.1-.3.4-.3.6-.8.6-.8l-.3-.5z" />
-    </svg>
-  </div>
-);
-
 // ==================== TechOrbitDisplay Component ====================
 
 type IconConfig = {
@@ -407,23 +311,26 @@ export const TechOrbitDisplay = memo(function TechOrbitDisplay({
       {/* Background ripple pulses */}
       <Ripple />
 
-      {/* Center Logo in pure sphere form & Brand Typography */}
-      <div className="relative z-10 flex flex-col items-center justify-center gap-2 pointer-events-none select-none text-center px-4">
-        <div className="relative flex items-center justify-center">
-          {/* Subtle cyan glow aura */}
-          <div className="absolute inset-0 rounded-full bg-cyan-400/25 blur-xl scale-125 pointer-events-none" />
+      {/* Center Logo & Brand Typography */}
+      <div className="relative z-10 flex flex-col items-center justify-center gap-3 pointer-events-none select-none text-center px-4">
+        <div className="w-20 h-20 md:w-24 md:h-24 rounded-2xl bg-gradient-to-tr from-primary/20 via-primary/10 to-transparent p-3.5 border border-primary/30 shadow-2xl backdrop-blur-md flex items-center justify-center">
           <img
-            src="/sphere-logo.png"
-            alt="SkillSphere Sphere"
-            className="w-24 h-24 sm:w-28 sm:h-28 object-contain rounded-full shadow-[0_0_35px_rgba(0,242,254,0.4)] relative z-10"
+            src="/logo.svg"
+            alt="SkillSphere Logo"
+            className="w-full h-full object-contain filter drop-shadow-md"
           />
         </div>
-        <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground m-0">
-          SkillSphere
-        </h1>
+        <div>
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-foreground">
+            SkillSphere
+          </h1>
+          <p className="text-xs sm:text-sm text-muted-foreground font-medium mt-1">
+            Real-Time Coding Duels • Quizzes • Skill Arena
+          </p>
+        </div>
       </div>
 
-      {/* Orbiting Tech Stack Icons */}
+      {/* Orbiting Tech Icons */}
       {iconsArray.map((icon, index) => (
         <OrbitingCircles
           key={index}
@@ -455,61 +362,23 @@ export const BottomGradient = () => {
 // ==================== Main SignupCard Component ====================
 
 const TECH_ORBIT_ICONS: IconConfig[] = [
-  // Inner Orbit: Frontend Stacks (Radius 135)
+  // Inner Orbit: Git Branch
   {
-    radius: 135,
-    duration: 22,
-    delay: 0,
-    className: 'size-10 rounded-xl bg-card/90 border border-border shadow-md flex items-center justify-center p-2 backdrop-blur-md',
-    component: () => <ReactBadge />,
-  },
-  {
-    radius: 135,
-    duration: 22,
-    delay: 7.33,
-    className: 'size-10 rounded-xl bg-card/90 border border-border shadow-md flex items-center justify-center p-2 backdrop-blur-md',
-    component: () => <TailwindBadge />,
-  },
-  {
-    radius: 135,
-    duration: 22,
-    delay: 14.67,
-    className: 'size-10 rounded-xl bg-card/90 border border-border shadow-md flex items-center justify-center p-2 backdrop-blur-md',
-    component: () => <ExpressBadge />,
+    radius: 140,
+    duration: 20,
+    delay: 15,
+    className: 'size-10 text-emerald-500 border-emerald-500/30',
+    component: () => <GitBranch className="w-5 h-5" />,
   },
 
-  // Outer Orbit: Backend, Database & DevOps (Radius 215)
+  // Outer Orbit: Shield Check
   {
-    radius: 215,
-    duration: 32,
-    delay: 0,
+    radius: 225,
+    duration: 36,
+    delay: 27,
     reverse: true,
-    className: 'size-11 rounded-xl bg-card/90 border border-border shadow-md flex items-center justify-center p-2.5 backdrop-blur-md',
-    component: () => <NodeBadge />,
-  },
-  {
-    radius: 215,
-    duration: 32,
-    delay: 8,
-    reverse: true,
-    className: 'size-11 rounded-xl bg-card/90 border border-border shadow-md flex items-center justify-center p-2.5 backdrop-blur-md',
-    component: () => <MongoBadge />,
-  },
-  {
-    radius: 215,
-    duration: 32,
-    delay: 16,
-    reverse: true,
-    className: 'size-11 rounded-xl bg-card/90 border border-border shadow-md flex items-center justify-center p-2.5 backdrop-blur-md',
-    component: () => <PostgresBadge />,
-  },
-  {
-    radius: 215,
-    duration: 32,
-    delay: 24,
-    reverse: true,
-    className: 'size-11 rounded-xl bg-card/90 border border-border shadow-md flex items-center justify-center p-2.5 backdrop-blur-md',
-    component: () => <DockerBadge />,
+    className: 'size-11 text-indigo-400 border-indigo-400/30',
+    component: () => <ShieldCheck className="w-5.5 h-5.5" />,
   },
 ];
 
@@ -615,9 +484,9 @@ export const SignupCard: React.FC = () => {
             <BoxReveal boxColor="var(--primary)" duration={0.3}>
               <div className="flex items-center gap-3">
                 <img
-                  src="/sphere-logo.png"
+                  src="/logo.svg"
                   alt="SkillSphere Logo"
-                  className="w-10 h-10 object-contain drop-shadow-sm rounded-full"
+                  className="w-10 h-10 object-contain drop-shadow-sm"
                 />
                 <h2 className="font-extrabold text-2xl sm:text-3xl tracking-tight text-foreground">
                   SkillSphere
