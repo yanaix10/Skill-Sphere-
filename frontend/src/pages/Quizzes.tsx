@@ -1,10 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Sidebar, { ChallengeConfig } from "../components/Sidebar";
 import SessionDetails from "../components/SessionDetails";
 import Practice from "./Practice";
 import QuestArena from "../components/QuestArena";
 import Challenge from "../components/Challenge";
-import ArenaHub from "../components/ArenaHub";
 
 interface QuizConfig {
   difficulty: string;
@@ -34,7 +33,6 @@ export default function Quizzes(): React.ReactElement {
     return "main";
   });
 
-  const [arenaTab, setArenaTab] = useState<"practice" | "challenge" | "both">("practice");
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
 
   const [quizConfig, setQuizConfig] = useState<QuizConfig>({
@@ -92,13 +90,6 @@ export default function Quizzes(): React.ReactElement {
     }
   };
 
-  const handleStartPractice = () => {
-    if (typeof window !== "undefined") {
-      sessionStorage.removeItem("skillsphere_practice_state");
-    }
-    setMode("practice");
-  };
-
   const handleLaunchChallenge = (config: ChallengeConfig) => {
     setChallengeConfig(config);
     setMode("challenge");
@@ -120,31 +111,23 @@ export default function Quizzes(): React.ReactElement {
 
   return (
     <div className="w-full h-full bg-background text-foreground flex flex-row overflow-hidden p-0 transition-colors duration-200">
-      {/* Main Center Area: Arena Hub, Sandboxing Duel Arena, or Practice Quiz */}
+      {/* Main Center Area: Sandboxing & Arena or Practice Quiz */}
       <div className="flex-1 h-full min-w-0 overflow-hidden relative">
-        {mode === "main" && (
-          <ArenaHub
-            arenaTab={arenaTab}
-            setArenaTab={setArenaTab}
-            quizConfig={quizConfig}
-            setQuizConfig={setQuizConfig}
-            onStartPractice={handleStartPractice}
-            onLaunchChallenge={handleLaunchChallenge}
-          />
-        )}
         {mode === "practice" && <Practice setMode={setMode} quizConfig={quizConfig} />}
-        {mode === "challenge" && (
+        {mode === "quest" && <QuestArena />}
+        {mode === "session" && selectedSessionId && (
+          <SessionDetails sessionId={selectedSessionId} setMode={setMode} />
+        )}
+
+        {/* Sandboxing & 1v1 Battle Arena (Active in both main and challenge modes) */}
+        {(mode === "main" || mode === "challenge") && (
           <Challenge
             setMode={setMode}
-            isDuelActive={true}
+            isDuelActive={mode === "challenge"}
             challengeConfig={challengeConfig}
             onRoomCreated={handleRoomCreated}
             onOpponentChange={(name) => setOpponentName(name)}
           />
-        )}
-        {mode === "quest" && <QuestArena />}
-        {mode === "session" && selectedSessionId && (
-          <SessionDetails sessionId={selectedSessionId} setMode={setMode} />
         )}
       </div>
 
@@ -158,8 +141,6 @@ export default function Quizzes(): React.ReactElement {
         onLaunchChallenge={handleLaunchChallenge}
         activeRoomCode={activeRoomCode}
         opponentName={opponentName}
-        arenaTab={arenaTab}
-        setArenaTab={setArenaTab}
       />
     </div>
   );

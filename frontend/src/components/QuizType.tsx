@@ -47,7 +47,7 @@ const QuizType: React.FC<QuizTypeProps> = ({ quizConfig, setQuizConfig, disabled
     <div className="bg-card text-card-foreground p-4 rounded-xl border border-border w-full font-sans box-border shadow-xs space-y-4">
       {/* Difficulty Section */}
       <div className="space-y-1.5">
-        <label className="text-xs font-bold text-foreground uppercase tracking-wider font-sans block">
+        <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider font-sans block">
           SELECT DIFFICULTY
         </label>
         <SegmentedControl
@@ -60,7 +60,7 @@ const QuizType: React.FC<QuizTypeProps> = ({ quizConfig, setQuizConfig, disabled
 
       {/* Number of Questions Section */}
       <div className="space-y-1.5">
-        <label className="text-xs font-bold text-foreground uppercase tracking-wider font-sans block">
+        <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider font-sans block">
           NUMBER OF QUESTIONS
         </label>
         <SegmentedControl
@@ -73,7 +73,7 @@ const QuizType: React.FC<QuizTypeProps> = ({ quizConfig, setQuizConfig, disabled
 
       {/* Category Section */}
       <div className="space-y-1.5">
-        <label className="text-xs font-bold text-foreground uppercase tracking-wider font-sans block">
+        <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider font-sans block">
           SELECT CATEGORY
         </label>
         <div className="flex flex-col gap-1.5">
