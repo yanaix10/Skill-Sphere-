@@ -287,6 +287,60 @@ export const OrbitingCircles = memo(function OrbitingCircles({
   );
 });
 
+// ==================== Orbit Tech Stack Badges ====================
+
+// React
+const ReactBadge = () => (
+  <div className="w-full h-full flex items-center justify-center" title="React">
+    <svg viewBox="-11.5 -10.23174 23 20.46348" className="w-5.5 h-5.5">
+      <circle cx="0" cy="0" r="2.05" fill="#00d8ff" />
+      <g stroke="#00d8ff" strokeWidth="1" fill="none">
+        <ellipse rx="11" ry="4.2" />
+        <ellipse rx="11" ry="4.2" transform="rotate(60)" />
+        <ellipse rx="11" ry="4.2" transform="rotate(120)" />
+      </g>
+    </svg>
+  </div>
+);
+
+// Docker
+const DockerBadge = () => (
+  <div className="w-full h-full flex items-center justify-center" title="Docker">
+    <svg viewBox="0 0 24 24" className="w-5.5 h-5.5" fill="#2496ED">
+      <path d="M13 8h2v2h-2V8zm-3 0h2v2h-2V8zm-3 0h2v2H7V8zm6-3h2v2h-2V5zm-3 0h2v2h-2V5zm-3 0h2v2H7V5zm15.8 7.2c-.4-.3-1.2-.4-1.9-.2-.3-.5-.7-.9-1.2-1.2l-.6-.4-.4.6c-.3.5-.4 1.1-.3 1.7-.8.5-1.8.6-2.8.5H1.6c-.4 1.3-.3 3.5.7 5.1 1.3 2.1 3.5 3.3 6.7 3.3 5.4 0 9.8-3.3 11.4-8.8.7.2 1.5.1 2.1-.3.4-.3.6-.8.6-.8l-.3-.5z" />
+    </svg>
+  </div>
+);
+
+// Express
+const ExpressBadge = () => (
+  <div className="w-full h-full flex items-center justify-center" title="Express.js">
+    <span className="font-mono text-sm font-bold tracking-tighter text-foreground select-none">
+      ex
+    </span>
+  </div>
+);
+
+// Git
+const GitBadge = () => (
+  <div className="w-full h-full flex items-center justify-center" title="Git">
+    <svg viewBox="0 0 24 24" className="w-5.5 h-5.5" fill="#F05032">
+      <path d="M2.59 13.41l10.82 10.82c.78.78 2.05.78 2.83 0l8.18-8.18c.78-.78.78-2.05 0-2.83L13.6 2.4a2 2 0 0 0-2.83 0L8.35 4.82l3.43 3.43c.48-.15 1.05-.04 1.45.36.4.4.51.97.36 1.45l3.3 3.3c.48-.15 1.05-.04 1.45.36.59.59.59 1.54 0 2.12-.59.59-1.54.59-2.12 0-.42-.42-.52-1.02-.33-1.51l-3.08-3.08v4.51c.15.11.29.25.39.39.59.59.59 1.54 0 2.12-.59.59-1.54.59-2.12 0-.59-.59-.59-1.54 0-2.12.18-.18.39-.3.61-.37v-4.63c-.22-.07-.43-.19-.61-.37-.42-.42-.52-1.02-.33-1.51L7 6.17l-4.41 4.41c-.78.78-.78 2.05 0 2.83z" />
+    </svg>
+  </div>
+);
+
+// TypeScript
+const TypeScriptBadge = () => (
+  <div className="w-full h-full flex items-center justify-center" title="TypeScript">
+    <div className="w-5 h-5 rounded-[3px] bg-[#3178C6] flex items-center justify-center shadow-xs">
+      <span className="text-[10px] font-black text-white leading-none font-sans tracking-tight">
+        TS
+      </span>
+    </div>
+  </div>
+);
+
 // ==================== TechOrbitDisplay Component ====================
 
 type IconConfig = {
@@ -311,23 +365,15 @@ export const TechOrbitDisplay = memo(function TechOrbitDisplay({
       {/* Background ripple pulses */}
       <Ripple />
 
-      {/* Center Logo & Brand Typography */}
-      <div className="relative z-10 flex flex-col items-center justify-center gap-3 pointer-events-none select-none text-center px-4">
-        <div className="w-20 h-20 md:w-24 md:h-24 rounded-2xl bg-gradient-to-tr from-primary/20 via-primary/10 to-transparent p-3.5 border border-primary/30 shadow-2xl backdrop-blur-md flex items-center justify-center">
-          <img
-            src="/logo.png"
-            alt="SkillSphere Logo"
-            className="w-full h-full object-contain filter drop-shadow-md"
-          />
-        </div>
-        <div>
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-foreground">
-            SkillSphere
-          </h1>
-          <p className="text-xs sm:text-sm text-muted-foreground font-medium mt-1">
-            Real-Time Coding Duels • Quizzes • Skill Arena
-          </p>
-        </div>
+      {/* Center Circular Logo (No text) */}
+      <div className="relative z-10 flex items-center justify-center pointer-events-none select-none">
+        {/* Soft emerald radial glow aura */}
+        <div className="absolute inset-0 rounded-full bg-emerald-500/25 blur-xl scale-125 pointer-events-none" />
+        <img
+          src="/logo.png"
+          alt="SkillSphere Logo"
+          className="w-24 h-24 sm:w-28 sm:h-28 object-contain rounded-full shadow-[0_0_35px_rgba(34,197,94,0.35)] relative z-10"
+        />
       </div>
 
       {/* Orbiting Tech Icons */}
@@ -362,23 +408,45 @@ export const BottomGradient = () => {
 // ==================== Main SignupCard Component ====================
 
 const TECH_ORBIT_ICONS: IconConfig[] = [
-  // Inner Orbit: Git Branch
+  // Inner Orbit (Radius 135): React, TypeScript, Express
   {
-    radius: 140,
-    duration: 20,
-    delay: 15,
-    className: 'size-10 text-emerald-500 border-emerald-500/30',
-    component: () => <GitBranch className="w-5 h-5" />,
+    radius: 135,
+    duration: 22,
+    delay: 0,
+    className: 'size-10 rounded-xl bg-card/90 border border-border shadow-md flex items-center justify-center p-2 backdrop-blur-md',
+    component: () => <ReactBadge />,
+  },
+  {
+    radius: 135,
+    duration: 22,
+    delay: 7.33,
+    className: 'size-10 rounded-xl bg-card/90 border border-border shadow-md flex items-center justify-center p-2 backdrop-blur-md',
+    component: () => <TypeScriptBadge />,
+  },
+  {
+    radius: 135,
+    duration: 22,
+    delay: 14.67,
+    className: 'size-10 rounded-xl bg-card/90 border border-border shadow-md flex items-center justify-center p-2 backdrop-blur-md',
+    component: () => <ExpressBadge />,
   },
 
-  // Outer Orbit: Shield Check
+  // Outer Orbit (Radius 215, reverse): Docker, Git
   {
-    radius: 225,
-    duration: 36,
-    delay: 27,
+    radius: 215,
+    duration: 32,
+    delay: 0,
     reverse: true,
-    className: 'size-11 text-indigo-400 border-indigo-400/30',
-    component: () => <ShieldCheck className="w-5.5 h-5.5" />,
+    className: 'size-11 rounded-xl bg-card/90 border border-border shadow-md flex items-center justify-center p-2.5 backdrop-blur-md',
+    component: () => <DockerBadge />,
+  },
+  {
+    radius: 215,
+    duration: 32,
+    delay: 16,
+    reverse: true,
+    className: 'size-11 rounded-xl bg-card/90 border border-border shadow-md flex items-center justify-center p-2.5 backdrop-blur-md',
+    component: () => <GitBadge />,
   },
 ];
 
@@ -486,7 +554,7 @@ export const SignupCard: React.FC = () => {
                 <img
                   src="/logo.png"
                   alt="SkillSphere Logo"
-                  className="w-10 h-10 object-contain drop-shadow-sm"
+                  className="w-10 h-10 object-contain drop-shadow-sm rounded-full"
                 />
                 <h2 className="font-extrabold text-2xl sm:text-3xl tracking-tight text-foreground">
                   SkillSphere
