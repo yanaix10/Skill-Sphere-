@@ -315,7 +315,7 @@ export const TechOrbitDisplay = memo(function TechOrbitDisplay({
       <div className="relative z-10 flex flex-col items-center justify-center gap-3 pointer-events-none select-none text-center px-4">
         <div className="w-20 h-20 md:w-24 md:h-24 rounded-2xl bg-gradient-to-tr from-primary/20 via-primary/10 to-transparent p-3.5 border border-primary/30 shadow-2xl backdrop-blur-md flex items-center justify-center">
           <img
-            src="/logo.svg"
+            src="/logo.png"
             alt="SkillSphere Logo"
             className="w-full h-full object-contain filter drop-shadow-md"
           />
@@ -484,7 +484,7 @@ export const SignupCard: React.FC = () => {
             <BoxReveal boxColor="var(--primary)" duration={0.3}>
               <div className="flex items-center gap-3">
                 <img
-                  src="/logo.svg"
+                  src="/logo.png"
                   alt="SkillSphere Logo"
                   className="w-10 h-10 object-contain drop-shadow-sm"
                 />
