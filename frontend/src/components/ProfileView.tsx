@@ -196,37 +196,37 @@ const ProfileView: React.FC<ProfileViewProps> = ({ data, userId, onEdit }) => {
         </div>
 
         {/* Rank & Rating Progression Card */}
-        <div className="mt-4 rounded-xl border border-border bg-secondary/30 p-3.5 space-y-3">
+        <div className="mt-4 rounded-xl border border-border bg-card p-4 space-y-3 shadow-xs">
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
+              <span className="text-[11px] font-mono uppercase tracking-wider text-foreground font-bold">
                 Current Standing
               </span>
               <div className="flex items-center gap-1.5">
-                <span className="text-sm font-bold text-foreground">
-                  {tier.name} <span className="text-xs font-normal text-muted-foreground">({tier.title})</span>
+                <span className="text-sm font-extrabold text-foreground">
+                  {tier.name} <span className="text-xs font-semibold text-foreground/70">({tier.title})</span>
                 </span>
               </div>
             </div>
             <div className="text-right">
-              <span className="text-xs font-bold font-mono text-primary tabular-nums">
-                {tier.rating} <span className="text-[10px] font-normal text-muted-foreground">Rating</span>
+              <span className="text-xs font-black font-mono text-primary tabular-nums">
+                {tier.rating} <span className="text-[10px] font-bold text-foreground">Rating</span>
               </span>
-              <span className="block text-[10px] text-muted-foreground font-mono">
+              <span className="block text-[11px] text-foreground font-mono font-bold">
                 {userData.points || tier.rating} XP
               </span>
             </div>
           </div>
 
           {/* Progress bar to next tier */}
-          <div className="space-y-1 pt-0.5">
-            <div className="flex justify-between text-[10px] text-muted-foreground font-mono">
+          <div className="space-y-1.5 pt-0.5">
+            <div className="flex justify-between text-[11px] text-foreground font-bold font-mono">
               <span>Progress</span>
-              <span>
+              <span className="text-foreground">
                 {tier.nextTier ? `${tier.toNextTier} pts to ${tier.nextTier.name}` : 'Top Tier Reached'}
               </span>
             </div>
-            <div className="h-1.5 w-full bg-secondary rounded-full overflow-hidden border border-border/80">
+            <div className="h-2 w-full bg-secondary rounded-full overflow-hidden border border-border">
               <div
                 className="h-full rounded-full transition-all duration-300"
                 style={{
@@ -238,23 +238,23 @@ const ProfileView: React.FC<ProfileViewProps> = ({ data, userId, onEdit }) => {
           </div>
 
           {/* Battle Stats Summary */}
-          <div className="grid grid-cols-3 gap-2 pt-1 border-t border-border/60">
-            <div className="text-center p-1.5 rounded-lg bg-secondary/50">
-              <span className="block text-[10px] text-muted-foreground uppercase">Quizzes</span>
-              <span className="text-xs font-bold text-foreground">
+          <div className="grid grid-cols-3 gap-2 pt-2 border-t border-border/80">
+            <div className="text-center p-2 rounded-lg bg-secondary/80 border border-border/60">
+              <span className="block text-[10px] text-foreground font-bold uppercase tracking-wider">Quizzes</span>
+              <span className="text-sm font-extrabold text-foreground">
                 {userData.quizzesCompleted || 0}
               </span>
             </div>
-            <div className="text-center p-1.5 rounded-lg bg-secondary/50">
-              <span className="block text-[10px] text-muted-foreground uppercase">Duels</span>
-              <span className="text-xs font-bold text-foreground">
+            <div className="text-center p-2 rounded-lg bg-secondary/80 border border-border/60">
+              <span className="block text-[10px] text-foreground font-bold uppercase tracking-wider">Duels</span>
+              <span className="text-sm font-extrabold text-foreground">
                 {userData.duelsWon || 0}W / {(userData.duelsPlayed || 0) - (userData.duelsWon || 0)}L
               </span>
             </div>
-            <div className="text-center p-1.5 rounded-lg bg-secondary/50">
-              <span className="block text-[10px] text-muted-foreground uppercase">Streak</span>
-              <span className="text-xs font-bold text-amber-500 flex items-center justify-center gap-1">
-                <Flame className="w-3.5 h-3.5 fill-amber-500/20" />
+            <div className="text-center p-2 rounded-lg bg-secondary/80 border border-border/60">
+              <span className="block text-[10px] text-foreground font-bold uppercase tracking-wider">Streak</span>
+              <span className="text-sm font-extrabold text-amber-500 flex items-center justify-center gap-1">
+                <Flame className="w-4 h-4 fill-amber-500/20" />
                 {userData.winStreak || 0}
               </span>
             </div>
@@ -262,13 +262,13 @@ const ProfileView: React.FC<ProfileViewProps> = ({ data, userId, onEdit }) => {
         </div>
 
         {/* Achievement Badges Showcase */}
-        <div className="mt-3.5 rounded-xl border border-border bg-secondary/30 p-3.5 space-y-2.5">
+        <div className="mt-3.5 rounded-xl border border-border bg-card p-4 space-y-3 shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-              <Trophy className="w-3.5 h-3.5 text-amber-500" />
+            <span className="text-xs font-bold text-foreground uppercase tracking-wider flex items-center gap-1.5">
+              <Trophy className="w-4 h-4 text-amber-500" />
               Badges & Milestones
             </span>
-            <span className="text-[10px] font-mono text-muted-foreground">
+            <span className="text-[11px] font-mono font-bold text-foreground">
               {userBadges.length} / {badgeKeys.length} Unlocked
             </span>
           </div>
@@ -282,36 +282,36 @@ const ProfileView: React.FC<ProfileViewProps> = ({ data, userId, onEdit }) => {
                 <div
                   key={key}
                   className={cn(
-                    'p-2 rounded-lg border text-left transition-all flex flex-col justify-between gap-1 min-h-[58px]',
+                    'p-2.5 rounded-lg border text-left transition-all flex flex-col justify-between gap-1.5 min-h-[64px]',
                     isUnlocked
-                      ? 'bg-card border-border shadow-xs'
-                      : 'bg-secondary/20 border-border/40 opacity-60'
+                      ? 'bg-secondary/40 border-border shadow-xs'
+                      : 'bg-secondary/15 border-border/50'
                   )}
                   title={badge.description}
                 >
                   <div className="flex items-center justify-between">
-                    <span className="p-1 rounded-md bg-secondary/60 shrink-0">
+                    <span className="p-1.5 rounded-md bg-secondary/80 shrink-0">
                       {badge.iconName === 'Target' && <Target className="w-4 h-4 text-rose-500" />}
-                      {badge.iconName === 'Zap' && <Zap className="w-4 h-4 text-cyan-400" />}
+                      {badge.iconName === 'Zap' && <Zap className="w-4 h-4 text-cyan-500" />}
                       {badge.iconName === 'Award' && <Award className="w-4 h-4 text-pink-500" />}
                       {badge.iconName === 'Flame' && <Flame className="w-4 h-4 text-amber-500" />}
-                      {badge.iconName === 'Globe' && <Globe className="w-4 h-4 text-blue-400" />}
-                      {badge.iconName === 'Brain' && <Brain className="w-4 h-4 text-purple-400" />}
+                      {badge.iconName === 'Globe' && <Globe className="w-4 h-4 text-blue-500" />}
+                      {badge.iconName === 'Brain' && <Brain className="w-4 h-4 text-purple-500" />}
                       {!['Target', 'Zap', 'Award', 'Flame', 'Globe', 'Brain'].includes(badge.iconName) && (
                         <Sparkles className="w-4 h-4 text-primary" />
                       )}
                     </span>
                     {isUnlocked ? (
-                      <CheckCircle2 className="w-3 h-3 text-emerald-500" />
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
                     ) : (
-                      <Lock className="w-2.5 h-2.5 text-muted-foreground" />
+                      <Lock className="w-3 h-3 text-foreground/60" />
                     )}
                   </div>
                   <div>
-                    <span className="block text-[11px] font-bold text-foreground leading-tight truncate">
+                    <span className="block text-xs font-bold text-foreground leading-tight truncate">
                       {badge.name}
                     </span>
-                    <span className="block text-[9px] text-muted-foreground truncate leading-tight">
+                    <span className="block text-[10px] text-foreground/80 font-medium truncate leading-tight mt-0.5">
                       {isUnlocked ? 'Unlocked' : badge.description}
                     </span>
                   </div>
@@ -322,43 +322,43 @@ const ProfileView: React.FC<ProfileViewProps> = ({ data, userId, onEdit }) => {
         </div>
 
         {/* Personal & Campus Details Card */}
-        <div className="mt-3.5 rounded-xl border border-border bg-secondary/30 p-3.5 space-y-3">
-          <div className="space-y-1.5">
-            <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider block">
+        <div className="mt-3.5 rounded-xl border border-border bg-card p-4 space-y-3.5 shadow-xs">
+          <div className="space-y-2">
+            <span className="text-xs font-bold text-foreground uppercase tracking-wider block">
               Personal Details
             </span>
-            <div className="flex justify-between text-xs py-0.5">
-              <span className="text-muted-foreground">Age</span>
-              <span className="font-medium text-foreground">{userData.age || 'N/A'}</span>
+            <div className="flex justify-between text-xs py-1 border-b border-border/50">
+              <span className="font-semibold text-foreground">Age</span>
+              <span className="font-bold text-foreground">{userData.age || 'N/A'}</span>
             </div>
-            <div className="flex justify-between text-xs py-0.5">
-              <span className="text-muted-foreground">Home City</span>
-              <span className="font-medium text-foreground">{userData.homeCity || 'N/A'}</span>
+            <div className="flex justify-between text-xs py-1">
+              <span className="font-semibold text-foreground">Home City</span>
+              <span className="font-bold text-foreground">{userData.homeCity || 'N/A'}</span>
             </div>
           </div>
 
-          <div className="border-t border-border/60 pt-3 space-y-1.5">
-            <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider block">
+          <div className="border-t border-border pt-3.5 space-y-2">
+            <span className="text-xs font-bold text-foreground uppercase tracking-wider block">
               Education
             </span>
-            <div className="flex justify-between text-xs py-0.5">
-              <span className="text-muted-foreground">College</span>
-              <span className="font-medium text-foreground truncate max-w-[160px] text-right">
+            <div className="flex justify-between text-xs py-1 border-b border-border/50">
+              <span className="font-semibold text-foreground">College</span>
+              <span className="font-bold text-foreground truncate max-w-[180px] text-right">
                 {userData.collegeName || 'N/A'}
               </span>
             </div>
-            <div className="flex justify-between text-xs py-0.5">
-              <span className="text-muted-foreground">Year</span>
-              <span className="font-medium text-foreground">{userData.year || 'N/A'}</span>
+            <div className="flex justify-between text-xs py-1">
+              <span className="font-semibold text-foreground">Year</span>
+              <span className="font-bold text-foreground">{userData.year || 'N/A'}</span>
             </div>
           </div>
 
           {userData.about && (
-            <div className="border-t border-border/60 pt-3 space-y-1.5">
-              <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider block">
+            <div className="border-t border-border pt-3.5 space-y-2">
+              <span className="text-xs font-bold text-foreground uppercase tracking-wider block">
                 About Campus
               </span>
-              <p className="text-xs text-muted-foreground italic leading-relaxed m-0">
+              <p className="text-xs text-foreground/90 font-medium leading-relaxed m-0">
                 "{userData.about}"
               </p>
             </div>

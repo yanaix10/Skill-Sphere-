@@ -10,25 +10,25 @@
 :root {
   color-scheme: light;
 
-  /* Neutrals */
+  /* Neutrals - Pitch black high contrast text */
   --background: #fafafa;
   --surface: #ffffff;
   --surface-muted: #f4f4f5;
   --card: #ffffff;
-  --card-foreground: #18181b;
+  --card-foreground: #000000;
   --popover: #ffffff;
-  --popover-foreground: #18181b;
+  --popover-foreground: #000000;
   --border: #e4e4e7;
   --input: #e4e4e7;
-  --text: #18181b;
-  --foreground: #18181b;
-  --text-muted: #71717a;
-  --muted-foreground: #71717a;
+  --text: #000000;
+  --foreground: #000000;
+  --text-muted: #09090b;
+  --muted-foreground: #09090b;
   --secondary: #f4f4f5;
-  --secondary-foreground: #18181b;
+  --secondary-foreground: #000000;
   --muted: #f4f4f5;
   --accent: #f4f4f5;
-  --accent-foreground: #18181b;
+  --accent-foreground: #000000;
 
   /* Brand accent — primary buttons & active states only (Teal/Emerald) */
   --primary: #0d9488;

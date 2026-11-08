@@ -47,8 +47,8 @@ export const SegmentedControl: React.FC<SegmentedControlProps> = ({
             className={cn(
               "flex-1 h-full inline-flex items-center justify-center whitespace-nowrap rounded-lg px-2.5 text-sm font-sans font-medium transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 cursor-pointer",
               isSelected
-                ? "bg-background text-foreground font-semibold shadow-xs border-2 border-black dark:border-white"
-                : "text-muted-foreground hover:text-foreground hover:bg-secondary/60 border-2 border-transparent"
+                ? "bg-background text-foreground font-bold shadow-xs border-2 border-foreground"
+                : "text-foreground font-semibold hover:bg-secondary/70 border-2 border-transparent"
             )}
           >
             {option.label}

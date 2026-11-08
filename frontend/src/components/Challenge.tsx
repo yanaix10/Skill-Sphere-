@@ -1505,14 +1505,14 @@ export default function Challenge({
           <h1 className="font-display font-bold text-2xl tracking-tight text-foreground">
             Create a 1v1 Challenge
           </h1>
-          <p className="font-sans font-normal text-xs leading-relaxed text-muted-foreground max-w-xs mx-auto">
+          <p className="font-sans font-medium text-xs leading-relaxed text-foreground/80 max-w-xs mx-auto">
             Select your preferred track and number of questions to start a real-time coding duel.
           </p>
         </div>
 
         {/* Section: Select Track */}
         <div className="space-y-1">
-          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider font-sans block">
+          <label className="text-xs font-bold text-foreground uppercase tracking-wider font-sans block">
             SELECT TRACK
           </label>
           <SegmentedControl
@@ -1533,7 +1533,7 @@ export default function Challenge({
 
         {/* Section: Number of Questions */}
         <div className="space-y-1">
-          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider font-sans block">
+          <label className="text-xs font-bold text-foreground uppercase tracking-wider font-sans block">
             NUMBER OF QUESTIONS
           </label>
           <SegmentedControl
