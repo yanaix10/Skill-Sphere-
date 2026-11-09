@@ -33,7 +33,7 @@ export function loadAllQuestions(): MatchQuestion[] {
     }
   }
 
-  console.warn('⚠️ questions.json not found on disk, returning empty list.');
+  console.warn('questions.json not found on disk, returning empty list.');
   return [];
 }
 

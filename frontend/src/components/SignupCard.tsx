@@ -39,7 +39,6 @@ const auth = getAuth(app);
 const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({ prompt: 'select_account' });
 
-// ==================== Input Component ====================
 
 export const Input = memo(
   forwardRef(function Input(
@@ -94,7 +93,6 @@ export const Input = memo(
 );
 Input.displayName = 'Input';
 
-// ==================== BoxReveal Component ====================
 
 type BoxRevealProps = {
   children: ReactNode;
@@ -176,7 +174,6 @@ export const BoxReveal = memo(function BoxReveal({
   );
 });
 
-// ==================== Ripple Component ====================
 
 type RippleProps = {
   mainCircleSize?: number;
@@ -229,7 +226,6 @@ export const Ripple = memo(function Ripple({
   );
 });
 
-// ==================== OrbitingCircles Component ====================
 
 type OrbitingCirclesProps = {
   className?: string;
@@ -288,7 +284,6 @@ export const OrbitingCircles = memo(function OrbitingCircles({
   );
 });
 
-// ==================== Orbit Tech Stack Badges ====================
 
 // React
 const ReactBadge = () => (
@@ -342,7 +337,6 @@ const TypeScriptBadge = () => (
   </div>
 );
 
-// ==================== TechOrbitDisplay Component ====================
 
 type IconConfig = {
   className?: string;
@@ -393,7 +387,6 @@ export const TechOrbitDisplay = memo(function TechOrbitDisplay({
   );
 });
 
-// ==================== BottomGradient Component ====================
 
 export const BottomGradient = () => {
   return (
@@ -404,7 +397,6 @@ export const BottomGradient = () => {
   );
 };
 
-// ==================== Main SignupCard Component ====================
 
 const TECH_ORBIT_ICONS: IconConfig[] = [
   // Inner Orbit (Radius 135): React, TypeScript, Express

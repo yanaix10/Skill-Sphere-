@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { createBrowserRouter, RouterProvider, Outlet, Navigate } from 'react-router-dom';
 import { auth } from './firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
-import SignupCard from './components/SignupCard';
+import LandingPage from './pages/LandingPage';
 import HomePage from './pages/HomePage';
 import DashboardPage from './pages/DashboardPage';
 import Profile from './components/Profile';
@@ -32,32 +32,12 @@ function Layout() {
   return (
     <div className="flex flex-col h-screen w-screen overflow-hidden bg-background text-foreground">
       <Navbar /> 
-      <main className="flex-1 overflow-hidden">
+      <main className="flex-1 overflow-y-auto min-h-0">
         <Outlet />
       </main>
     </div>
   );
 }
-
-const router = createBrowserRouter([
-  {
-    path: "/",
-    element: <Layout />,
-    errorElement: <RootErrorBoundary />,
-    children: [
-      { path: "/", element: <HomePage /> },
-      { path: "/dashboard", element: <DashboardPage /> },
-      { path: "/home", element: <DashboardPage /> },
-      { path: "/profile", element: <Profile /> },
-      { path: "/friends", element: <Friends /> },
-      { path: "/quizzes", element: <Quizzes /> },
-      { path: "/privacy", element: <PrivacyPolicy /> },
-      { path: "/terms", element: <TermsOfService /> },
-      { path: "/games", element: <Navigate to="/quizzes" replace /> },
-      { path: "*", element: <Navigate to="/quizzes" replace /> },
-    ]
-  }
-]);
 
 function AppContent() {
   const getInitialUser = (): User | null => {
@@ -104,19 +84,34 @@ function AppContent() {
       clearTimeout(timeout);
       unsubscribe();
     };
-  },[]);
-  
-  if(loading) return <div className="bg-background text-foreground h-screen w-screen flex items-center justify-center text-xl font-bold">Loading SkillSphere...</div>;
-  
-  const isPublicPage = typeof window !== "undefined" && (
-    window.location.pathname === "/privacy" || 
-    window.location.pathname === "/terms" ||
-    window.location.pathname === "/quizzes" ||
-    window.location.pathname === "/games"
-  );
+  }, []);
 
-  if(user === null && !isPublicPage){
-    return <SignupCard />;
+  const router = useMemo(() => createBrowserRouter([
+    {
+      path: "/",
+      element: <Layout />,
+      errorElement: <RootErrorBoundary />,
+      children: [
+        { path: "/", element: user ? <HomePage /> : <LandingPage /> },
+        { path: "/dashboard", element: user ? <DashboardPage /> : <Navigate to="/" replace /> },
+        { path: "/home", element: user ? <DashboardPage /> : <Navigate to="/" replace /> },
+        { path: "/profile", element: user ? <Profile /> : <Navigate to="/" replace /> },
+        { path: "/friends", element: user ? <Friends /> : <Navigate to="/" replace /> },
+        { path: "/quizzes", element: <Quizzes /> },
+        { path: "/privacy", element: <PrivacyPolicy /> },
+        { path: "/terms", element: <TermsOfService /> },
+        { path: "/games", element: <Navigate to="/quizzes" replace /> },
+        { path: "*", element: <Navigate to="/quizzes" replace /> },
+      ]
+    }
+  ]), [user]);
+  
+  if (loading) {
+    return (
+      <div className="bg-background text-foreground h-screen w-screen flex items-center justify-center text-xl font-bold font-sans">
+        Loading SkillSphere...
+      </div>
+    );
   }
 
   return <RouterProvider router={router} />;

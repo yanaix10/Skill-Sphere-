@@ -1,4 +1,5 @@
 import React from 'react';
+import { MessageSquare } from 'lucide-react';
 
 interface OnlineFriend {
   id: string;
@@ -43,7 +44,9 @@ const OnlineList: React.FC<OnlineListProps> = ({ friends = [], onSelect }) => {
                 </div>
               </div>
               <div className="flex gap-2">
-                <button className="size-8 rounded-lg bg-secondary text-secondary-foreground border border-border cursor-pointer flex items-center justify-center text-xs hover:bg-secondary/80">💬</button>
+                <button className="size-8 rounded-lg bg-secondary text-secondary-foreground border border-border cursor-pointer flex items-center justify-center text-xs hover:bg-secondary/80">
+                  <MessageSquare className="w-3.5 h-3.5 text-muted-foreground" />
+                </button>
               </div>
             </div>
           ))}

@@ -62,10 +62,17 @@ const DEFAULT_NOTIFICATIONS: FriendMessageNotification[] = [
   },
 ];
 
-const navigationLinks = [
+const authenticatedLinks = [
   { href: "/dashboard", label: "Home" },
   { href: "/quizzes", label: "Quizzes & duels" },
   { href: "/friends", label: "Friends" },
+];
+
+const publicLinks = [
+  { href: "/", label: "Overview" },
+  { href: "/quizzes", label: "Quizzes & duels" },
+  { href: "/privacy", label: "Privacy Policy" },
+  { href: "/terms", label: "Terms of Service" },
 ];
 
 export default function Navbar() {
@@ -180,7 +187,7 @@ export default function Navbar() {
                 <PopoverContent align="start" className="w-40 p-2 md:hidden bg-card border-border">
                   <NavigationMenu className="max-w-none *:w-full">
                     <NavigationMenuList className="flex-col items-start gap-1">
-                      {navigationLinks.map((link, index) => (
+                      {(currentUser ? authenticatedLinks : publicLinks).map((link, index) => (
                         <NavigationMenuItem key={index} className="w-full">
                           <Link
                             to={link.href}
@@ -214,7 +221,7 @@ export default function Navbar() {
             {/* Desktop Navigation menu */}
             <NavigationMenu className="max-md:hidden">
               <NavigationMenuList className="gap-1 sm:gap-2">
-                {navigationLinks.map((link, index) => (
+                {(currentUser ? authenticatedLinks : publicLinks).map((link, index) => (
                   <NavigationMenuItem key={index}>
                     <Link
                       to={link.href}

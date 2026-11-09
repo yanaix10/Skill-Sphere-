@@ -16,7 +16,7 @@ if (process.env.FIREBASE_SERVICE_ACCOUNT && process.env.FIREBASE_SERVICE_ACCOUNT
       serviceAccount = JSON.parse(decoded);
     }
   } catch (err: any) {
-    console.error("❌ Failed to parse FIREBASE_SERVICE_ACCOUNT environment variable:", err.message);
+    console.error("Failed to parse FIREBASE_SERVICE_ACCOUNT environment variable:", err.message);
   }
 }
 
@@ -40,7 +40,7 @@ if (!serviceAccount && process.env.GOOGLE_APPLICATION_CREDENTIALS) {
       serviceAccount = JSON.parse(content);
     }
   } catch (err: any) {
-    console.error("❌ Failed to read GOOGLE_APPLICATION_CREDENTIALS file:", err.message);
+    console.error("Failed to read GOOGLE_APPLICATION_CREDENTIALS file:", err.message);
   }
 }
 
@@ -50,13 +50,13 @@ if (serviceAccount && !admin.apps.length) {
     admin.initializeApp({
       credential: admin.credential.cert(serviceAccount),
     });
-    console.log("✅ Firebase Admin successfully initialized for project:", serviceAccount.project_id || "configured");
+    console.log("Firebase Admin successfully initialized for project:", serviceAccount.project_id || "configured");
   } catch (initErr: any) {
-    console.error("❌ Error initializing Firebase Admin SDK:", initErr.message);
+    console.error("Error initializing Firebase Admin SDK:", initErr.message);
   }
 } else if (!admin.apps.length) {
   console.warn(
-    "⚠️ Firebase Admin not initialized (no serviceAccountKey.json or FIREBASE_SERVICE_ACCOUNT env var provided). " +
+    "Firebase Admin not initialized (no serviceAccountKey.json or FIREBASE_SERVICE_ACCOUNT env var provided). " +
     "Token verification in authMiddleware will be disabled or mocked."
   );
 }

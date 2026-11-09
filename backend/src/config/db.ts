@@ -10,7 +10,7 @@ const collections: Record<string, Map<string, any>> = {
 };
 
 const setupInMemoryMock = () => {
-  console.warn("⚠️ SkillSphere: MongoDB Connection failed or MONGO_URI missing. Falling back to In-Memory Database Mode.");
+  console.warn("SkillSphere: MongoDB Connection failed or MONGO_URI missing. Falling back to In-Memory Database Mode.");
 
   // Stub mongoose.connect to resolve immediately
   mongoose.connect = async () => {

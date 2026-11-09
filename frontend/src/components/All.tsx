@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { MessageSquare } from 'lucide-react';
 import { db, auth } from '../firebase';
 import { collection, query, where, onSnapshot, doc, getDoc } from 'firebase/firestore';
 
@@ -87,7 +88,7 @@ const AllList: React.FC<AllListProps> = ({ onSelect, setActiveTab }) => {
                 }}
                 title="Message"
               >
-                💬
+                <MessageSquare className="w-3.5 h-3.5 text-muted-foreground" />
               </button>
             </div>
           </div>

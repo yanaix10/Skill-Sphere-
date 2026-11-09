@@ -78,7 +78,7 @@ export const Profile: React.FC = () => {
     const user = auth.currentUser;
     
     if (!user) {
-      alert("⚠️ Dev Bypass Mode: Profile data cannot be saved to the database without a real Google Login.");
+      alert("Dev Mode: Profile data cannot be saved to the database without a real Google Login.");
       return;
     }
 

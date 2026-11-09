@@ -133,7 +133,7 @@ async function executeWithJudge0(
       isSubmit: true
     };
   } catch (err: any) {
-    console.warn("⚠️ Judge0 execution failed or unavailable, falling back to local runner:", err.message);
+    console.warn("Judge0 execution failed or unavailable, falling back to local runner:", err.message);
     return null;
   }
 }
@@ -275,9 +275,7 @@ export async function evaluateCodeSubmission(options: CodeRunOptions): Promise<E
     }
   }
 
-  // =========================================================================
-  // Case A: MultiPL-E / Assertion-based Question
-  // =========================================================================
+  // MultiPL-E / Assertion-based Question Execution
   if (langSpec && (langSpec.testSuite || langSpec.sampleTests)) {
     const selectedTests = !isSubmit && langSpec.sampleTests
       ? langSpec.sampleTests
@@ -393,8 +391,8 @@ public class Main {
       judge0Result.isSubmit = isSubmit;
       if (judge0Result.success) {
         judge0Result.message = isSubmit
-          ? "🎉 Correct! All test cases passed!"
-          : "✅ Sample test case passed! Click SUBMIT SOLUTION to evaluate all test cases.";
+          ? "Correct! All test cases passed."
+          : "Sample test case passed. Click SUBMIT SOLUTION to evaluate all test cases.";
       }
       return judge0Result;
     }
@@ -407,8 +405,8 @@ public class Main {
       return {
         success: true,
         message: isSubmit
-          ? "🎉 Correct! All test cases passed."
-          : "✅ Sample test case passed! Click SUBMIT SOLUTION to evaluate all test cases.",
+          ? "Correct! All test cases passed."
+          : "Sample test case passed. Click SUBMIT SOLUTION to evaluate all test cases.",
         isSubmit,
         output: localResult.stdout.trim(),
         executionTimeMs: elapsed
@@ -423,9 +421,7 @@ public class Main {
     }
   }
 
-  // =========================================================================
-  // Case B: Legacy input/output Question (Backward Compatibility)
-  // =========================================================================
+  // Legacy input/output Question Execution
   const testCases = question?.testCases || [];
   if (!testCases || testCases.length === 0) {
     return {
@@ -487,8 +483,8 @@ int main() {
   return {
     success: true,
     message: isSubmit
-      ? "🎉 Correct! All test cases passed."
-      : "✅ Sample test case passed! Click SUBMIT SOLUTION to evaluate all test cases.",
+      ? "Correct! All test cases passed."
+      : "Sample test case passed. Click SUBMIT SOLUTION to evaluate all test cases.",
     isSubmit,
     executionTimeMs: Date.now() - startTime
   };

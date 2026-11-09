@@ -868,9 +868,7 @@ export default function Challenge({
     return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
   };
 
-  // =========================================================================
   // VIEW 1: ACTIVE CHALLENGE MATCH
-  // =========================================================================
   if (isStarted) {
     if (!currentMatchQuestion) {
       return (
@@ -1358,9 +1356,7 @@ export default function Challenge({
     );
   }
 
-  // =========================================================================
   // VIEW 2: LOBBY & VERSUS CARD (When Room is Active or Waiting)
-  // =========================================================================
   if (inRoom) {
     return (
       <div className="h-full w-full flex flex-col items-center justify-center p-6 bg-background text-foreground select-none font-sans">
@@ -1493,26 +1489,24 @@ export default function Challenge({
     );
   }
 
-  // =========================================================================
   // VIEW 3: IDLE ARENA PLACEHOLDER (Configuration Selectors before entering queue)
-  // =========================================================================
   return (
     <div className="h-full w-full flex flex-col items-center justify-center p-6 bg-background text-foreground select-none font-sans">
-      <div className="relative max-w-[360px] w-full bg-card border border-border rounded-2xl p-6 space-y-4 shadow-xs overflow-hidden">
+      <div className="relative max-w-sm w-full bg-card border border-border rounded-2xl p-6 space-y-5 shadow-xl overflow-hidden">
         <BorderBeam size={180} duration={10} />
 
         <div className="text-center space-y-1">
-          <h1 className="font-display font-bold text-2xl tracking-tight text-foreground">
+          <h2 className="font-bold text-xl tracking-tight text-foreground text-center mb-1">
             Create a 1v1 Challenge
-          </h1>
-          <p className="font-sans font-normal text-xs leading-relaxed text-muted-foreground max-w-xs mx-auto">
+          </h2>
+          <p className="font-sans font-normal text-xs leading-relaxed text-muted-foreground text-center">
             Select your preferred track and number of questions to start a real-time coding duel.
           </p>
         </div>
 
         {/* Section: Select Track */}
-        <div className="space-y-1">
-          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider font-sans block">
+        <div className="space-y-2">
+          <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground block">
             SELECT TRACK
           </label>
           <SegmentedControl
@@ -1532,8 +1526,8 @@ export default function Challenge({
         </div>
 
         {/* Section: Number of Questions */}
-        <div className="space-y-1">
-          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider font-sans block">
+        <div className="space-y-2">
+          <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground block">
             NUMBER OF QUESTIONS
           </label>
           <SegmentedControl
@@ -1551,7 +1545,7 @@ export default function Challenge({
         </div>
 
         {/* Action Button: Create Room */}
-        <Button
+        <button
           onClick={() => {
             const newCode = Math.random().toString(36).substring(2, 8).toUpperCase();
             setRoomCode(newCode);
@@ -1573,10 +1567,10 @@ export default function Challenge({
               questionCount: challengeConfig?.questionCount || 5,
             });
           }}
-          className="w-full h-10 font-sans font-semibold text-xs tracking-wide bg-primary text-primary-foreground hover:bg-primary/90 transition-all uppercase cursor-pointer"
+          className="w-full py-3.5 bg-[#00D2B4] text-black font-semibold rounded-xl hover:bg-[#00bda2] transition-colors duration-200 shadow-[0_4px_20px_rgba(0,210,180,0.2)] cursor-pointer text-xs sm:text-sm tracking-wide uppercase font-sans"
         >
           CREATE 1V1 ROOM
-        </Button>
+        </button>
       </div>
     </div>
   );

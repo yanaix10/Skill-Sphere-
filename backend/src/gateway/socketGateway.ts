@@ -182,9 +182,7 @@ export function setupSocketGateway(io: Server): void {
   io.on('connection', (socket: Socket) => {
     const auth = resolvePlayerAuth(socket);
 
-    // =========================================================================
     // Native Protocol: join_challenge (Creates or joins room)
-    // =========================================================================
     socket.on('join_challenge', async (rawPayload) => {
       try {
         const payload = joinChallengeSchema.parse(rawPayload);
@@ -274,9 +272,7 @@ export function setupSocketGateway(io: Server): void {
       }
     });
 
-    // =========================================================================
     // Native Protocol: sync_arena (Immediate direct state synchronization)
-    // =========================================================================
     socket.on('sync_arena', ({ challengeId }) => {
       const code = (challengeId || '').toUpperCase().trim();
       const match = manager.getMatchByRoomCode(code) || manager.getMatchBySocket(socket.id);
@@ -295,9 +291,7 @@ export function setupSocketGateway(io: Server): void {
       }
     });
 
-    // =========================================================================
     // Native Protocol: start_challenge (Host starts countdown)
-    // =========================================================================
     socket.on('start_challenge', ({ challengeId }) => {
       const match = manager.getMatchByRoomCode(challengeId) || manager.getMatchBySocket(socket.id);
       if (match && (match.state === 'waiting' || match.state === 'countdown')) {
@@ -310,9 +304,7 @@ export function setupSocketGateway(io: Server): void {
       }
     });
 
-    // =========================================================================
     // Native Protocol: code_submitted (Run Sample or Submit Solution)
-    // =========================================================================
     socket.on('code_submitted', async (rawPayload) => {
       try {
         const payload = codeSubmittedSchema.parse(rawPayload);
@@ -483,9 +475,7 @@ export function setupSocketGateway(io: Server): void {
       }
     });
 
-    // =========================================================================
     // Native Protocol: skip_question
-    // =========================================================================
     socket.on('skip_question', ({ challengeId }) => {
       const match = manager.getMatchByRoomCode(challengeId) || manager.getMatchBySocket(socket.id);
       if (match) {
@@ -497,9 +487,7 @@ export function setupSocketGateway(io: Server): void {
       }
     });
 
-    // =========================================================================
     // Native Protocol: surrender
-    // =========================================================================
     socket.on('surrender', ({ challengeId }) => {
       const match = manager.getMatchByRoomCode(challengeId) || manager.getMatchBySocket(socket.id);
       if (match) {
@@ -511,9 +499,7 @@ export function setupSocketGateway(io: Server): void {
       }
     });
 
-    // =========================================================================
     // Native Protocol: typing
-    // =========================================================================
     socket.on('typing', ({ challengeId }) => {
       const match = manager.getMatchByRoomCode(challengeId) || manager.getMatchBySocket(socket.id);
       if (match) {
@@ -522,9 +508,7 @@ export function setupSocketGateway(io: Server): void {
       }
     });
 
-    // =========================================================================
     // Native Protocol: leave_challenge
-    // =========================================================================
     socket.on('leave_challenge', ({ challengeId }) => {
       const match = manager.getMatchByRoomCode(challengeId) || manager.getMatchBySocket(socket.id);
       if (match) {
@@ -535,9 +519,7 @@ export function setupSocketGateway(io: Server): void {
       }
     });
 
-    // =========================================================================
     // Normalized Protocol: Quick Match Queue
-    // =========================================================================
     socket.on('queue:join', (rawPayload) => {
       try {
         const payload = queueJoinSchema.parse(rawPayload || {});
@@ -569,9 +551,7 @@ export function setupSocketGateway(io: Server): void {
       manager.leaveQueue(socket.id);
     });
 
-    // =========================================================================
     // Sandbox Run Protocol (Live Testing in Sandbox Area)
-    // =========================================================================
     socket.on('sandbox:run', async (payload: { code: string; language: string; questionId?: string }) => {
       try {
         const allQuestions = loadAllQuestions();

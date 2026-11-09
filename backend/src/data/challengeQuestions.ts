@@ -23,9 +23,7 @@ export interface UnifiedChallengeQuestion {
 }
 
 export const challengeQuestions: UnifiedChallengeQuestion[] = [
-  // ==========================================
   // WEBDEV: JAVASCRIPT (freeCodeCamp)
-  // ==========================================
   {
     id: "fcc_reverse_string",
     name: "fcc_reverse_string",
@@ -136,9 +134,7 @@ export const challengeQuestions: UnifiedChallengeQuestion[] = [
     points: 30
   },
 
-  // ==========================================
   // WEBDEV: TYPESCRIPT (Type Challenges)
-  // ==========================================
   {
     id: "tc_pick",
     name: "tc_pick",
@@ -262,9 +258,7 @@ export const challengeQuestions: UnifiedChallengeQuestion[] = [
     points: 20
   },
 
-  // ==========================================
   // WEBDEV: REACT (freeCodeCamp React)
-  // ==========================================
   {
     id: "react_simple_jsx",
     name: "react_simple_jsx",
@@ -327,9 +321,7 @@ export const challengeQuestions: UnifiedChallengeQuestion[] = [
     points: 20
   },
 
-  // ==========================================
   // DSA: ALGORITHMS (MBPP & HumanEval)
-  // ==========================================
   {
     id: "mbpp_3",
     name: "mbpp_3",
@@ -377,9 +369,7 @@ export const challengeQuestions: UnifiedChallengeQuestion[] = [
     points: 10
   },
 
-  // ==========================================
   // DSA: BUG FIXING (QuixBugs & DebugBench)
-  // ==========================================
   {
     id: "qb_bitcount",
     name: "qb_bitcount",
