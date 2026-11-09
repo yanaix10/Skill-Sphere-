@@ -3,6 +3,8 @@
 SkillSphere is a real-time developer workspace and skill-building platform featuring 1v1 coding duels and interactive technical assessments.
 It unifies academic and developer workflows through Google Calendar, Google Classroom, and developer activity tracking.
 
+Live Application: [https://xskillsphere.vercel.app](https://xskillsphere.vercel.app)
+
 ---
 
 ## Preview
