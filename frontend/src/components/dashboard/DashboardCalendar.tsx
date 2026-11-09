@@ -15,27 +15,18 @@ import {
   Grid3x3,
   List,
   LogOut,
-  UserCheck,
   ShieldCheck,
   Download,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { auth, googleProvider } from "../../firebase";
-import { signInWithPopup } from "firebase/auth";
-import { BACKEND_URL } from "../../utils/api";
-
-export interface CalendarEvent {
-  id: string;
-  title: string;
-  date: string; // YYYY-MM-DD
-  startTime: string; // e.g. "10:30 AM"
-  endTime: string; // e.g. "11:15 AM"
-  meetLink?: string;
-  category: "Meeting" | "Duel" | "Class" | "Interview" | "Task";
-  organizer: string;
-  description?: string;
-  color?: string;
-}
+import {
+  requestGoogleAccess,
+  fetchGoogleCalendarEvents,
+  disconnectGoogle,
+  getGoogleEmail,
+  isGoogleConnected,
+  CalendarEvent,
+} from "../../services/googleAuthService";
 
 const CATEGORY_COLORS: Record<string, { bg: string; text: string; badge: string }> = {
   Meeting:   { bg: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-l-2 border-blue-500", text: "text-blue-600 dark:text-blue-400", badge: "bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/30" },
@@ -62,26 +53,14 @@ export const DashboardCalendar: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [isSyncing, setIsSyncing] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
-  const [showAccountModal, setShowAccountModal] = useState(false);
 
   const [isConnected, setIsConnected] = useState<boolean>(() => {
-    return localStorage.getItem("skillsphere_calendar_connected") === "true";
+    return isGoogleConnected() || localStorage.getItem("skillsphere_calendar_connected") === "true";
   });
 
-  const user = auth.currentUser;
   const [calendarEmail, setCalendarEmail] = useState<string>(() => {
-    return localStorage.getItem("skillsphere_calendar_email") || "";
+    return getGoogleEmail() || localStorage.getItem("skillsphere_calendar_email") || "";
   });
-  const [isCollegeAccount, setIsCollegeAccount] = useState<boolean>(() => {
-    return localStorage.getItem("skillsphere_calendar_is_college") === "true";
-  });
-  const [collegeEmailInput, setCollegeEmailInput] = useState<string>("");
-
-  const effectiveEmail = calendarEmail || user?.email || "";
-
-  const getUserId = useCallback(() => {
-    return auth.currentUser?.uid || localStorage.getItem("skillsphere_current_user_id") || "default_user";
-  }, []);
 
   const saveEvents = (data: CalendarEvent[]) => {
     setEvents(data);
@@ -91,85 +70,54 @@ export const DashboardCalendar: React.FC = () => {
   };
 
   const fetchLiveEvents = useCallback(async () => {
-    const userId = getUserId();
     try {
       setIsSyncing(true);
-      const res = await fetch(`${BACKEND_URL}/api/google/calendar/events?userId=${encodeURIComponent(userId)}`);
-      const data = await res.json();
-      if (data.success && Array.isArray(data.events)) {
-        saveEvents(data.events);
+      const liveEvents = await fetchGoogleCalendarEvents();
+      saveEvents(liveEvents);
+      setIsConnected(true);
+      localStorage.setItem("skillsphere_calendar_connected", "true");
+    } catch (err: any) {
+      console.warn("Could not fetch Google Calendar events:", err);
+      if (err.message && err.message.includes("expired")) {
+        setIsConnected(false);
       }
-    } catch (err) {
-      console.warn("Failed to fetch Google Calendar events:", err);
     } finally {
       setIsSyncing(false);
     }
-  }, [getUserId]);
+  }, []);
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("google_sync") === "success") {
-      const email = params.get("email");
-      if (email) {
-        setCalendarEmail(email);
-        localStorage.setItem("skillsphere_calendar_email", email);
-      }
-      setIsConnected(true);
-      localStorage.setItem("skillsphere_calendar_connected", "true");
-      fetchLiveEvents();
-      // Clean query params from URL
-      window.history.replaceState({}, document.title, window.location.pathname);
-    } else if (isConnected) {
+    if (isConnected) {
       fetchLiveEvents();
     }
   }, [fetchLiveEvents, isConnected]);
 
   const handleConnectGoogle = async () => {
     setIsSyncing(true);
-    const userId = getUserId();
     try {
-      const res = await fetch(`${BACKEND_URL}/api/google/auth-url?userId=${encodeURIComponent(userId)}`);
-      const data = await res.json();
-      if (data.url) {
-        window.location.href = data.url;
-        return;
+      const { email } = await requestGoogleAccess();
+      if (email) {
+        setCalendarEmail(email);
+        localStorage.setItem("skillsphere_calendar_email", email);
       }
+      setIsConnected(true);
+      localStorage.setItem("skillsphere_calendar_connected", "true");
+      await fetchLiveEvents();
     } catch (e: any) {
-      console.warn("Failed to get Google auth URL, falling back:", e);
-      setShowAccountModal(true);
+      console.warn("Google Sign-In failed:", e);
+      alert(e.message || "Failed to sign in with Google.");
     } finally {
       setIsSyncing(false);
     }
   };
 
-  const handleDisconnect = async () => {
-    const userId = getUserId();
-    try {
-      await fetch(`${BACKEND_URL}/api/google/disconnect`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId }),
-      });
-    } catch {}
+  const handleDisconnect = () => {
+    disconnectGoogle();
     setIsConnected(false);
     setCalendarEmail("");
     localStorage.removeItem("skillsphere_calendar_email");
     localStorage.removeItem("skillsphere_calendar_connected");
-    localStorage.removeItem("skillsphere_calendar_is_college");
     saveEvents([]);
-  };
-
-  const handleSaveCollegeEmail = () => {
-    if (!collegeEmailInput.trim()) return;
-    const clean = collegeEmailInput.trim().toLowerCase();
-    setCalendarEmail(clean);
-    setIsConnected(true);
-    setIsCollegeAccount(true);
-    localStorage.setItem("skillsphere_calendar_email", clean);
-    localStorage.setItem("skillsphere_calendar_connected", "true");
-    localStorage.setItem("skillsphere_calendar_is_college", "true");
-    setShowAccountModal(false);
-    handleSync();
   };
 
   const handleSync = () => {
@@ -302,20 +250,13 @@ export const DashboardCalendar: React.FC = () => {
         {/* Toolbar actions show ONLY when connected */}
         {isConnected && (
           <div className="flex flex-wrap items-center gap-2">
-            {/* Account Switcher Pill */}
-            <button
-              onClick={() => setShowAccountModal(true)}
-              className="px-2.5 py-1.5 rounded-md bg-card hover:bg-surface-muted border border-border flex items-center gap-2 text-[12px] text-foreground transition-all cursor-pointer shadow-xs"
-              title="Switch between Personal and College Google Account"
-            >
-              <div className={cn("w-2 h-2 rounded-full shrink-0", isCollegeAccount ? "bg-emerald-500 ring-2 ring-emerald-500/30" : "bg-primary")} />
-              <span className="font-mono text-[11px] text-foreground max-w-[180px] sm:max-w-[220px] truncate">
-                {effectiveEmail}
+            {/* Account Pill */}
+            <div className="px-2.5 py-1.5 rounded-md bg-card border border-border flex items-center gap-2 text-[12px] text-foreground shadow-xs">
+              <div className="w-2 h-2 rounded-full shrink-0 bg-emerald-500 ring-2 ring-emerald-500/30" />
+              <span className="font-mono text-[11px] text-foreground max-w-[200px] truncate">
+                {calendarEmail || "Connected"}
               </span>
-              <span className="text-[10px] text-primary font-medium pl-1 border-l border-border/80">
-                {isCollegeAccount ? "College" : "Personal"}
-              </span>
-            </button>
+            </div>
 
             {/* Direct Open in Google Calendar Web App */}
             <a
@@ -377,15 +318,9 @@ export const DashboardCalendar: React.FC = () => {
               <CalendarIcon className="w-5 h-5" />
             </div>
             <div className="space-y-1">
-              <div className="flex flex-wrap items-center gap-2">
-                <h4 className="text-[14px] font-semibold text-foreground m-0">Connect Google Calendar</h4>
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 text-[11px] font-medium">
-                  <ShieldCheck className="w-3 h-3" />
-                  Verified Safe Sign-In
-                </span>
-              </div>
+              <h4 className="text-[15px] font-semibold text-foreground m-0">Connect Google Calendar</h4>
               <p className="text-[12px] text-muted-foreground m-0 max-w-xl">
-                Sign in with your personal or college Google account. Connects safely without requesting sensitive mailbox or restricted admin scopes.
+                Sign in with your personal or college Google account to sync your schedule, lectures, and upcoming meetings.
               </p>
             </div>
           </div>
@@ -394,7 +329,7 @@ export const DashboardCalendar: React.FC = () => {
             <button
               onClick={handleConnectGoogle}
               disabled={isSyncing}
-              className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-[12px] font-semibold flex items-center gap-2 cursor-pointer border-none shadow-xs transition-all disabled:opacity-60"
+              className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-[13px] font-semibold flex items-center gap-2 cursor-pointer border-none shadow-xs transition-all disabled:opacity-60"
             >
               <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
                 <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
@@ -403,12 +338,6 @@ export const DashboardCalendar: React.FC = () => {
                 <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
               </svg>
               <span>{isSyncing ? "Connecting..." : "Sign in with Google"}</span>
-            </button>
-            <button
-              onClick={() => setShowAccountModal(true)}
-              className="px-3.5 py-2 rounded-xl bg-secondary hover:bg-secondary/80 text-foreground text-[12px] font-medium cursor-pointer border border-border transition-colors"
-            >
-              Manual Link
             </button>
           </div>
         </div>
@@ -758,88 +687,6 @@ export const DashboardCalendar: React.FC = () => {
               </button>
             </div>
           </form>
-        </div>
-      )}
-
-      {/* Switch / Link College Google Account Modal */}
-      {showAccountModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="w-full max-w-md rounded-2xl bg-card border border-border p-5 space-y-4 shadow-2xl animate-in zoom-in-95 duration-150">
-            <div className="flex items-center justify-between pb-2 border-b border-border">
-              <div className="flex items-center gap-2">
-                <CalendarIcon className="w-4 h-4 text-blue-500" />
-                <h3 className="text-[14px] font-semibold text-foreground">
-                  Link College / University Google Calendar
-                </h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowAccountModal(false)}
-                className="p-1 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary cursor-pointer border-none bg-transparent"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <div className="flex items-center gap-2 p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-[11px] text-emerald-700 dark:text-emerald-300">
-              <ShieldCheck className="w-4 h-4 shrink-0 text-emerald-500" />
-              <span>
-                Standard Google OAuth: Safe for institutional (@vitstudent.ac.in, .edu) and personal Gmail accounts without administrator restrictions.
-              </span>
-            </div>
-
-            <p className="text-[12px] text-muted-foreground">
-              Link your college / institutional Google Calendar account to pull classes, exams, lab schedules, and meetings into SkillSphere.
-            </p>
-
-            <div className="space-y-3">
-              <div>
-                <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block mb-1">
-                  College Institutional Email Address
-                </label>
-                <input
-                  type="email"
-                  placeholder="e.g. naitik.yadav@vitstudent.ac.in"
-                  value={collegeEmailInput}
-                  onChange={(e) => setCollegeEmailInput(e.target.value)}
-                  className="w-full px-3 py-2 bg-background border border-border rounded-lg text-[13px] text-foreground focus:outline-none focus:ring-1 focus:ring-primary font-mono"
-                />
-              </div>
-
-              {effectiveEmail && (
-                <div className="p-3 rounded-lg bg-secondary/30 border border-border text-[12px] space-y-1">
-                  <div className="text-muted-foreground">Active Calendar Account:</div>
-                  <div className="font-mono text-foreground text-[12px] font-medium break-all">
-                    {effectiveEmail} {isCollegeAccount && <span className="text-blue-500 font-semibold">(College Linked)</span>}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="pt-2 flex flex-col gap-2">
-              <button
-                type="button"
-                onClick={handleConnectGoogle}
-                className="w-full py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-[12px] font-semibold flex items-center justify-center gap-2 cursor-pointer border-none transition-colors"
-              >
-                <svg className="w-4 h-4" viewBox="0 0 24 24">
-                  <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-                  <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                  <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
-                  <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
-                </svg>
-                <span>Authorize with Google OAuth</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={handleSaveCollegeEmail}
-                className="w-full py-2 rounded-lg bg-secondary hover:bg-secondary/80 text-foreground text-[12px] font-semibold cursor-pointer border border-border transition-colors"
-              >
-                Save College Email Manually
-              </button>
-            </div>
-          </div>
         </div>
       )}
     </div>
