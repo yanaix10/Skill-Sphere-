@@ -1,45 +1,35 @@
 # SkillSphere
 
-> [!WARNING]
-> ### Project Under Active Development
-> This project is currently under active development. Features, architecture, and documentation are evolving rapidly. Updates will follow soon.
+SkillSphere is a real-time developer workspace and skill-building platform featuring 1v1 coding duels and interactive technical assessments.
+It unifies academic and developer workflows through Google Calendar, Google Classroom, and developer activity tracking.
 
 ---
 
-## Overview
+## Preview
 
-SkillSphere is a real-time competitive programming arena, web development challenge platform, and developer social hub. It connects developers through synchronized 1v1 coding duels, timed skill assessments, and collaborative developer tools.
+![SkillSphere Dashboard](docs/screenshots/dashboard.png)
 
----
-
-## Key Features
-
-### 1v1 Real-Time Arena
-* **DSA Sprint**: Synchronized algorithmic challenges supporting Python, C++, JavaScript, and Java.
-* **Web Dev Arena**: Practical frontend and backend challenges spanning JavaScript and TypeScript type systems.
-* **Server Authority**: Synchronized match clocks, anti-race submission buffers, and disconnect grace periods.
-* **State Management**: Resilient session persistence and automatic reconnection across page reloads and tab reopenings.
-
-### Practice Quizzes and Assessments
-* Timed skill evaluations across Web Development, Linux, DevOps, Algorithms, and Databases.
-* Monaco editor integration with sample assertions and test runner execution.
-* In-session answer persistence and performance breakdown analytics.
-
-### Developer Social Hub
-* Multi-column layout with real-time messaging.
-* Developer profiles, skill records, and activity tracking.
-* Dark and light theme modes.
+![SkillSphere Home](docs/screenshots/home.jpg)
 
 ---
 
-## Tech Stack
+## Features
 
-* **Frontend**: React 19, TypeScript, Vite, Tailwind CSS, Monaco Editor, Lucide Icons
-* **Backend**: Node.js, Express, Socket.IO, TypeScript, MongoDB, Firebase
-* **Execution**: Multi-language runner architecture with TypeScript compiler diagnostics and sandbox runners
+- Real-time 1v1 coding duels with synchronized timers and multi-language execution.
+- Interactive practice quizzes across Web Development, Algorithms, and DevOps.
+- Centralized developer dashboard with task tracking and GitHub activity metrics.
+- Seamless Google Classroom and Google Calendar sync for coursework and meetings.
+- Social networking with real-time peer messaging and profile customization.
+- Dark, light, and system theme support with dynamic canvas backgrounds.
 
 ---
 
-## Attributions
+## Feature Requests
 
-Third-party datasets and benchmarks are documented in [ATTRIBUTION.md](ATTRIBUTION.md).
+The project is ready to accept any features. Feel free to open an issue to suggest improvements or new functionality.
+
+---
+
+## Thank You
+
+Thank you for checking out SkillSphere.
