@@ -22,6 +22,7 @@ import {
 import { cn } from "@/lib/utils";
 import { auth, googleProvider } from "../../firebase";
 import { signInWithPopup } from "firebase/auth";
+import { BACKEND_URL } from "../../utils/api";
 
 export interface CalendarEvent {
   id: string;
@@ -78,6 +79,10 @@ export const DashboardCalendar: React.FC = () => {
 
   const effectiveEmail = calendarEmail || user?.email || "";
 
+  const getUserId = useCallback(() => {
+    return auth.currentUser?.uid || localStorage.getItem("skillsphere_current_user_id") || "default_user";
+  }, []);
+
   const saveEvents = (data: CalendarEvent[]) => {
     setEvents(data);
     try {
@@ -85,27 +90,67 @@ export const DashboardCalendar: React.FC = () => {
     } catch {}
   };
 
+  const fetchLiveEvents = useCallback(async () => {
+    const userId = getUserId();
+    try {
+      setIsSyncing(true);
+      const res = await fetch(`${BACKEND_URL}/api/google/calendar/events?userId=${encodeURIComponent(userId)}`);
+      const data = await res.json();
+      if (data.success && Array.isArray(data.events)) {
+        saveEvents(data.events);
+      }
+    } catch (err) {
+      console.warn("Failed to fetch Google Calendar events:", err);
+    } finally {
+      setIsSyncing(false);
+    }
+  }, [getUserId]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("google_sync") === "success") {
+      const email = params.get("email");
+      if (email) {
+        setCalendarEmail(email);
+        localStorage.setItem("skillsphere_calendar_email", email);
+      }
+      setIsConnected(true);
+      localStorage.setItem("skillsphere_calendar_connected", "true");
+      fetchLiveEvents();
+      // Clean query params from URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    } else if (isConnected) {
+      fetchLiveEvents();
+    }
+  }, [fetchLiveEvents, isConnected]);
+
   const handleConnectGoogle = async () => {
     setIsSyncing(true);
+    const userId = getUserId();
     try {
-      const res = await signInWithPopup(auth, googleProvider);
-      if (res.user?.email) {
-        setCalendarEmail(res.user.email);
-        setIsConnected(true);
-        setIsCollegeAccount(res.user.email.endsWith(".edu") || res.user.email.includes("student") || res.user.email.includes(".ac."));
-        localStorage.setItem("skillsphere_calendar_email", res.user.email);
-        localStorage.setItem("skillsphere_calendar_connected", "true");
-        localStorage.setItem("skillsphere_calendar_is_college", String(res.user.email.endsWith(".edu") || res.user.email.includes(".ac.")));
+      const res = await fetch(`${BACKEND_URL}/api/google/auth-url?userId=${encodeURIComponent(userId)}`);
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+        return;
       }
     } catch (e: any) {
-      console.warn("Google popup auth:", e);
+      console.warn("Failed to get Google auth URL, falling back:", e);
       setShowAccountModal(true);
     } finally {
       setIsSyncing(false);
     }
   };
 
-  const handleDisconnect = () => {
+  const handleDisconnect = async () => {
+    const userId = getUserId();
+    try {
+      await fetch(`${BACKEND_URL}/api/google/disconnect`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId }),
+      });
+    } catch {}
     setIsConnected(false);
     setCalendarEmail("");
     localStorage.removeItem("skillsphere_calendar_email");
@@ -128,10 +173,7 @@ export const DashboardCalendar: React.FC = () => {
   };
 
   const handleSync = () => {
-    setIsSyncing(true);
-    setTimeout(() => {
-      setIsSyncing(false);
-    }, 1000);
+    fetchLiveEvents();
   };
 
   const getGoogleCalendarUrl = (ev: CalendarEvent) => {

@@ -16,6 +16,7 @@ import {
 import { cn } from "@/lib/utils";
 import { auth, googleProvider } from "../../firebase";
 import { signInWithPopup } from "firebase/auth";
+import { BACKEND_URL } from "../../utils/api";
 
 export interface ClassroomCourse {
   id: string;
@@ -95,30 +96,76 @@ export const DashboardClassroom: React.FC = () => {
     } catch {}
   };
 
+  const getUserId = () => {
+    return auth.currentUser?.uid || localStorage.getItem("skillsphere_current_user_id") || "default_user";
+  };
+
+  const fetchLiveClassroom = async () => {
+    const userId = getUserId();
+    try {
+      setIsSyncing(true);
+      const res = await fetch(`${BACKEND_URL}/api/google/classroom/assignments?userId=${encodeURIComponent(userId)}`);
+      const data = await res.json();
+      if (data.success) {
+        if (Array.isArray(data.courses) && data.courses.length > 0) {
+          saveCourses(data.courses);
+        }
+        if (Array.isArray(data.assignments) && data.assignments.length > 0) {
+          saveAssignments(data.assignments);
+        }
+      }
+    } catch (err) {
+      console.warn("Failed to fetch Google Classroom data:", err);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("google_sync") === "success") {
+      const email = params.get("email");
+      if (email) {
+        setClassroomEmail(email);
+        localStorage.setItem("skillsphere_classroom_email", email);
+      }
+      setIsConnected(true);
+      localStorage.setItem("skillsphere_classroom_connected", "true");
+      fetchLiveClassroom();
+      window.history.replaceState({}, document.title, window.location.pathname);
+    } else if (isConnected) {
+      fetchLiveClassroom();
+    }
+  }, [isConnected]);
+
   // Real Google Sign-In with OAuth Popup & Permissions Consent
   const handleConnectGoogle = async () => {
     setIsSyncing(true);
+    const userId = getUserId();
     try {
-      const result = await signInWithPopup(auth, googleProvider);
-      const googleUser = result.user;
-      if (googleUser && googleUser.email) {
-        setClassroomEmail(googleUser.email);
-        setIsConnected(true);
-        setIsCollegeAccount(googleUser.email.endsWith(".edu") || googleUser.email.includes("student") || googleUser.email.includes(".ac."));
-        localStorage.setItem("skillsphere_classroom_email", googleUser.email);
-        localStorage.setItem("skillsphere_classroom_connected", "true");
-        localStorage.setItem("skillsphere_classroom_is_college", String(googleUser.email.endsWith(".edu") || googleUser.email.includes(".ac.")));
+      const res = await fetch(`${BACKEND_URL}/api/google/auth-url?userId=${encodeURIComponent(userId)}`);
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+        return;
       }
     } catch (err: any) {
-      console.warn("Google Sign-In Popup:", err);
-      // Fallback for sandboxed environments or popup blockers
+      console.warn("Google Sign-In:", err);
       setShowAccountModal(true);
     } finally {
       setIsSyncing(false);
     }
   };
 
-  const handleDisconnect = () => {
+  const handleDisconnect = async () => {
+    const userId = getUserId();
+    try {
+      await fetch(`${BACKEND_URL}/api/google/disconnect`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId }),
+      });
+    } catch {}
     setIsConnected(false);
     setClassroomEmail("");
     localStorage.removeItem("skillsphere_classroom_connected");
@@ -142,10 +189,7 @@ export const DashboardClassroom: React.FC = () => {
   };
 
   const handleSync = () => {
-    setIsSyncing(true);
-    setTimeout(() => {
-      setIsSyncing(false);
-    }, 1200);
+    fetchLiveClassroom();
   };
 
   // Form state for adding custom assignment
