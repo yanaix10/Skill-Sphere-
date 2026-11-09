@@ -5,7 +5,6 @@ import {
   ExternalLink,
   RefreshCw,
   Plus,
-  BookOpen,
   Check,
   X,
   LogOut,
@@ -46,14 +45,14 @@ export const DashboardClassroom: React.FC = () => {
   });
 
   const [isConnected, setIsConnected] = useState<boolean>(() => {
-    return isGoogleConnected() || localStorage.getItem("skillsphere_classroom_connected") === "true";
+    return isGoogleConnected('classroom') || localStorage.getItem("skillsphere_classroom_connected") === "true";
   });
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
   const [filter, setFilter] = useState<"pending" | "submitted" | "all">("pending");
   const [showAddModal, setShowAddModal] = useState<boolean>(false);
 
   const [classroomEmail, setClassroomEmail] = useState<string>(() => {
-    return getGoogleEmail() || localStorage.getItem("skillsphere_classroom_email") || "";
+    return getGoogleEmail('classroom') || localStorage.getItem("skillsphere_classroom_email") || "";
   });
 
   const saveAssignments = (data: ClassroomAssignment[]) => {
@@ -74,10 +73,10 @@ export const DashboardClassroom: React.FC = () => {
     try {
       setIsSyncing(true);
       const data = await fetchGoogleClassroomData();
-      if (Array.isArray(data.courses) && data.courses.length > 0) {
+      if (Array.isArray(data.courses)) {
         saveCourses(data.courses);
       }
-      if (Array.isArray(data.assignments) && data.assignments.length > 0) {
+      if (Array.isArray(data.assignments)) {
         saveAssignments(data.assignments);
       }
       setIsConnected(true);
@@ -101,7 +100,7 @@ export const DashboardClassroom: React.FC = () => {
   const handleConnectGoogle = async () => {
     setIsSyncing(true);
     try {
-      const { email } = await requestGoogleAccess();
+      const { email } = await requestGoogleAccess('classroom');
       if (email) {
         setClassroomEmail(email);
         localStorage.setItem("skillsphere_classroom_email", email);
@@ -118,7 +117,7 @@ export const DashboardClassroom: React.FC = () => {
   };
 
   const handleDisconnect = () => {
-    disconnectGoogle();
+    disconnectGoogle('classroom');
     setIsConnected(false);
     setClassroomEmail("");
     localStorage.removeItem("skillsphere_classroom_connected");
@@ -245,18 +244,31 @@ export const DashboardClassroom: React.FC = () => {
               onClick={handleSync}
               disabled={isSyncing}
               className="px-3 py-1.5 rounded-md bg-surface-muted hover:bg-surface-muted/80 text-foreground text-[12px] font-medium flex items-center gap-1.5 transition-colors cursor-pointer border border-border"
-              title="Refresh Google Classroom sync"
+              title="Refresh Google Classroom assignments"
             >
               <RefreshCw className={cn("w-3.5 h-3.5 text-primary", isSyncing && "animate-spin")} />
               <span>{isSyncing ? "Syncing..." : "Sync"}</span>
             </button>
 
+            {/* Switch Account */}
+            <button
+              onClick={handleConnectGoogle}
+              disabled={isSyncing}
+              className="px-2.5 py-1.5 rounded-md bg-surface-muted hover:bg-surface-muted/80 text-foreground text-[12px] font-medium flex items-center gap-1.5 transition-colors cursor-pointer border border-border"
+              title="Switch to your college or personal Google account"
+            >
+              <RefreshCw className="w-3.5 h-3.5 text-muted-foreground" />
+              <span>Switch Account</span>
+            </button>
+
+            {/* Prominent Logout Google Button */}
             <button
               onClick={handleDisconnect}
-              className="p-1.5 rounded-md bg-surface-muted hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors cursor-pointer border border-border"
-              title="Disconnect Google Classroom"
+              className="px-2.5 py-1.5 rounded-md bg-destructive/10 hover:bg-destructive/20 text-destructive text-[12px] font-semibold flex items-center gap-1.5 transition-colors cursor-pointer border border-destructive/20"
+              title="Log out from Google Classroom"
             >
               <LogOut className="w-3.5 h-3.5" />
+              <span>Logout Google</span>
             </button>
 
             <button
@@ -280,7 +292,7 @@ export const DashboardClassroom: React.FC = () => {
             <div className="space-y-1">
               <h4 className="text-[15px] font-semibold text-foreground m-0">Connect Google Classroom</h4>
               <p className="text-[12px] text-muted-foreground m-0 max-w-xl">
-                Sign in with your personal or college Google Workspace account to sync your enrolled courses and upcoming coursework deadlines.
+                Sign in with your college Google Workspace account to sync your active coursework assignments and deadlines.
               </p>
             </div>
           </div>
@@ -302,78 +314,6 @@ export const DashboardClassroom: React.FC = () => {
           </div>
         </div>
       )}
-
-      {/* Enrolled Courses or Launch Portal */}
-      {courses.length > 0 ? (
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h3 className="text-[14px] font-semibold text-foreground flex items-center gap-1.5">
-              <BookOpen className="w-3.5 h-3.5 text-primary" />
-              Enrolled Google Classroom Courses ({courses.length})
-            </h3>
-            <a
-              href="https://classroom.google.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-[12px] text-primary hover:underline flex items-center gap-1 font-semibold"
-            >
-              <span>Open Google Classroom</span>
-              <ExternalLink className="w-3 h-3" />
-            </a>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            {courses.map((course) => (
-              <a
-                key={course.id}
-                href={course.link}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="p-3.5 rounded-xl bg-card border border-border hover:border-emerald-500/50 transition-all flex flex-col justify-between group no-underline shadow-xs"
-              >
-                <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-secondary text-muted-foreground">
-                      {course.section}
-                    </span>
-                    <ExternalLink className="w-3.5 h-3.5 text-muted-foreground group-hover:text-emerald-500 transition-colors" />
-                  </div>
-                  <h4 className="text-[14px] font-semibold text-foreground group-hover:text-emerald-500 transition-colors line-clamp-2">
-                    {course.name}
-                  </h4>
-                </div>
-                <div className="pt-2.5 mt-2.5 border-t border-border/60 text-[12px] text-muted-foreground flex items-center justify-between">
-                  <span className="truncate">{course.teacher}</span>
-                  <span className="font-mono text-[10px] text-muted-foreground/80">{course.roomCode}</span>
-                </div>
-              </a>
-            ))}
-          </div>
-        </div>
-      ) : isConnected ? (
-        <div className="p-4 rounded-xl bg-card border border-border flex flex-col sm:flex-row items-center justify-between gap-3 shadow-xs">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center border border-emerald-500/20 shrink-0">
-              <BookOpen className="w-4 h-4" />
-            </div>
-            <div>
-              <h4 className="text-[13px] font-semibold text-foreground m-0">Open Enrolled Courses</h4>
-              <p className="text-[12px] text-muted-foreground m-0">
-                Access assignments, stream materials, and lecture notes directly inside Google Classroom.
-              </p>
-            </div>
-          </div>
-          <a
-            href="https://classroom.google.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[12px] font-semibold flex items-center gap-1.5 shadow-xs transition-colors no-underline shrink-0"
-          >
-            <span>Launch Google Classroom</span>
-            <ExternalLink className="w-3 h-3" />
-          </a>
-        </div>
-      ) : null}
 
           {/* Filter Tabs for Assignments */}
           <div className="flex items-center gap-2 pt-1">

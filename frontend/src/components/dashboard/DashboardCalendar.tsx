@@ -55,11 +55,11 @@ export const DashboardCalendar: React.FC = () => {
   const [showAddModal, setShowAddModal] = useState(false);
 
   const [isConnected, setIsConnected] = useState<boolean>(() => {
-    return isGoogleConnected() || localStorage.getItem("skillsphere_calendar_connected") === "true";
+    return isGoogleConnected('calendar') || localStorage.getItem("skillsphere_calendar_connected") === "true";
   });
 
   const [calendarEmail, setCalendarEmail] = useState<string>(() => {
-    return getGoogleEmail() || localStorage.getItem("skillsphere_calendar_email") || "";
+    return getGoogleEmail('calendar') || localStorage.getItem("skillsphere_calendar_email") || "";
   });
 
   const saveEvents = (data: CalendarEvent[]) => {
@@ -95,7 +95,7 @@ export const DashboardCalendar: React.FC = () => {
   const handleConnectGoogle = async () => {
     setIsSyncing(true);
     try {
-      const { email } = await requestGoogleAccess();
+      const { email } = await requestGoogleAccess('calendar');
       if (email) {
         setCalendarEmail(email);
         localStorage.setItem("skillsphere_calendar_email", email);
@@ -112,7 +112,7 @@ export const DashboardCalendar: React.FC = () => {
   };
 
   const handleDisconnect = () => {
-    disconnectGoogle();
+    disconnectGoogle('calendar');
     setIsConnected(false);
     setCalendarEmail("");
     localStorage.removeItem("skillsphere_calendar_email");
@@ -286,17 +286,31 @@ export const DashboardCalendar: React.FC = () => {
               onClick={handleSync}
               disabled={isSyncing}
               className="px-3 py-1.5 rounded-md bg-surface-muted hover:bg-surface-muted/80 text-foreground text-[12px] font-medium flex items-center gap-1.5 transition-colors cursor-pointer border border-border"
+              title="Refresh Google Calendar events"
             >
               <RefreshCw className={cn("w-3.5 h-3.5 text-primary", isSyncing && "animate-spin")} />
               <span>{isSyncing ? "Syncing..." : "Sync"}</span>
             </button>
 
+            {/* Switch Account */}
+            <button
+              onClick={handleConnectGoogle}
+              disabled={isSyncing}
+              className="px-2.5 py-1.5 rounded-md bg-surface-muted hover:bg-surface-muted/80 text-foreground text-[12px] font-medium flex items-center gap-1.5 transition-colors cursor-pointer border border-border"
+              title="Switch to your personal or college Google account"
+            >
+              <RefreshCw className="w-3.5 h-3.5 text-muted-foreground" />
+              <span>Switch Account</span>
+            </button>
+
+            {/* Prominent Logout Google Button */}
             <button
               onClick={handleDisconnect}
-              className="p-1.5 rounded-md bg-surface-muted hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors cursor-pointer border border-border"
-              title="Disconnect Google Calendar"
+              className="px-2.5 py-1.5 rounded-md bg-destructive/10 hover:bg-destructive/20 text-destructive text-[12px] font-semibold flex items-center gap-1.5 transition-colors cursor-pointer border border-destructive/20"
+              title="Log out from Google Calendar"
             >
               <LogOut className="w-3.5 h-3.5" />
+              <span>Logout Google</span>
             </button>
 
             <button

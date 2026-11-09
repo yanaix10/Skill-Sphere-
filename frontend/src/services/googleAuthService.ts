@@ -4,6 +4,8 @@ declare global {
   }
 }
 
+export type GoogleService = 'calendar' | 'classroom';
+
 export interface CalendarEvent {
   id: string;
   title: string;
@@ -42,46 +44,63 @@ const CLIENT_ID =
   import.meta.env.VITE_GOOGLE_CLIENT_ID ||
   "558068409791-sjacgg7p3pr1hi4ngbeim38k06kcbvtn.apps.googleusercontent.com";
 
-const SCOPES = [
+const CALENDAR_SCOPES = [
   "https://www.googleapis.com/auth/userinfo.email",
   "https://www.googleapis.com/auth/userinfo.profile",
   "https://www.googleapis.com/auth/calendar.events.readonly",
+].join(" ");
+
+const CLASSROOM_SCOPES = [
+  "https://www.googleapis.com/auth/userinfo.email",
+  "https://www.googleapis.com/auth/userinfo.profile",
   "https://www.googleapis.com/auth/classroom.coursework.me.readonly",
   "https://www.googleapis.com/auth/classroom.courses.readonly",
 ].join(" ");
 
-const TOKEN_KEY = "skillsphere_google_access_token";
-const EMAIL_KEY = "skillsphere_google_email";
-const EXPIRES_KEY = "skillsphere_google_token_expiry";
+const getServiceKeys = (service: GoogleService = 'calendar') => ({
+  token: `skillsphere_${service}_google_token`,
+  email: `skillsphere_${service}_google_email`,
+  expiry: `skillsphere_${service}_google_expiry`,
+  connected: `skillsphere_${service}_connected`,
+});
 
-export const getGoogleToken = (): string | null => {
-  const token = localStorage.getItem(TOKEN_KEY);
-  const expiry = localStorage.getItem(EXPIRES_KEY);
+export const getGoogleToken = (service: GoogleService = 'calendar'): string | null => {
+  const keys = getServiceKeys(service);
+  const token = localStorage.getItem(keys.token) || localStorage.getItem("skillsphere_google_access_token");
+  const expiry = localStorage.getItem(keys.expiry) || localStorage.getItem("skillsphere_google_token_expiry");
   if (token && expiry) {
     if (Date.now() > parseInt(expiry, 10)) {
-      localStorage.removeItem(TOKEN_KEY);
-      localStorage.removeItem(EXPIRES_KEY);
+      localStorage.removeItem(keys.token);
+      localStorage.removeItem(keys.expiry);
       return null;
     }
   }
   return token;
 };
 
-export const getGoogleEmail = (): string => {
-  return localStorage.getItem(EMAIL_KEY) || "";
+export const getGoogleEmail = (service: GoogleService = 'calendar'): string => {
+  const keys = getServiceKeys(service);
+  return localStorage.getItem(keys.email) || localStorage.getItem(`skillsphere_${service}_email`) || localStorage.getItem("skillsphere_google_email") || "";
 };
 
-export const isGoogleConnected = (): boolean => {
-  return Boolean(getGoogleToken());
+export const isGoogleConnected = (service: GoogleService = 'calendar'): boolean => {
+  return Boolean(getGoogleToken(service));
 };
 
-export const disconnectGoogle = (): void => {
-  localStorage.removeItem(TOKEN_KEY);
-  localStorage.removeItem(EMAIL_KEY);
-  localStorage.removeItem(EXPIRES_KEY);
-  localStorage.removeItem("skillsphere_calendar_meetings");
-  localStorage.removeItem("skillsphere_classroom_courses");
-  localStorage.removeItem("skillsphere_classroom_assignments");
+export const disconnectGoogle = (service: GoogleService = 'calendar'): void => {
+  const keys = getServiceKeys(service);
+  localStorage.removeItem(keys.token);
+  localStorage.removeItem(keys.email);
+  localStorage.removeItem(keys.expiry);
+  localStorage.removeItem(keys.connected);
+  localStorage.removeItem(`skillsphere_${service}_email`);
+
+  if (service === 'calendar') {
+    localStorage.removeItem("skillsphere_calendar_meetings");
+  } else {
+    localStorage.removeItem("skillsphere_classroom_courses");
+    localStorage.removeItem("skillsphere_classroom_assignments");
+  }
 };
 
 /**
@@ -112,17 +131,20 @@ const loadGsiScript = (): Promise<void> => {
 };
 
 /**
- * Triggers Google OAuth popup using Google Identity Services (GIS)
- * and retrieves user email and access token
+ * Triggers Google OAuth popup using Google Identity Services (GIS).
+ * Using prompt: "select_account" allows selecting between Personal and College accounts!
  */
-export const requestGoogleAccess = async (): Promise<{ accessToken: string; email: string }> => {
+export const requestGoogleAccess = async (service: GoogleService = 'calendar'): Promise<{ accessToken: string; email: string }> => {
   await loadGsiScript();
+
+  const scopes = service === 'calendar' ? CALENDAR_SCOPES : CLASSROOM_SCOPES;
+  const keys = getServiceKeys(service);
 
   return new Promise((resolve, reject) => {
     try {
       const tokenClient = window.google.accounts.oauth2.initTokenClient({
         client_id: CLIENT_ID,
-        scope: SCOPES,
+        scope: scopes,
         callback: async (tokenResponse: any) => {
           if (tokenResponse.error) {
             reject(new Error(tokenResponse.error_description || tokenResponse.error));
@@ -131,10 +153,11 @@ export const requestGoogleAccess = async (): Promise<{ accessToken: string; emai
 
           const accessToken = tokenResponse.access_token;
           const expiresIn = parseInt(tokenResponse.expires_in || "3600", 10) * 1000;
-          localStorage.setItem(TOKEN_KEY, accessToken);
-          localStorage.setItem(EXPIRES_KEY, String(Date.now() + expiresIn));
+          localStorage.setItem(keys.token, accessToken);
+          localStorage.setItem(keys.expiry, String(Date.now() + expiresIn));
+          localStorage.setItem(keys.connected, "true");
 
-          // Fetch user profile email
+          // Fetch user profile email for this specific account
           let email = "";
           try {
             const userRes = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
@@ -143,7 +166,8 @@ export const requestGoogleAccess = async (): Promise<{ accessToken: string; emai
             const userData = await userRes.json();
             email = userData.email || "";
             if (email) {
-              localStorage.setItem(EMAIL_KEY, email);
+              localStorage.setItem(keys.email, email);
+              localStorage.setItem(`skillsphere_${service}_email`, email);
             }
           } catch (e) {
             console.warn("Could not fetch Google userinfo:", e);
@@ -153,8 +177,8 @@ export const requestGoogleAccess = async (): Promise<{ accessToken: string; emai
         },
       });
 
-      // Prompt account selection
-      tokenClient.requestAccessToken({ prompt: "consent" });
+      // Always prompt account selection so users can choose between Personal and College accounts
+      tokenClient.requestAccessToken({ prompt: "select_account" });
     } catch (err) {
       reject(err);
     }
@@ -164,10 +188,10 @@ export const requestGoogleAccess = async (): Promise<{ accessToken: string; emai
 /**
  * Fetches upcoming Google Calendar events directly using Access Token
  */
-export const fetchGoogleCalendarEvents = async (token?: string): Promise<CalendarEvent[]> => {
-  const accessToken = token || getGoogleToken();
+export const fetchGoogleCalendarEvents = async (): Promise<CalendarEvent[]> => {
+  const accessToken = getGoogleToken('calendar');
   if (!accessToken) {
-    throw new Error("No active Google session found. Please sign in.");
+    throw new Error("No active Google Calendar session found. Please sign in.");
   }
 
   const now = new Date();
@@ -183,8 +207,8 @@ export const fetchGoogleCalendarEvents = async (token?: string): Promise<Calenda
 
   if (!res.ok) {
     if (res.status === 401) {
-      disconnectGoogle();
-      throw new Error("Google session expired. Please sign in again.");
+      disconnectGoogle('calendar');
+      throw new Error("Google Calendar session expired. Please sign in again.");
     }
     const errData = await res.json().catch(() => ({}));
     throw new Error(errData.error?.message || "Failed to fetch Google Calendar events");
@@ -230,14 +254,13 @@ export const fetchGoogleCalendarEvents = async (token?: string): Promise<Calenda
 };
 
 /**
- * Fetches Google Classroom courses and assignments directly using Access Token
+ * Fetches Google Classroom courses and assignments directly using Access Token.
+ * Filters out old assignments from previous semesters / academic years.
  */
-export const fetchGoogleClassroomData = async (
-  token?: string
-): Promise<{ courses: ClassroomCourse[]; assignments: ClassroomAssignment[] }> => {
-  const accessToken = token || getGoogleToken();
+export const fetchGoogleClassroomData = async (): Promise<{ courses: ClassroomCourse[]; assignments: ClassroomAssignment[] }> => {
+  const accessToken = getGoogleToken('classroom');
   if (!accessToken) {
-    throw new Error("No active Google session found. Please sign in.");
+    throw new Error("No active Google Classroom session found. Please sign in.");
   }
 
   // Step 1: Fetch active courses
@@ -247,8 +270,8 @@ export const fetchGoogleClassroomData = async (
 
   if (!coursesRes.ok) {
     if (coursesRes.status === 401) {
-      disconnectGoogle();
-      throw new Error("Google session expired. Please sign in again.");
+      disconnectGoogle('classroom');
+      throw new Error("Google Classroom session expired. Please sign in again.");
     }
     const errData = await coursesRes.json().catch(() => ({}));
     throw new Error(errData.error?.message || "Failed to fetch Google Classroom courses");
@@ -268,6 +291,9 @@ export const fetchGoogleClassroomData = async (
 
   // Step 2: Fetch coursework for each course
   const assignments: ClassroomAssignment[] = [];
+  const now = new Date();
+  // Cutoff: filter out assignments older than 60 days in the past (previous years / prior semesters)
+  const cutoffDate = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
 
   await Promise.all(
     rawCourses.map(async (course: any) => {
@@ -282,12 +308,28 @@ export const fetchGoogleClassroomData = async (
 
         const cwData = await cwRes.json();
         for (const cw of cwData.courseWork || []) {
+          let dueDateObj: Date | null = null;
           let dueDateStr = "No due date";
+
           if (cw.dueDate && cw.dueDate.year && cw.dueDate.month && cw.dueDate.day) {
             const y = cw.dueDate.year;
             const m = String(cw.dueDate.month).padStart(2, "0");
             const d = String(cw.dueDate.day).padStart(2, "0");
             dueDateStr = `${y}-${m}-${d}`;
+            dueDateObj = new Date(y, cw.dueDate.month - 1, cw.dueDate.day);
+          }
+
+          // Filter out assignments from past semesters / previous years
+          if (dueDateObj && dueDateObj < cutoffDate) {
+            continue;
+          }
+
+          // If no due date, filter out if created more than 60 days ago
+          if (!dueDateObj && cw.creationTime) {
+            const created = new Date(cw.creationTime);
+            if (!isNaN(created.getTime()) && created < cutoffDate) {
+              continue;
+            }
           }
 
           let dueTimeStr = undefined;
@@ -315,6 +357,13 @@ export const fetchGoogleClassroomData = async (
       }
     })
   );
+
+  // Sort: upcoming deadlines first, then no due date
+  assignments.sort((a, b) => {
+    if (a.dueDate === "No due date") return 1;
+    if (b.dueDate === "No due date") return -1;
+    return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+  });
 
   return { courses, assignments };
 };
