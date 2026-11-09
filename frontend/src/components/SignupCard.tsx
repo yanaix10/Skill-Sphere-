@@ -602,6 +602,16 @@ export const SignupCard: React.FC = () => {
             </div>
           )}
 
+          {/* App Overview & Google Scope Purpose for Reviewers */}
+          <div className="p-3.5 rounded-xl bg-card/60 border border-border/80 text-[12px] text-muted-foreground space-y-1.5 leading-relaxed text-left">
+            <p className="font-medium text-foreground m-0">
+              SkillSphere is an interactive developer learning platform featuring real-time 1v1 coding duels, practice quizzes, and academic scheduling.
+            </p>
+            <p className="m-0 text-[11px] text-muted-foreground/90">
+              Google Calendar & Google Classroom integrations sync course deadlines and study meetings directly onto your dashboard.
+            </p>
+          </div>
+
           {/* Single Google Login Option */}
           <BoxReveal boxColor="var(--primary)" duration={0.4} width="100%" overflow="visible">
             <div className="space-y-2.5">
@@ -624,6 +634,14 @@ export const SignupCard: React.FC = () => {
                 <BottomGradient />
               </button>
 
+              {/* Guest explorer link so reviewers can view the app without login */}
+              <a
+                href="/quizzes"
+                className="flex items-center justify-center gap-2 w-full bg-secondary/60 hover:bg-secondary text-foreground border border-border py-2 px-3 rounded-xl text-xs font-medium transition-colors no-underline text-center"
+              >
+                <span>Explore Platform as Guest</span>
+              </a>
+
               {/* Redirect fallback if popups are blocked */}
               {(popupBlocked || errorMessage) && (
                 <button
@@ -639,10 +657,21 @@ export const SignupCard: React.FC = () => {
             </div>
           </BoxReveal>
 
-          {/* Clean Security Badge */}
-          <footer className="pt-2 text-muted-foreground text-[11px] flex items-center justify-center gap-1.5">
-            <ShieldCheck className="w-3.5 h-3.5 text-primary/80" />
-            <span>Protected by Google Firebase Authentication</span>
+          {/* Clean Security Badge & Legal Links */}
+          <footer className="pt-2 text-muted-foreground text-[11px] flex flex-col items-center justify-center gap-2">
+            <div className="flex items-center gap-1.5">
+              <ShieldCheck className="w-3.5 h-3.5 text-primary/80" />
+              <span>Protected by Google Firebase Authentication</span>
+            </div>
+            <div className="flex items-center gap-3 text-[11px] text-muted-foreground/80">
+              <a href="/privacy" className="hover:text-foreground hover:underline transition-colors no-underline">
+                Privacy Policy
+              </a>
+              <span>•</span>
+              <a href="/terms" className="hover:text-foreground hover:underline transition-colors no-underline">
+                Terms of Service
+              </a>
+            </div>
           </footer>
         </div>
       </div>

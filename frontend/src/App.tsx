@@ -110,7 +110,9 @@ function AppContent() {
   
   const isPublicPage = typeof window !== "undefined" && (
     window.location.pathname === "/privacy" || 
-    window.location.pathname === "/terms"
+    window.location.pathname === "/terms" ||
+    window.location.pathname === "/quizzes" ||
+    window.location.pathname === "/games"
   );
 
   if(user === null && !isPublicPage){
