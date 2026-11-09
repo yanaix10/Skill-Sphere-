@@ -9,6 +9,8 @@ import Profile from './components/Profile';
 import Navbar from './components/Navbar';
 import Friends from './pages/Friends';
 import Quizzes from './pages/Quizzes';
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import TermsOfService from './pages/TermsOfService';
 import { ThemeProvider } from './context/ThemeContext';
 
 function RootErrorBoundary() {
@@ -49,6 +51,8 @@ const router = createBrowserRouter([
       { path: "/profile", element: <Profile /> },
       { path: "/friends", element: <Friends /> },
       { path: "/quizzes", element: <Quizzes /> },
+      { path: "/privacy", element: <PrivacyPolicy /> },
+      { path: "/terms", element: <TermsOfService /> },
       { path: "/games", element: <Navigate to="/quizzes" replace /> },
       { path: "*", element: <Navigate to="/quizzes" replace /> },
     ]
@@ -104,7 +108,12 @@ function AppContent() {
   
   if(loading) return <div className="bg-background text-foreground h-screen w-screen flex items-center justify-center text-xl font-bold">Loading SkillSphere...</div>;
   
-  if(user === null){
+  const isPublicPage = typeof window !== "undefined" && (
+    window.location.pathname === "/privacy" || 
+    window.location.pathname === "/terms"
+  );
+
+  if(user === null && !isPublicPage){
     return <SignupCard />;
   }
 
