@@ -1,17 +1,16 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useRef } from "react";
 import {
   UploadCloud,
   Image as ImageIcon,
-  FileText,
+  Link as LinkIcon,
   Plus,
   Trash2,
   ExternalLink,
   Download,
   Eye,
   X,
-  RotateCcw,
   Check,
-  AlertCircle,
+  Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -31,64 +30,34 @@ export interface ResourceLinkItem {
   id: string;
   title: string;
   url: string;
-  type: "video" | "article" | "course" | "other";
   addedAt: number;
+  favicon?: string;
 }
 
-const DEFAULT_FILES: MediaFileItem[] = [
-  {
-    id: "sample-jpg-1",
-    name: "algorithms_cheatsheet.jpg",
-    type: "image/jpeg",
-    size: 420 * 1024,
-    dataUrl: "https://images.unsplash.com/photo-1516116211227-bbc0643b1c67?w=800&auto=format&fit=crop&q=60",
-    uploadedAt: Date.now() - 86400000 * 1,
-    category: "image",
-    progress: 100,
-    status: "success",
-  },
-  {
-    id: "sample-jpg-2",
-    name: "system_architecture_diagram.jpg",
-    type: "image/jpeg",
-    size: 890 * 1024,
-    dataUrl: "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=800&auto=format&fit=crop&q=60",
-    uploadedAt: Date.now() - 86400000 * 3,
-    category: "image",
-    progress: 100,
-    status: "success",
-  },
-  {
-    id: "sample-jpg-3",
-    name: "coding_desk_notes.jpg",
-    type: "image/jpeg",
-    size: 1.2 * 1024 * 1024,
-    dataUrl: "https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=800&auto=format&fit=crop&q=60",
-    uploadedAt: Date.now() - 86400000 * 6,
-    category: "image",
-    progress: 100,
-    status: "success",
-  },
-];
+/** Derive a favicon URL from any page URL using Google's public CDN */
+function getFaviconUrl(pageUrl: string): string {
+  try {
+    const u = new URL(
+      pageUrl.startsWith("http") ? pageUrl : `https://${pageUrl}`
+    );
+    return `https://www.google.com/s2/favicons?domain=${u.hostname}&sz=32`;
+  } catch {
+    return "";
+  }
+}
 
-const DEFAULT_LINKS: ResourceLinkItem[] = [
-  {
-    id: "link-1",
-    title: "NeetCode 150 - Algorithm Roadmap",
-    url: "https://neetcode.io/roadmap",
-    type: "course",
-    addedAt: Date.now() - 86400000 * 2,
-  },
-  {
-    id: "link-2",
-    title: "System Design Primer by Donne Martin",
-    url: "https://github.com/donnemartin/system-design-primer",
-    type: "article",
-    addedAt: Date.now() - 86400000 * 8,
-  },
-];
+/** Shorten a URL to a readable hostname label */
+function getDomain(pageUrl: string): string {
+  try {
+    return new URL(pageUrl.startsWith("http") ? pageUrl : `https://${pageUrl}`)
+      .hostname.replace(/^www\./, "");
+  } catch {
+    return pageUrl;
+  }
+}
 
 export const DashboardMedia: React.FC = () => {
+  /* ───────────── State ───────────── */
   const [files, setFiles] = useState<MediaFileItem[]>(() => {
     try {
       const stored = localStorage.getItem("skillsphere_uploaded_media");
@@ -110,14 +79,19 @@ export const DashboardMedia: React.FC = () => {
     } catch {}
     return [];
   });
+
   const [lightboxImage, setLightboxImage] = useState<MediaFileItem | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Link Modal
+  // Link form
   const [showLinkForm, setShowLinkForm] = useState(false);
-  const [newLink, setNewLink] = useState({ title: "", url: "", type: "article" as ResourceLinkItem["type"] });
+  const [newName, setNewName] = useState("");
+  const [newUrl, setNewUrl] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+  const [justSaved, setJustSaved] = useState(false);
 
+  /* ───────────── File helpers ───────────── */
   const saveFiles = (updated: MediaFileItem[]) => {
     setFiles(updated);
     try {
@@ -127,13 +101,13 @@ export const DashboardMedia: React.FC = () => {
 
   const processFiles = (fileList: FileList | null) => {
     if (!fileList || fileList.length === 0) return;
-
     Array.from(fileList).forEach((file) => {
       const reader = new FileReader();
       reader.onload = (e) => {
         const dataUrl = e.target?.result as string;
-        const category: MediaFileItem["category"] = file.type.startsWith("image/") ? "image" : "document";
-
+        const category: MediaFileItem["category"] = file.type.startsWith("image/")
+          ? "image"
+          : "document";
         const item: MediaFileItem = {
           id: `file-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
           name: file.name,
@@ -145,7 +119,6 @@ export const DashboardMedia: React.FC = () => {
           progress: 100,
           status: "success",
         };
-
         setFiles((prev) => {
           const next = [item, ...prev];
           try {
@@ -162,46 +135,79 @@ export const DashboardMedia: React.FC = () => {
     saveFiles(files.filter((f) => f.id !== id));
   };
 
-  const handleAddLink = (e: React.FormEvent) => {
+  /* ───────────── Link helpers ───────────── */
+  const saveLinks = (updated: ResourceLinkItem[]) => {
+    setLinks(updated);
+    try {
+      localStorage.setItem("skillsphere_saved_links", JSON.stringify(updated));
+    } catch {}
+  };
+
+  const handleAddLink = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newLink.title.trim() || !newLink.url.trim()) return;
-    let url = newLink.url.trim();
-    if (!url.startsWith("http://") && !url.startsWith("https://")) url = "https://" + url;
+    const name = newName.trim();
+    let url = newUrl.trim();
+    if (!name || !url) return;
+    if (!url.startsWith("http://") && !url.startsWith("https://")) {
+      url = "https://" + url;
+    }
+
+    setIsSaving(true);
+
+    // Favicon is derived client-side — no network call needed for the main save.
+    const favicon = getFaviconUrl(url);
 
     const item: ResourceLinkItem = {
       id: `link-${Date.now()}`,
-      title: newLink.title.trim(),
+      title: name,
       url,
-      type: newLink.type,
+      favicon,
       addedAt: Date.now(),
     };
 
-    const next = [item, ...links];
-    setLinks(next);
-    setNewLink({ title: "", url: "", type: "article" });
-    setShowLinkForm(false);
+    saveLinks([item, ...links]);
+    setNewName("");
+    setNewUrl("");
+    setIsSaving(false);
+    setJustSaved(true);
+    setTimeout(() => {
+      setJustSaved(false);
+      setShowLinkForm(false);
+    }, 900);
   };
 
+  const handleDeleteLink = (id: string) => {
+    saveLinks(links.filter((l) => l.id !== id));
+  };
+
+  /* ───────────── Misc ───────────── */
   const formatSize = (bytes: number) => {
     if (bytes < 1024) return bytes + " B";
     if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
     return (bytes / (1024 * 1024)).toFixed(1) + " MB";
   };
 
-  const imageFiles = files.filter((f) => f.category === "image" || f.type.startsWith("image/"));
+  const imageFiles = files.filter(
+    (f) => f.category === "image" || f.type.startsWith("image/")
+  );
 
+  /* ───────────── Render ───────────── */
   return (
-    <div className="space-y-5 max-w-7xl mx-auto text-foreground">
-      {/* Workspace Header */}
+    <div className="space-y-6 max-w-7xl mx-auto text-foreground">
+      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-border gap-3">
-        <h2 className="text-[18px] font-semibold tracking-tight text-foreground m-0">Media & resources</h2>
-
+        <h2 className="text-[18px] font-semibold tracking-tight text-foreground m-0">
+          Media &amp; resources
+        </h2>
         <div className="flex items-center gap-2">
           <button
-            onClick={() => setShowLinkForm(!showLinkForm)}
-            className="px-3 py-1.5 rounded-md bg-surface-muted hover:bg-surface-muted/80 text-foreground text-[13px] font-medium flex items-center gap-1.5 transition-colors cursor-pointer border border-border"
+            onClick={() => {
+              setShowLinkForm((v) => !v);
+              setJustSaved(false);
+            }}
+            className="px-3 py-1.5 rounded-md bg-secondary hover:bg-secondary/70 text-foreground text-[13px] font-medium flex items-center gap-1.5 transition-colors cursor-pointer border border-border"
           >
-            <Plus className="w-3.5 h-3.5" />
+            <LinkIcon className="w-3.5 h-3.5" />
             <span>Add link</span>
           </button>
           <button
@@ -214,18 +220,11 @@ export const DashboardMedia: React.FC = () => {
         </div>
       </div>
 
-      {/* Upload Dropzone Container */}
+      {/* Upload Dropzone */}
       <div
-        onDragOver={(e) => {
-          e.preventDefault();
-          setIsDragging(true);
-        }}
+        onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
         onDragLeave={() => setIsDragging(false)}
-        onDrop={(e) => {
-          e.preventDefault();
-          setIsDragging(false);
-          processFiles(e.dataTransfer.files);
-        }}
+        onDrop={(e) => { e.preventDefault(); setIsDragging(false); processFiles(e.dataTransfer.files); }}
         onClick={() => fileInputRef.current?.click()}
         className={cn(
           "rounded-2xl border-2 border-dashed p-6 sm:p-8 text-center cursor-pointer transition-all duration-200 group bg-card",
@@ -246,19 +245,19 @@ export const DashboardMedia: React.FC = () => {
           </div>
           <h3 className="text-[14px] font-semibold text-foreground m-0">Drop files to upload</h3>
           <p className="text-[12px] text-muted-foreground">
-            JPG, PNG diagrams, system architecture charts, or PDF documentation (up to 10MB)
+            JPG, PNG diagrams, system architecture charts, or PDF documentation (up to 10&nbsp;MB)
           </p>
         </div>
       </div>
 
-      {/* Add Link Form */}
+      {/* ── Add Link Form ── */}
       {showLinkForm && (
         <form
           onSubmit={handleAddLink}
           className="p-4 rounded-2xl bg-card border border-border space-y-3 animate-in fade-in duration-150"
         >
           <div className="flex items-center justify-between pb-2 border-b border-border">
-            <h3 className="text-[14px] font-semibold text-foreground">Add Resource Link</h3>
+            <h3 className="text-[14px] font-semibold text-foreground">Save a link</h3>
             <button
               type="button"
               onClick={() => setShowLinkForm(false)}
@@ -267,39 +266,135 @@ export const DashboardMedia: React.FC = () => {
               <X className="w-4 h-4" />
             </button>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+
+          <div className="flex flex-col sm:flex-row gap-2">
             <input
               type="text"
               required
-              placeholder="Title (e.g. NeetCode 150)"
-              value={newLink.title}
-              onChange={(e) => setNewLink({ ...newLink, title: e.target.value })}
-              className="px-3 py-1.5 rounded-xl bg-background border border-border text-[12px] text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+              placeholder="Name  (e.g. NeetCode 150)"
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              className="flex-1 px-3 py-2 rounded-xl bg-background border border-border text-[13px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
             />
             <input
               type="text"
               required
-              placeholder="https://..."
-              value={newLink.url}
-              onChange={(e) => setNewLink({ ...newLink, url: e.target.value })}
-              className="px-3 py-1.5 rounded-xl bg-background border border-border text-[12px] text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+              placeholder="URL  (e.g. https://neetcode.io)"
+              value={newUrl}
+              onChange={(e) => setNewUrl(e.target.value)}
+              className="flex-1 px-3 py-2 rounded-xl bg-background border border-border text-[13px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary font-mono"
             />
             <button
               type="submit"
-              className="px-4 py-1.5 rounded-xl bg-primary text-primary-foreground text-[10px] font-bold uppercase tracking-wider hover:bg-primary/90 transition-all cursor-pointer border-none"
+              disabled={isSaving || justSaved}
+              className={cn(
+                "px-5 py-2 rounded-xl text-[12px] font-bold uppercase tracking-wider border-none cursor-pointer transition-all flex items-center gap-1.5 shrink-0",
+                justSaved
+                  ? "bg-emerald-500/20 text-emerald-500"
+                  : "bg-primary text-primary-foreground hover:bg-primary/90"
+              )}
             >
-              Save Link
+              {isSaving ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : justSaved ? (
+                <Check className="w-3.5 h-3.5" />
+              ) : (
+                <Plus className="w-3.5 h-3.5" />
+              )}
+              <span>{justSaved ? "Saved!" : "Save"}</span>
             </button>
           </div>
+
+          {/* Live URL preview pill */}
+          {newUrl.trim() && (
+            <div className="flex items-center gap-2 pt-1">
+              <span className="text-[11px] text-muted-foreground">Preview:</span>
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-secondary border border-border text-[12px] font-medium text-foreground">
+                <img
+                  src={getFaviconUrl(newUrl)}
+                  alt=""
+                  className="w-3.5 h-3.5 rounded-sm object-contain"
+                  onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                />
+                <span className="max-w-[200px] truncate">{newName.trim() || getDomain(newUrl)}</span>
+              </div>
+            </div>
+          )}
         </form>
       )}
 
-      {/* ─── JPGs & Files Gallery ─── */}
+      {/* ── Saved Links Tag Strip ── */}
+      {links.length > 0 && (
+        <div className="space-y-2.5">
+          <div className="flex items-center gap-2">
+            <LinkIcon className="w-4 h-4 text-primary" />
+            <h3 className="text-[14px] font-semibold text-foreground">
+              Saved links <span className="text-muted-foreground font-normal">({links.length})</span>
+            </h3>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            {links.map((link) => (
+              <div
+                key={link.id}
+                className="group/tag inline-flex items-center gap-1.5 pl-2 pr-1 py-1 rounded-full bg-secondary border border-border hover:border-primary/50 hover:bg-secondary/70 transition-all text-[12px] font-medium text-foreground cursor-default"
+              >
+                {/* Favicon */}
+                {link.favicon ? (
+                  <img
+                    src={link.favicon}
+                    alt=""
+                    className="w-4 h-4 rounded-sm object-contain shrink-0"
+                    onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                  />
+                ) : (
+                  <div className="w-4 h-4 rounded-sm bg-primary/15 flex items-center justify-center shrink-0">
+                    <LinkIcon className="w-2.5 h-2.5 text-primary" />
+                  </div>
+                )}
+
+                {/* Label — clicking opens the URL */}
+                <a
+                  href={link.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="max-w-[180px] truncate text-foreground hover:text-primary transition-colors no-underline leading-none"
+                  title={link.url}
+                >
+                  {link.title}
+                </a>
+
+                {/* Open in new tab icon */}
+                <a
+                  href={link.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="p-0.5 rounded-full text-muted-foreground hover:text-foreground transition-colors opacity-0 group-hover/tag:opacity-100"
+                  title="Open"
+                >
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+
+                {/* Delete button */}
+                <button
+                  onClick={() => handleDeleteLink(link.id)}
+                  className="p-0.5 rounded-full text-muted-foreground hover:text-destructive transition-colors cursor-pointer border-none bg-transparent opacity-0 group-hover/tag:opacity-100"
+                  title="Remove"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── JPG / Image Gallery ── */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <h3 className="text-[14px] font-semibold text-foreground flex items-center gap-2">
             <ImageIcon className="w-4 h-4 text-primary" />
-            Uploaded JPG Diagrams & Notes ({imageFiles.length})
+            Uploaded JPG Diagrams &amp; Notes ({imageFiles.length})
           </h3>
           <span className="text-[12px] text-muted-foreground">Click any image to expand full-screen</span>
         </div>
@@ -339,7 +434,9 @@ export const DashboardMedia: React.FC = () => {
                     <span className="font-semibold text-foreground truncate max-w-[160px]" title={file.name}>
                       {file.name}
                     </span>
-                    <span className="font-mono text-[10px] tabular-nums text-muted-foreground">{formatSize(file.size)}</span>
+                    <span className="font-mono text-[10px] tabular-nums text-muted-foreground">
+                      {formatSize(file.size)}
+                    </span>
                   </div>
 
                   <div className="flex items-center justify-end gap-1 pt-2 border-t border-border">
@@ -366,48 +463,7 @@ export const DashboardMedia: React.FC = () => {
         )}
       </div>
 
-      {/* ─── Learning Links Grid ─── */}
-      {links.length > 0 && (
-        <div className="space-y-3 pt-2">
-          <h3 className="text-[14px] font-semibold text-foreground">Saved Study & Architecture Links</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {links.map((link) => (
-              <a
-                key={link.id}
-                href={link.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="p-3.5 rounded-2xl bg-card border border-border hover:border-primary/50 transition-colors flex items-center justify-between no-underline group"
-              >
-                <div className="min-w-0 pr-2">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-primary font-mono">
-                    {link.type}
-                  </span>
-                  <h4 className="text-[13px] font-semibold text-foreground group-hover:text-primary transition-colors truncate mt-0.5">
-                    {link.title}
-                  </h4>
-                  <p className="text-[11px] text-muted-foreground truncate font-mono">{link.url}</p>
-                </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      handleDeleteLink(link.id);
-                    }}
-                    className="p-1.5 text-muted-foreground hover:text-destructive transition-colors cursor-pointer border-none bg-transparent"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                  <ExternalLink className="w-4 h-4 text-muted-foreground group-hover:text-foreground" />
-                </div>
-              </a>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Full-screen Lightbox Modal */}
+      {/* Full-screen Lightbox */}
       {lightboxImage && (
         <div
           onClick={() => setLightboxImage(null)}
@@ -418,7 +474,9 @@ export const DashboardMedia: React.FC = () => {
             className="relative max-w-4xl max-h-[90vh] bg-card rounded-2xl overflow-hidden border border-border shadow-2xl flex flex-col"
           >
             <div className="flex items-center justify-between px-4 py-2.5 border-b border-border bg-secondary/40">
-              <span className="text-[12px] font-semibold text-foreground truncate max-w-md">{lightboxImage.name}</span>
+              <span className="text-[12px] font-semibold text-foreground truncate max-w-md">
+                {lightboxImage.name}
+              </span>
               <div className="flex items-center gap-2">
                 <a
                   href={lightboxImage.dataUrl}
@@ -437,7 +495,11 @@ export const DashboardMedia: React.FC = () => {
               </div>
             </div>
             <div className="p-2 sm:p-4 max-h-[75vh] overflow-auto flex items-center justify-center">
-              <img src={lightboxImage.dataUrl} alt={lightboxImage.name} className="max-h-[70vh] w-auto rounded-lg object-contain" />
+              <img
+                src={lightboxImage.dataUrl}
+                alt={lightboxImage.name}
+                className="max-h-[70vh] w-auto rounded-lg object-contain"
+              />
             </div>
           </div>
         </div>
