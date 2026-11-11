@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   UploadCloud,
   Image as ImageIcon,
@@ -11,15 +11,28 @@ import {
   X,
   Check,
   Loader2,
+  AlertCircle,
 } from "lucide-react";
+import {
+  ref as storageRef,
+  uploadBytesResumable,
+  getDownloadURL,
+  deleteObject,
+} from "firebase/storage";
+import { storage, auth } from "../../firebase";
 import { cn } from "@/lib/utils";
+
+/* ─── Types ─────────────────────────────────────────────────────── */
 
 export interface MediaFileItem {
   id: string;
   name: string;
   type: string;
   size: number;
+  /** Permanent Firebase Storage download URL (not base64) */
   dataUrl: string;
+  /** Firebase Storage path so we can delete the file later */
+  storagePath?: string;
   uploadedAt: number;
   category: "image" | "document" | "other";
   progress?: number;
@@ -34,19 +47,17 @@ export interface ResourceLinkItem {
   favicon?: string;
 }
 
-/** Derive a favicon URL from any page URL using Google's public CDN */
+/* ─── Utility helpers ───────────────────────────────────────────── */
+
 function getFaviconUrl(pageUrl: string): string {
   try {
-    const u = new URL(
-      pageUrl.startsWith("http") ? pageUrl : `https://${pageUrl}`
-    );
+    const u = new URL(pageUrl.startsWith("http") ? pageUrl : `https://${pageUrl}`);
     return `https://www.google.com/s2/favicons?domain=${u.hostname}&sz=32`;
   } catch {
     return "";
   }
 }
 
-/** Shorten a URL to a readable hostname label */
 function getDomain(pageUrl: string): string {
   try {
     return new URL(pageUrl.startsWith("http") ? pageUrl : `https://${pageUrl}`)
@@ -56,131 +67,188 @@ function getDomain(pageUrl: string): string {
   }
 }
 
+/** Metadata-only key — we never store base64 here, just the small JSON */
+const LS_FILES_KEY = "skillsphere_media_meta_v2";
+const LS_LINKS_KEY = "skillsphere_saved_links";
+
+function loadFromLS<T>(key: string): T[] {
+  try {
+    const raw = localStorage.getItem(key);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed as T[];
+    }
+  } catch {}
+  return [];
+}
+
+function saveToLS<T>(key: string, data: T[]) {
+  try {
+    localStorage.setItem(key, JSON.stringify(data));
+  } catch {}
+}
+
+/* ─── Pending upload tracker ────────────────────────────────────── */
+
+interface PendingUpload {
+  id: string;
+  name: string;
+  size: number;
+  progress: number;
+  error?: string;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   Component
+══════════════════════════════════════════════════════════════════ */
+
 export const DashboardMedia: React.FC = () => {
-  /* ───────────── State ───────────── */
-  const [files, setFiles] = useState<MediaFileItem[]>(() => {
-    try {
-      const stored = localStorage.getItem("skillsphere_uploaded_media");
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed)) return parsed;
-      }
-    } catch {}
-    return [];
-  });
+  /* ── Persisted state ─────────────────────────────────────────── */
+  const [files, setFiles] = useState<MediaFileItem[]>(() => loadFromLS<MediaFileItem>(LS_FILES_KEY));
+  const [links, setLinks] = useState<ResourceLinkItem[]>(() => loadFromLS<ResourceLinkItem>(LS_LINKS_KEY));
 
-  const [links, setLinks] = useState<ResourceLinkItem[]>(() => {
-    try {
-      const stored = localStorage.getItem("skillsphere_saved_links");
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed)) return parsed;
-      }
-    } catch {}
-    return [];
-  });
+  /* ── Upload state ────────────────────────────────────────────── */
+  const [pending, setPending] = useState<PendingUpload[]>([]);
 
+  /* ── UI state ────────────────────────────────────────────────── */
   const [lightboxImage, setLightboxImage] = useState<MediaFileItem | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Link form
   const [showLinkForm, setShowLinkForm] = useState(false);
   const [newName, setNewName] = useState("");
   const [newUrl, setNewUrl] = useState("");
-  const [isSaving, setIsSaving] = useState(false);
+  const [isSavingLink, setIsSavingLink] = useState(false);
   const [justSaved, setJustSaved] = useState(false);
 
-  /* ───────────── File helpers ───────────── */
-  const saveFiles = (updated: MediaFileItem[]) => {
-    setFiles(updated);
-    try {
-      localStorage.setItem("skillsphere_uploaded_media", JSON.stringify(updated));
-    } catch {}
-  };
+  /* ── Persist files metadata whenever it changes ─────────────── */
+  useEffect(() => {
+    // Strip any pending/error items before persisting
+    const toSave = files.filter((f) => f.status === "success");
+    saveToLS(LS_FILES_KEY, toSave);
+  }, [files]);
 
+  useEffect(() => {
+    saveToLS(LS_LINKS_KEY, links);
+  }, [links]);
+
+  /* ── File upload ─────────────────────────────────────────────── */
   const processFiles = (fileList: FileList | null) => {
     if (!fileList || fileList.length === 0) return;
+
+    const uid = auth.currentUser?.uid ?? "anonymous";
+
     Array.from(fileList).forEach((file) => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const dataUrl = e.target?.result as string;
-        const category: MediaFileItem["category"] = file.type.startsWith("image/")
-          ? "image"
-          : "document";
-        const item: MediaFileItem = {
-          id: `file-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-          name: file.name,
-          type: file.type || "application/octet-stream",
-          size: file.size,
-          dataUrl,
-          uploadedAt: Date.now(),
-          category,
-          progress: 100,
-          status: "success",
-        };
-        setFiles((prev) => {
-          const next = [item, ...prev];
+      const itemId = `file-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+      const category: MediaFileItem["category"] = file.type.startsWith("image/")
+        ? "image"
+        : "document";
+
+      // Add a pending tracker
+      setPending((prev) => [
+        { id: itemId, name: file.name, size: file.size, progress: 0 },
+        ...prev,
+      ]);
+
+      // Build a unique path under the user's folder
+      const path = `media/${uid}/${itemId}_${file.name}`;
+      const ref = storageRef(storage, path);
+      const task = uploadBytesResumable(ref, file);
+
+      task.on(
+        "state_changed",
+        (snap) => {
+          const pct = snap.totalBytes > 0
+            ? Math.round((snap.bytesTransferred / snap.totalBytes) * 100)
+            : 0;
+          setPending((prev) =>
+            prev.map((p) => (p.id === itemId ? { ...p, progress: pct } : p))
+          );
+        },
+        (err) => {
+          console.error("Upload failed:", err);
+          setPending((prev) =>
+            prev.map((p) =>
+              p.id === itemId ? { ...p, error: "Upload failed. Check storage rules." } : p
+            )
+          );
+        },
+        async () => {
           try {
-            localStorage.setItem("skillsphere_uploaded_media", JSON.stringify(next));
-          } catch {}
-          return next;
-        });
-      };
-      reader.readAsDataURL(file);
+            const downloadUrl = await getDownloadURL(task.snapshot.ref);
+            const item: MediaFileItem = {
+              id: itemId,
+              name: file.name,
+              type: file.type || "application/octet-stream",
+              size: file.size,
+              dataUrl: downloadUrl,
+              storagePath: path,
+              uploadedAt: Date.now(),
+              category,
+              progress: 100,
+              status: "success",
+            };
+            setFiles((prev) => [item, ...prev]);
+            setPending((prev) => prev.filter((p) => p.id !== itemId));
+          } catch (e) {
+            console.error("getDownloadURL failed:", e);
+            setPending((prev) =>
+              prev.map((p) =>
+                p.id === itemId ? { ...p, error: "Could not retrieve file URL." } : p
+              )
+            );
+          }
+        }
+      );
     });
   };
 
-  const handleDeleteFile = (id: string) => {
-    saveFiles(files.filter((f) => f.id !== id));
+  const handleDeleteFile = async (id: string) => {
+    const target = files.find((f) => f.id === id);
+    if (!target) return;
+
+    // Remove from UI immediately
+    setFiles((prev) => prev.filter((f) => f.id !== id));
+
+    // Best-effort delete from Storage
+    if (target.storagePath) {
+      try {
+        await deleteObject(storageRef(storage, target.storagePath));
+      } catch {
+        // If the file is already gone or permission denied, ignore
+      }
+    }
   };
 
-  /* ───────────── Link helpers ───────────── */
-  const saveLinks = (updated: ResourceLinkItem[]) => {
-    setLinks(updated);
-    try {
-      localStorage.setItem("skillsphere_saved_links", JSON.stringify(updated));
-    } catch {}
-  };
-
+  /* ── Link helpers ────────────────────────────────────────────── */
   const handleAddLink = async (e: React.FormEvent) => {
     e.preventDefault();
-    const name = newName.trim();
+    const title = newName.trim();
     let url = newUrl.trim();
-    if (!name || !url) return;
-    if (!url.startsWith("http://") && !url.startsWith("https://")) {
-      url = "https://" + url;
-    }
+    if (!title || !url) return;
+    if (!url.startsWith("http://") && !url.startsWith("https://")) url = "https://" + url;
 
-    setIsSaving(true);
-
-    // Favicon is derived client-side — no network call needed for the main save.
-    const favicon = getFaviconUrl(url);
-
+    setIsSavingLink(true);
     const item: ResourceLinkItem = {
       id: `link-${Date.now()}`,
-      title: name,
+      title,
       url,
-      favicon,
+      favicon: getFaviconUrl(url),
       addedAt: Date.now(),
     };
-
-    saveLinks([item, ...links]);
+    setLinks((prev) => [item, ...prev]);
     setNewName("");
     setNewUrl("");
-    setIsSaving(false);
+    setIsSavingLink(false);
     setJustSaved(true);
-    setTimeout(() => {
-      setJustSaved(false);
-      setShowLinkForm(false);
-    }, 900);
+    setTimeout(() => { setJustSaved(false); setShowLinkForm(false); }, 900);
   };
 
   const handleDeleteLink = (id: string) => {
-    saveLinks(links.filter((l) => l.id !== id));
+    setLinks((prev) => prev.filter((l) => l.id !== id));
   };
 
-  /* ───────────── Misc ───────────── */
+  /* ── Misc ────────────────────────────────────────────────────── */
   const formatSize = (bytes: number) => {
     if (bytes < 1024) return bytes + " B";
     if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
@@ -188,23 +256,23 @@ export const DashboardMedia: React.FC = () => {
   };
 
   const imageFiles = files.filter(
-    (f) => f.category === "image" || f.type.startsWith("image/")
+    (f) => f.status === "success" && (f.category === "image" || f.type.startsWith("image/"))
   );
 
-  /* ───────────── Render ───────────── */
+  /* ═══════════════════════════════════════════════════════════════
+     Render
+  ══════════════════════════════════════════════════════════════════ */
   return (
     <div className="space-y-6 max-w-7xl mx-auto text-foreground">
-      {/* Header */}
+
+      {/* ── Header ── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-border gap-3">
         <h2 className="text-[18px] font-semibold tracking-tight text-foreground m-0">
           Media &amp; resources
         </h2>
         <div className="flex items-center gap-2">
           <button
-            onClick={() => {
-              setShowLinkForm((v) => !v);
-              setJustSaved(false);
-            }}
+            onClick={() => { setShowLinkForm((v) => !v); setJustSaved(false); }}
             className="px-3 py-1.5 rounded-md bg-secondary hover:bg-secondary/70 text-foreground text-[13px] font-medium flex items-center gap-1.5 transition-colors cursor-pointer border border-border"
           >
             <LinkIcon className="w-3.5 h-3.5" />
@@ -220,7 +288,7 @@ export const DashboardMedia: React.FC = () => {
         </div>
       </div>
 
-      {/* Upload Dropzone */}
+      {/* ── Dropzone ── */}
       <div
         onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
         onDragLeave={() => setIsDragging(false)}
@@ -236,7 +304,7 @@ export const DashboardMedia: React.FC = () => {
           type="file"
           multiple
           accept="image/jpeg,image/png,image/webp,image/gif,application/pdf"
-          onChange={(e) => processFiles(e.target.files)}
+          onChange={(e) => { processFiles(e.target.files); e.target.value = ""; }}
           className="hidden"
         />
         <div className="flex flex-col items-center justify-center space-y-2">
@@ -250,7 +318,55 @@ export const DashboardMedia: React.FC = () => {
         </div>
       </div>
 
-      {/* ── Add Link Form ── */}
+      {/* ── Active upload progress cards ── */}
+      {pending.length > 0 && (
+        <div className="space-y-2">
+          {pending.map((p) => (
+            <div
+              key={p.id}
+              className={cn(
+                "flex items-center gap-3 p-3 rounded-xl border text-[12px]",
+                p.error
+                  ? "bg-destructive/5 border-destructive/30 text-destructive"
+                  : "bg-card border-border"
+              )}
+            >
+              {p.error ? (
+                <AlertCircle className="w-4 h-4 shrink-0" />
+              ) : (
+                <Loader2 className="w-4 h-4 shrink-0 animate-spin text-primary" />
+              )}
+              <div className="flex-1 min-w-0">
+                <div className="flex justify-between items-center mb-1">
+                  <span className="font-medium truncate max-w-[200px]">{p.name}</span>
+                  <span className="tabular-nums text-muted-foreground ml-2 shrink-0">
+                    {p.error ? "Failed" : `${p.progress}%`}
+                  </span>
+                </div>
+                {!p.error && (
+                  <div className="w-full h-1.5 bg-secondary rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-primary rounded-full transition-all duration-300"
+                      style={{ width: `${p.progress}%` }}
+                    />
+                  </div>
+                )}
+                {p.error && <p className="text-[11px] mt-0.5 opacity-80">{p.error}</p>}
+              </div>
+              {p.error && (
+                <button
+                  onClick={() => setPending((prev) => prev.filter((x) => x.id !== p.id))}
+                  className="p-1 text-muted-foreground hover:text-foreground cursor-pointer border-none bg-transparent shrink-0"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* ── Add Link form ── */}
       {showLinkForm && (
         <form
           onSubmit={handleAddLink}
@@ -286,7 +402,7 @@ export const DashboardMedia: React.FC = () => {
             />
             <button
               type="submit"
-              disabled={isSaving || justSaved}
+              disabled={isSavingLink || justSaved}
               className={cn(
                 "px-5 py-2 rounded-xl text-[12px] font-bold uppercase tracking-wider border-none cursor-pointer transition-all flex items-center gap-1.5 shrink-0",
                 justSaved
@@ -294,7 +410,7 @@ export const DashboardMedia: React.FC = () => {
                   : "bg-primary text-primary-foreground hover:bg-primary/90"
               )}
             >
-              {isSaving ? (
+              {isSavingLink ? (
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
               ) : justSaved ? (
                 <Check className="w-3.5 h-3.5" />
@@ -305,7 +421,7 @@ export const DashboardMedia: React.FC = () => {
             </button>
           </div>
 
-          {/* Live URL preview pill */}
+          {/* Live preview pill */}
           {newUrl.trim() && (
             <div className="flex items-center gap-2 pt-1">
               <span className="text-[11px] text-muted-foreground">Preview:</span>
@@ -323,7 +439,7 @@ export const DashboardMedia: React.FC = () => {
         </form>
       )}
 
-      {/* ── Saved Links Tag Strip ── */}
+      {/* ── Saved links tag strip ── */}
       {links.length > 0 && (
         <div className="space-y-2.5">
           <div className="flex items-center gap-2">
@@ -339,7 +455,6 @@ export const DashboardMedia: React.FC = () => {
                 key={link.id}
                 className="group/tag inline-flex items-center gap-1.5 pl-2 pr-1 py-1 rounded-full bg-secondary border border-border hover:border-primary/50 hover:bg-secondary/70 transition-all text-[12px] font-medium text-foreground cursor-default"
               >
-                {/* Favicon */}
                 {link.favicon ? (
                   <img
                     src={link.favicon}
@@ -352,8 +467,6 @@ export const DashboardMedia: React.FC = () => {
                     <LinkIcon className="w-2.5 h-2.5 text-primary" />
                   </div>
                 )}
-
-                {/* Label — clicking opens the URL */}
                 <a
                   href={link.url}
                   target="_blank"
@@ -363,8 +476,6 @@ export const DashboardMedia: React.FC = () => {
                 >
                   {link.title}
                 </a>
-
-                {/* Open in new tab icon */}
                 <a
                   href={link.url}
                   target="_blank"
@@ -374,8 +485,6 @@ export const DashboardMedia: React.FC = () => {
                 >
                   <ExternalLink className="w-3 h-3" />
                 </a>
-
-                {/* Delete button */}
                 <button
                   onClick={() => handleDeleteLink(link.id)}
                   className="p-0.5 rounded-full text-muted-foreground hover:text-destructive transition-colors cursor-pointer border-none bg-transparent opacity-0 group-hover/tag:opacity-100"
@@ -389,7 +498,7 @@ export const DashboardMedia: React.FC = () => {
         </div>
       )}
 
-      {/* ── JPG / Image Gallery ── */}
+      {/* ── Image gallery ── */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <h3 className="text-[14px] font-semibold text-foreground flex items-center gap-2">
@@ -443,6 +552,8 @@ export const DashboardMedia: React.FC = () => {
                     <a
                       href={file.dataUrl}
                       download={file.name}
+                      target="_blank"
+                      rel="noreferrer"
                       className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
                       title="Download"
                     >
@@ -463,7 +574,7 @@ export const DashboardMedia: React.FC = () => {
         )}
       </div>
 
-      {/* Full-screen Lightbox */}
+      {/* ── Lightbox ── */}
       {lightboxImage && (
         <div
           onClick={() => setLightboxImage(null)}
@@ -480,8 +591,9 @@ export const DashboardMedia: React.FC = () => {
               <div className="flex items-center gap-2">
                 <a
                   href={lightboxImage.dataUrl}
-                  download={lightboxImage.name}
-                  className="px-3 py-1 rounded-lg bg-primary text-primary-foreground text-[10px] font-bold uppercase tracking-wider flex items-center gap-1"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="px-3 py-1 rounded-lg bg-primary text-primary-foreground text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 no-underline"
                 >
                   <Download className="w-3 h-3" />
                   <span>Download</span>
