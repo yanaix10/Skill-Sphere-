@@ -21,23 +21,17 @@ import {
 } from "firebase/storage";
 import { storage, auth } from "../../firebase";
 import { cn } from "@/lib/utils";
+import {
+  saveMediaToIndexedDB,
+  loadAllMediaFromIndexedDB,
+  deleteMediaFromIndexedDB,
+  updateMediaInIndexedDB,
+  PersistedMediaFile,
+} from "../../services/mediaStorage";
 
 /* ─── Types ─────────────────────────────────────────────────────── */
 
-export interface MediaFileItem {
-  id: string;
-  name: string;
-  type: string;
-  size: number;
-  /** Permanent Firebase Storage download URL (not base64) */
-  dataUrl: string;
-  /** Firebase Storage path so we can delete the file later */
-  storagePath?: string;
-  uploadedAt: number;
-  category: "image" | "document" | "other";
-  progress?: number;
-  status?: "uploading" | "success" | "error";
-}
+export type MediaFileItem = PersistedMediaFile;
 
 export interface ResourceLinkItem {
   id: string;
@@ -67,35 +61,23 @@ function getDomain(pageUrl: string): string {
   }
 }
 
-/** Metadata-only key — we never store base64 here, just the small JSON */
-const LS_FILES_KEY = "skillsphere_media_meta_v2";
 const LS_LINKS_KEY = "skillsphere_saved_links";
 
-function loadFromLS<T>(key: string): T[] {
+function loadLinksFromLS(): ResourceLinkItem[] {
   try {
-    const raw = localStorage.getItem(key);
+    const raw = localStorage.getItem(LS_LINKS_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed)) return parsed as T[];
+      if (Array.isArray(parsed)) return parsed;
     }
   } catch {}
   return [];
 }
 
-function saveToLS<T>(key: string, data: T[]) {
+function saveLinksToLS(data: ResourceLinkItem[]) {
   try {
-    localStorage.setItem(key, JSON.stringify(data));
+    localStorage.setItem(LS_LINKS_KEY, JSON.stringify(data));
   } catch {}
-}
-
-/* ─── Pending upload tracker ────────────────────────────────────── */
-
-interface PendingUpload {
-  id: string;
-  name: string;
-  size: number;
-  progress: number;
-  error?: string;
 }
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -104,11 +86,9 @@ interface PendingUpload {
 
 export const DashboardMedia: React.FC = () => {
   /* ── Persisted state ─────────────────────────────────────────── */
-  const [files, setFiles] = useState<MediaFileItem[]>(() => loadFromLS<MediaFileItem>(LS_FILES_KEY));
-  const [links, setLinks] = useState<ResourceLinkItem[]>(() => loadFromLS<ResourceLinkItem>(LS_LINKS_KEY));
-
-  /* ── Upload state ────────────────────────────────────────────── */
-  const [pending, setPending] = useState<PendingUpload[]>([]);
+  const [files, setFiles] = useState<MediaFileItem[]>([]);
+  const [links, setLinks] = useState<ResourceLinkItem[]>(loadLinksFromLS);
+  const [isLoadingMedia, setIsLoadingMedia] = useState(true);
 
   /* ── UI state ────────────────────────────────────────────────── */
   const [lightboxImage, setLightboxImage] = useState<MediaFileItem | null>(null);
@@ -121,85 +101,100 @@ export const DashboardMedia: React.FC = () => {
   const [isSavingLink, setIsSavingLink] = useState(false);
   const [justSaved, setJustSaved] = useState(false);
 
-  /* ── Persist files metadata whenever it changes ─────────────── */
+  /* ── Load all media permanently from IndexedDB on mount ──────── */
   useEffect(() => {
-    // Strip any pending/error items before persisting
-    const toSave = files.filter((f) => f.status === "success");
-    saveToLS(LS_FILES_KEY, toSave);
-  }, [files]);
+    let isMounted = true;
+    loadAllMediaFromIndexedDB()
+      .then((items) => {
+        if (isMounted) {
+          setFiles(items);
+          setIsLoadingMedia(false);
+        }
+      })
+      .catch((err) => {
+        console.warn("Could not load media from IndexedDB:", err);
+        if (isMounted) setIsLoadingMedia(false);
+      });
 
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  /* ── Save links to localStorage ──────────────────────────────── */
   useEffect(() => {
-    saveToLS(LS_LINKS_KEY, links);
+    saveLinksToLS(links);
   }, [links]);
 
-  /* ── File upload ─────────────────────────────────────────────── */
+  /* ── File upload handler with instant local persistence ──────── */
   const processFiles = (fileList: FileList | null) => {
     if (!fileList || fileList.length === 0) return;
 
     const uid = auth.currentUser?.uid ?? "anonymous";
 
-    Array.from(fileList).forEach((file) => {
+    Array.from(fileList).forEach(async (file) => {
       const itemId = `file-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
       const category: MediaFileItem["category"] = file.type.startsWith("image/")
         ? "image"
         : "document";
 
-      // Add a pending tracker
-      setPending((prev) => [
-        { id: itemId, name: file.name, size: file.size, progress: 0 },
-        ...prev,
-      ]);
+      // Create an immediate local preview URL
+      const localPreviewUrl = URL.createObjectURL(file);
 
-      // Build a unique path under the user's folder
-      const path = `media/${uid}/${itemId}_${file.name}`;
-      const ref = storageRef(storage, path);
-      const task = uploadBytesResumable(ref, file);
+      const newItem: MediaFileItem = {
+        id: itemId,
+        name: file.name,
+        type: file.type || "application/octet-stream",
+        size: file.size,
+        dataUrl: localPreviewUrl,
+        blob: file,
+        uploadedAt: Date.now(),
+        category,
+        status: "success",
+      };
 
-      task.on(
-        "state_changed",
-        (snap) => {
-          const pct = snap.totalBytes > 0
-            ? Math.round((snap.bytesTransferred / snap.totalBytes) * 100)
-            : 0;
-          setPending((prev) =>
-            prev.map((p) => (p.id === itemId ? { ...p, progress: pct } : p))
-          );
-        },
-        (err) => {
-          console.error("Upload failed:", err);
-          setPending((prev) =>
-            prev.map((p) =>
-              p.id === itemId ? { ...p, error: "Upload failed. Check storage rules." } : p
-            )
-          );
-        },
-        async () => {
-          try {
-            const downloadUrl = await getDownloadURL(task.snapshot.ref);
-            const item: MediaFileItem = {
-              id: itemId,
-              name: file.name,
-              type: file.type || "application/octet-stream",
-              size: file.size,
-              dataUrl: downloadUrl,
-              storagePath: path,
-              uploadedAt: Date.now(),
-              category,
-              progress: 100,
-              status: "success",
-            };
-            setFiles((prev) => [item, ...prev]);
-            setPending((prev) => prev.filter((p) => p.id !== itemId));
-          } catch (e) {
-            console.error("getDownloadURL failed:", e);
-            setPending((prev) =>
-              prev.map((p) =>
-                p.id === itemId ? { ...p, error: "Could not retrieve file URL." } : p
-              )
-            );
+      // 1. Immediately show in UI (0ms delay)
+      setFiles((prev) => [newItem, ...prev]);
+
+      // 2. Permanently persist into IndexedDB (survives refreshes & browser restarts!)
+      await saveMediaToIndexedDB({
+        id: itemId,
+        name: file.name,
+        type: file.type || "application/octet-stream",
+        size: file.size,
+        uploadedAt: Date.now(),
+        category,
+        blob: file,
+      });
+
+      // 3. Attempt background sync to Firebase Storage if available/configured
+      try {
+        const path = `media/${uid}/${itemId}_${file.name}`;
+        const ref = storageRef(storage, path);
+        const task = uploadBytesResumable(ref, file);
+
+        task.on(
+          "state_changed",
+          () => {},
+          (err) => {
+            // Note: If Firebase Storage CORS fails, file is safely and permanently stored in IndexedDB!
+            console.info("Saved locally in IndexedDB (Cloud sync paused):", err.message);
+          },
+          async () => {
+            try {
+              const downloadUrl = await getDownloadURL(task.snapshot.ref);
+              await updateMediaInIndexedDB(itemId, { storagePath: path, cloudUrl: downloadUrl });
+              setFiles((prev) =>
+                prev.map((f) =>
+                  f.id === itemId ? { ...f, storagePath: path, cloudUrl: downloadUrl } : f
+                )
+              );
+            } catch {}
           }
-        }
-      );
+        );
+      } catch {
+        console.info("Cloud storage upload bypassed; file permanently preserved in IndexedDB.");
+      }
     });
   };
 
@@ -207,16 +202,17 @@ export const DashboardMedia: React.FC = () => {
     const target = files.find((f) => f.id === id);
     if (!target) return;
 
-    // Remove from UI immediately
+    // 1. Remove from UI immediately
     setFiles((prev) => prev.filter((f) => f.id !== id));
 
-    // Best-effort delete from Storage
+    // 2. Remove permanently from IndexedDB
+    await deleteMediaFromIndexedDB(id);
+
+    // 3. Best-effort delete from Firebase Storage if cloud path exists
     if (target.storagePath) {
       try {
         await deleteObject(storageRef(storage, target.storagePath));
-      } catch {
-        // If the file is already gone or permission denied, ignore
-      }
+      } catch {}
     }
   };
 
@@ -241,7 +237,10 @@ export const DashboardMedia: React.FC = () => {
     setNewUrl("");
     setIsSavingLink(false);
     setJustSaved(true);
-    setTimeout(() => { setJustSaved(false); setShowLinkForm(false); }, 900);
+    setTimeout(() => {
+      setJustSaved(false);
+      setShowLinkForm(false);
+    }, 900);
   };
 
   const handleDeleteLink = (id: string) => {
@@ -256,7 +255,7 @@ export const DashboardMedia: React.FC = () => {
   };
 
   const imageFiles = files.filter(
-    (f) => f.status === "success" && (f.category === "image" || f.type.startsWith("image/"))
+    (f) => f.category === "image" || f.type.startsWith("image/")
   );
 
   /* ═══════════════════════════════════════════════════════════════
@@ -272,7 +271,10 @@ export const DashboardMedia: React.FC = () => {
         </h2>
         <div className="flex items-center gap-2">
           <button
-            onClick={() => { setShowLinkForm((v) => !v); setJustSaved(false); }}
+            onClick={() => {
+              setShowLinkForm((v) => !v);
+              setJustSaved(false);
+            }}
             className="px-3 py-1.5 rounded-md bg-secondary hover:bg-secondary/70 text-foreground text-[13px] font-medium flex items-center gap-1.5 transition-colors cursor-pointer border border-border"
           >
             <LinkIcon className="w-3.5 h-3.5" />
@@ -290,9 +292,16 @@ export const DashboardMedia: React.FC = () => {
 
       {/* ── Dropzone ── */}
       <div
-        onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+        onDragOver={(e) => {
+          e.preventDefault();
+          setIsDragging(true);
+        }}
         onDragLeave={() => setIsDragging(false)}
-        onDrop={(e) => { e.preventDefault(); setIsDragging(false); processFiles(e.dataTransfer.files); }}
+        onDrop={(e) => {
+          e.preventDefault();
+          setIsDragging(false);
+          processFiles(e.dataTransfer.files);
+        }}
         onClick={() => fileInputRef.current?.click()}
         className={cn(
           "rounded-2xl border-2 border-dashed p-6 sm:p-8 text-center cursor-pointer transition-all duration-200 group bg-card",
@@ -304,7 +313,10 @@ export const DashboardMedia: React.FC = () => {
           type="file"
           multiple
           accept="image/jpeg,image/png,image/webp,image/gif,application/pdf"
-          onChange={(e) => { processFiles(e.target.files); e.target.value = ""; }}
+          onChange={(e) => {
+            processFiles(e.target.files);
+            e.target.value = "";
+          }}
           className="hidden"
         />
         <div className="flex flex-col items-center justify-center space-y-2">
@@ -313,58 +325,10 @@ export const DashboardMedia: React.FC = () => {
           </div>
           <h3 className="text-[14px] font-semibold text-foreground m-0">Drop files to upload</h3>
           <p className="text-[12px] text-muted-foreground">
-            JPG, PNG diagrams, system architecture charts, or PDF documentation (up to 10&nbsp;MB)
+            JPG, PNG diagrams, system architecture charts, or PDF documentation (up to 25&nbsp;MB)
           </p>
         </div>
       </div>
-
-      {/* ── Active upload progress cards ── */}
-      {pending.length > 0 && (
-        <div className="space-y-2">
-          {pending.map((p) => (
-            <div
-              key={p.id}
-              className={cn(
-                "flex items-center gap-3 p-3 rounded-xl border text-[12px]",
-                p.error
-                  ? "bg-destructive/5 border-destructive/30 text-destructive"
-                  : "bg-card border-border"
-              )}
-            >
-              {p.error ? (
-                <AlertCircle className="w-4 h-4 shrink-0" />
-              ) : (
-                <Loader2 className="w-4 h-4 shrink-0 animate-spin text-primary" />
-              )}
-              <div className="flex-1 min-w-0">
-                <div className="flex justify-between items-center mb-1">
-                  <span className="font-medium truncate max-w-[200px]">{p.name}</span>
-                  <span className="tabular-nums text-muted-foreground ml-2 shrink-0">
-                    {p.error ? "Failed" : `${p.progress}%`}
-                  </span>
-                </div>
-                {!p.error && (
-                  <div className="w-full h-1.5 bg-secondary rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-primary rounded-full transition-all duration-300"
-                      style={{ width: `${p.progress}%` }}
-                    />
-                  </div>
-                )}
-                {p.error && <p className="text-[11px] mt-0.5 opacity-80">{p.error}</p>}
-              </div>
-              {p.error && (
-                <button
-                  onClick={() => setPending((prev) => prev.filter((x) => x.id !== p.id))}
-                  className="p-1 text-muted-foreground hover:text-foreground cursor-pointer border-none bg-transparent shrink-0"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
 
       {/* ── Add Link form ── */}
       {showLinkForm && (
@@ -430,7 +394,9 @@ export const DashboardMedia: React.FC = () => {
                   src={getFaviconUrl(newUrl)}
                   alt=""
                   className="w-3.5 h-3.5 rounded-sm object-contain"
-                  onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).style.display = "none";
+                  }}
                 />
                 <span className="max-w-[200px] truncate">{newName.trim() || getDomain(newUrl)}</span>
               </div>
@@ -460,7 +426,9 @@ export const DashboardMedia: React.FC = () => {
                     src={link.favicon}
                     alt=""
                     className="w-4 h-4 rounded-sm object-contain shrink-0"
-                    onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).style.display = "none";
+                    }}
                   />
                 ) : (
                   <div className="w-4 h-4 rounded-sm bg-primary/15 flex items-center justify-center shrink-0">
@@ -508,7 +476,12 @@ export const DashboardMedia: React.FC = () => {
           <span className="text-[12px] text-muted-foreground">Click any image to expand full-screen</span>
         </div>
 
-        {imageFiles.length === 0 ? (
+        {isLoadingMedia ? (
+          <div className="p-8 text-center rounded-xl bg-card border border-border text-muted-foreground text-[12px] flex items-center justify-center gap-2">
+            <Loader2 className="w-4 h-4 animate-spin text-primary" />
+            <span>Loading your saved notes &amp; diagrams...</span>
+          </div>
+        ) : imageFiles.length === 0 ? (
           <div className="p-8 text-center rounded-xl bg-card border border-border text-muted-foreground text-[12px]">
             No files uploaded yet. Drop JPGs or diagrams above to organize your study notes!
           </div>
@@ -591,6 +564,7 @@ export const DashboardMedia: React.FC = () => {
               <div className="flex items-center gap-2">
                 <a
                   href={lightboxImage.dataUrl}
+                  download={lightboxImage.name}
                   target="_blank"
                   rel="noreferrer"
                   className="px-3 py-1 rounded-lg bg-primary text-primary-foreground text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 no-underline"

@@ -196,7 +196,12 @@ export const DeveloperActivityCard: React.FC<{ compact?: boolean }> = ({ compact
       setChessUsername(username.trim().toLowerCase());
       setIsEditingChess(false);
     } catch (err: any) {
-      setChessError(err.message || "Failed to load Chess.com");
+      const isNetworkErr = !navigator.onLine || err.message?.includes("fetch") || err.name === "TypeError";
+      setChessError(
+        isNetworkErr
+          ? "Chess.com profile unavailable (network blocked or offline)"
+          : err.message || "Failed to load Chess.com"
+      );
     } finally {
       setChessLoading(false);
     }
