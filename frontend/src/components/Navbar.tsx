@@ -35,32 +35,7 @@ interface FriendMessageNotification {
   isRead: boolean;
 }
 
-const DEFAULT_NOTIFICATIONS: FriendMessageNotification[] = [
-  {
-    id: "notif-1",
-    friendId: "friend-soul",
-    friendName: "Soul Honest",
-    messageText: "Hey, did you check out the dynamic programming problem set?",
-    timestamp: "10:42 AM",
-    isRead: false,
-  },
-  {
-    id: "notif-2",
-    friendId: "friend-kritika",
-    friendName: "Kritika",
-    messageText: "Ready for our 1v1 speed duel today?",
-    timestamp: "Yesterday",
-    isRead: false,
-  },
-  {
-    id: "notif-3",
-    friendId: "friend-izuku",
-    friendName: "Izuku Namida",
-    messageText: "Sent you the project sprint notes on Classroom.",
-    timestamp: "Nov 4",
-    isRead: true,
-  },
-];
+const DEFAULT_NOTIFICATIONS: FriendMessageNotification[] = [];
 
 const authenticatedLinks = [
   { href: "/dashboard", label: "Home" },
@@ -84,7 +59,18 @@ export default function Navbar() {
   const [notifications, setNotifications] = useState<FriendMessageNotification[]>(() => {
     try {
       const stored = localStorage.getItem("skillsphere_friend_notifications");
-      if (stored) return JSON.parse(stored);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        // Purge any stored notifications that contain hardcoded demo data
+        const hasLegacy = parsed.some((n: any) =>
+          ["friend-soul", "friend-kritika", "friend-izuku"].includes(n.friendId)
+        );
+        if (hasLegacy) {
+          localStorage.removeItem("skillsphere_friend_notifications");
+          return [];
+        }
+        return parsed;
+      }
     } catch {}
     return DEFAULT_NOTIFICATIONS;
   });

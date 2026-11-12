@@ -38,7 +38,7 @@ const AddFriend: React.FC<AddFriendProps> = ({
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               type="text"
-              placeholder="Enter username (e.g. soul_honest)"
+              placeholder="Enter username (e.g. dev_coder)"
               onChange={(e) => setSearchName(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && onSearch()}
               className="pl-9 bg-card border-border text-sm"

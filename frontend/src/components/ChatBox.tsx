@@ -356,15 +356,6 @@ export const Chatbox: React.FC<ChatboxProps> = ({ selectedUser }) => {
     if (selectedUser.name) setActualName(selectedUser.name);
     if (selectedUser.avatarUrl) setAvatarUrl(selectedUser.avatarUrl);
 
-    if (selectedUser.id === "friend-soul") {
-      setActualName("Soul Honest");
-      return;
-    }
-    if (selectedUser.id === "friend-kritika") {
-      setActualName("Kritika Sharma");
-      return;
-    }
-
     const unsub = onSnapshot(doc(db, "users", selectedUser.id), (docSnap) => {
       if (docSnap.exists()) {
         const data = docSnap.data();

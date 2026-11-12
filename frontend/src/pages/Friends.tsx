@@ -68,14 +68,7 @@ const Friends: React.FC = () => {
     if (!currentUser) return;
 
     if (currentUser.uid === "test-user-123") {
-      const devFriends: Friend[] = [
-        { id: "friend-soul", username: "soul_honest", name: "Soul Honest", status: "accepted" },
-        { id: "friend-kritika", username: "kritikax45", name: "Kritika Sharma", status: "accepted" },
-      ];
-      setFriendsList(devFriends);
-      if (!selectedUser) {
-        setSelectedUser(devFriends[0]);
-      }
+      setFriendsList([]);
       return;
     }
 
