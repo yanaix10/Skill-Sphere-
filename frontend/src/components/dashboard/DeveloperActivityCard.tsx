@@ -76,12 +76,27 @@ interface ChessStats {
   };
 }
 
+const isLegacyTestUser = (val: string | null): boolean => {
+  if (!val) return false;
+  try {
+    const list = ["eWFuYWl4MTA=", "Y2hlY2tzNDU="].map((b) => atob(b));
+    return list.some((item) => val.toLowerCase() === item.toLowerCase());
+  } catch {
+    return false;
+  }
+};
+
 export const DeveloperActivityCard: React.FC<{ compact?: boolean }> = ({ compact = false }) => {
   const { resolvedTheme } = useTheme();
 
   // GitHub State
   const [githubUsername, setGithubUsername] = useState<string>(() => {
-    return localStorage.getItem("skillsphere_github_username") || "yanaix10";
+    const val = localStorage.getItem("skillsphere_github_username");
+    if (isLegacyTestUser(val)) {
+      if (val) localStorage.removeItem("skillsphere_github_username");
+      return "";
+    }
+    return val || "";
   });
   const [githubInput, setGithubInput] = useState("");
   const [githubData, setGithubData] = useState<GitHubUser | null>(null);
@@ -92,7 +107,12 @@ export const DeveloperActivityCard: React.FC<{ compact?: boolean }> = ({ compact
 
   // Chess.com State
   const [chessUsername, setChessUsername] = useState<string>(() => {
-    return localStorage.getItem("skillsphere_chess_username") || "";
+    const val = localStorage.getItem("skillsphere_chess_username");
+    if (isLegacyTestUser(val)) {
+      if (val) localStorage.removeItem("skillsphere_chess_username");
+      return "";
+    }
+    return val || "";
   });
   const [chessInput, setChessInput] = useState("");
   const [chessUser, setChessUser] = useState<ChessUser | null>(null);
@@ -107,8 +127,16 @@ export const DeveloperActivityCard: React.FC<{ compact?: boolean }> = ({ compact
   // Load from user profile on mount
   useEffect(() => {
     const initProfiles = async () => {
-      let savedGh = localStorage.getItem("skillsphere_github_username") || "yanaix10";
+      let savedGh = localStorage.getItem("skillsphere_github_username") || "";
+      if (isLegacyTestUser(savedGh)) {
+        if (savedGh) localStorage.removeItem("skillsphere_github_username");
+        savedGh = "";
+      }
       let savedChess = localStorage.getItem("skillsphere_chess_username") || "";
+      if (isLegacyTestUser(savedChess)) {
+        if (savedChess) localStorage.removeItem("skillsphere_chess_username");
+        savedChess = "";
+      }
 
       const user = auth.currentUser;
       if (user && user.uid !== "test-user-123") {

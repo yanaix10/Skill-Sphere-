@@ -38,21 +38,25 @@ export function ProfileDialog({
 }: ProfileDialogProps) {
   const id = useId();
 
-  const [firstName, setFirstName] = useState("Naitik");
-  const [lastName, setLastName] = useState("Yadav");
-  const [username, setUsername] = useState("naitik_dev");
-  const [website, setWebsite] = useState("www.skillsphere.dev");
-  const [collegeName, setCollegeName] = useState("VIT Chennai");
-  const [degree, setDegree] = useState("B.Tech");
-  const [branch, setBranch] = useState("CSE");
-  const [year, setYear] = useState("3");
-  const [age, setAge] = useState("21");
-  const [homeCity, setHomeCity] = useState("Bangalore");
-  const [bannerImage, setBannerImage] = useState<string | null>(
-    "https://cdn.21st.dev/assets/localized/feb98d05c4c252d9b9bb86b4cf80d14b38e69ea16b404e219f36a53f252b1f1c.jpg"
-  );
+  const [firstName, setFirstName] = useState(() => {
+    const user = auth.currentUser;
+    return user?.displayName ? user.displayName.split(" ")[0] : "";
+  });
+  const [lastName, setLastName] = useState(() => {
+    const user = auth.currentUser;
+    return user?.displayName ? user.displayName.split(" ").slice(1).join(" ") : "";
+  });
+  const [username, setUsername] = useState("");
+  const [website, setWebsite] = useState("");
+  const [collegeName, setCollegeName] = useState("");
+  const [degree, setDegree] = useState("");
+  const [branch, setBranch] = useState("");
+  const [year, setYear] = useState("");
+  const [age, setAge] = useState("");
+  const [homeCity, setHomeCity] = useState("");
+  const [bannerImage, setBannerImage] = useState<string | null>(null);
   const [avatarImage, setAvatarImage] = useState<string | null>(
-    "https://cdn.21st.dev/assets/localized/8d83e28e14ccb2140152662c91092e7696fada2802b4e1bb82d1d363f6723ed4.jpg"
+    () => auth.currentUser?.photoURL || null
   );
   const [isSaving, setIsSaving] = useState(false);
 
@@ -65,8 +69,7 @@ export function ProfileDialog({
     maxLength: limit,
   } = useCharacterLimit({
     maxLength,
-    initialValue:
-      "Passionate developer & competitive programmer on SkillSphere.",
+    initialValue: "",
   });
 
   useEffect(() => {
@@ -78,17 +81,17 @@ export function ProfileDialog({
         if (local) {
           try {
             const data = JSON.parse(local);
-            const parts = (data.name || "Naitik Yadav").split(" ");
+            const parts = (data.name || "").split(" ");
             setFirstName(parts[0] || "");
             setLastName(parts.slice(1).join(" ") || "");
-            setUsername(data.username || "naitik_dev");
-            setWebsite(data.website || "www.skillsphere.dev");
-            setCollegeName(data.collegeName || "VIT Chennai");
-            setDegree(data.degree || "B.Tech");
-            setBranch(data.branch || "CSE");
-            setYear(data.year || "3");
-            setAge(data.age || "21");
-            setHomeCity(data.homeCity || "Bangalore");
+            setUsername(data.username || "");
+            setWebsite(data.website || "");
+            setCollegeName(data.collegeName || "");
+            setDegree(data.degree || "");
+            setBranch(data.branch || "");
+            setYear(data.year || "");
+            setAge(data.age || "");
+            setHomeCity(data.homeCity || "");
             if (data.about) setBio(data.about);
             if (data.bannerUrl) setBannerImage(data.bannerUrl);
             if (data.avatarUrl) setAvatarImage(data.avatarUrl);
@@ -115,6 +118,11 @@ export function ProfileDialog({
           if (data.about) setBio(data.about);
           if (data.bannerUrl) setBannerImage(data.bannerUrl);
           if (data.avatarUrl) setAvatarImage(data.avatarUrl);
+        } else if (user.displayName) {
+          const parts = user.displayName.split(" ");
+          setFirstName(parts[0] || "");
+          setLastName(parts.slice(1).join(" ") || "");
+          if (user.photoURL) setAvatarImage(user.photoURL);
         }
       } catch (err) {
         console.error("Error loading user profile:", err);
@@ -283,7 +291,7 @@ export function ProfileDialog({
                   <Label htmlFor={`${id}-college`}>College / University</Label>
                   <Input
                     id={`${id}-college`}
-                    placeholder="e.g. VIT Chennai"
+                    placeholder="e.g. Stanford University / Tech Institute"
                     value={collegeName}
                     onChange={(e) => setCollegeName(e.target.value)}
                     type="text"

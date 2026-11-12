@@ -4,9 +4,9 @@
 - **Framework:** React 19.2.0 + TypeScript 5.7.3.
 - **Build Tool:** Vite 7.2.4.
 - **Styling:** Tailwind CSS v4.0.0.
-- **Routing:** `react-router-dom` v7.14.1 with `createBrowserRouter` defined in [`frontend/src/App.tsx`](file:///home/naitik/Projects/Skill-Sphere-/frontend/src/App.tsx).
+- **Routing:** `react-router-dom` v7.14.1 with `createBrowserRouter` defined in [`frontend/src/App.tsx`](frontend/src/App.tsx).
 - **Icons / Assets:** Inline SVGs and styled HTML elements.
-- **Authentication:** Firebase Auth ([`frontend/src/firebase.ts`](file:///home/naitik/Projects/Skill-Sphere-/frontend/src/firebase.ts)) with fallback guest/dev bypass (`?dev=true`).
+- **Authentication:** Firebase Auth ([`frontend/src/firebase.ts`](frontend/src/firebase.ts)) with fallback guest/dev bypass (`?dev=true`).
 
 ---
 
@@ -14,15 +14,15 @@
 * `/` -> `HomePage.tsx`
 * `/quizzes` -> `Quizzes.tsx`:
   * Default mode `main` renders the battleground introduction.
-  * Mode `challenge` renders the 1v1 arena [`frontend/src/components/Challenge.tsx`](file:///home/naitik/Projects/Skill-Sphere-/frontend/src/components/Challenge.tsx).
-  * Mode `practice` renders solo quiz practice ([`frontend/src/pages/Practice.tsx`](file:///home/naitik/Projects/Skill-Sphere-/frontend/src/pages/Practice.tsx)).
+  * Mode `challenge` renders the 1v1 arena [`frontend/src/components/Challenge.tsx`](frontend/src/components/Challenge.tsx).
+  * Mode `practice` renders solo quiz practice ([`frontend/src/pages/Practice.tsx`](frontend/src/pages/Practice.tsx)).
 * `/friends` -> `Friends.tsx`
 * `/profile` -> `Profile.tsx`
 * `/games` -> Placeholder container.
 
 ---
 
-## 3. Challenge Component Audit ([`Challenge.tsx`](file:///home/naitik/Projects/Skill-Sphere-/frontend/src/components/Challenge.tsx))
+## 3. Challenge Component Audit ([`Challenge.tsx`](frontend/src/components/Challenge.tsx))
 
 ### A. State Management
 All match state is stored locally using React hooks (`useState`, `useRef`, `useEffect`):
@@ -63,7 +63,7 @@ All match state is stored locally using React hooks (`useState`, `useRef`, `useE
      - Action buttons: `SKIP`, `RUN CODE` (sample test), `SUBMIT SOLUTION` (all tests).
      - Link: `Surrender Match`.
    - **Right Panel (Code Editor):**
-     - [`CodeEditor.tsx`](file:///home/naitik/Projects/Skill-Sphere-/frontend/src/components/CodeEditor.tsx) wrapping Monaco Editor with syntax highlighting, language selector, and auto-population of starter code when switching questions or languages.
+     - [`CodeEditor.tsx`](frontend/src/components/CodeEditor.tsx) wrapping Monaco Editor with syntax highlighting, language selector, and auto-population of starter code when switching questions or languages.
 4. **Result Overlay (`winner !== null`)**:
    - Fullscreen glassmorphic overlay announcing "CHALLENGE OVER", winner's name, and a "HOME" navigation button.
 

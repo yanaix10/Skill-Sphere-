@@ -37,7 +37,7 @@ export const HomeSidebar: React.FC<HomeSidebarProps> = ({
   onSelectSection,
 }) => {
   const user = auth.currentUser;
-  const displayName = user?.displayName || "Naitik Yadav";
+  const displayName = user?.displayName || user?.email?.split("@")[0] || "Developer";
 
   const [isClassroomConnected, setIsClassroomConnected] = useState(false);
   const [isCalendarConnected, setIsCalendarConnected] = useState(false);

@@ -110,14 +110,14 @@ const ProfileView: React.FC<ProfileViewProps> = ({ data, userId, onEdit }) => {
           setUserData(userDoc.data() as ProfileData);
         } else {
           setUserData({
-            name: 'Soul Honest',
-            username: 'soul_honest',
-            degree: 'B.Com in Management',
-            age: 22,
-            homeCity: 'Sitapur',
-            collegeName: 'VIT Chennai',
+            name: 'New Developer',
+            username: 'developer',
+            degree: 'Computer Science',
+            age: 20,
+            homeCity: 'Global',
+            collegeName: 'Tech University',
             year: 1,
-            about: 'Moj Masti Padhai',
+            about: 'Learning and building on SkillSphere.',
             rating: 600,
             points: 600,
             badges: [],

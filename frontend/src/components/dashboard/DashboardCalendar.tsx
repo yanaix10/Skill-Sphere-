@@ -181,7 +181,7 @@ export const DashboardCalendar: React.FC = () => {
       endTime: newEvent.endTime,
       meetLink: newEvent.meetLink.trim() || undefined,
       category: newEvent.category,
-      organizer: user?.displayName || "Naitik Yadav",
+      organizer: user?.displayName || user?.email || "Student",
       description: newEvent.description.trim() || undefined,
       color: newEvent.category === "Meeting" ? "blue" : newEvent.category === "Duel" ? "purple" : "green",
     };

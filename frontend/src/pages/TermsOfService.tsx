@@ -72,8 +72,8 @@ export const TermsOfService: React.FC = () => {
         <h2 className="text-xl font-bold">6. Contact</h2>
         <p className="text-sm leading-relaxed text-foreground/90">
           For inquiries regarding these Terms of Service, please reach out to:{" "}
-          <a href="mailto:naitik.yadav641@gmail.com" className="text-primary font-bold">
-            naitik.yadav641@gmail.com
+          <a href="mailto:support@skillsphere.app" className="text-primary font-bold">
+            support@skillsphere.app
           </a>.
         </p>
       </section>

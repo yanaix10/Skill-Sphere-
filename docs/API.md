@@ -84,7 +84,7 @@ The backend supports both the **Frontend-Native Events** (used directly by `Chal
 {
   "challengeId": "X7K9P2",
   "userDetails": {
-    "name": "Naitik"
+    "name": "Alex"
   }
 }
 ```

@@ -88,8 +88,8 @@ export const PrivacyPolicy: React.FC = () => {
         <h2 className="text-xl font-bold">5. Contact Us</h2>
         <p className="text-sm leading-relaxed text-foreground/90">
           If you have questions about this Privacy Policy or your data, please contact us at:{" "}
-          <a href="mailto:naitik.yadav641@gmail.com" className="text-primary font-bold">
-            naitik.yadav641@gmail.com
+          <a href="mailto:support@skillsphere.app" className="text-primary font-bold">
+            support@skillsphere.app
           </a>.
         </p>
       </section>

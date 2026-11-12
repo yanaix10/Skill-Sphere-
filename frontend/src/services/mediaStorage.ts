@@ -183,3 +183,4 @@ export async function deleteMediaFromIndexedDB(id: string): Promise<void> {
     console.warn("Could not delete from IndexedDB:", err);
   }
 }
+

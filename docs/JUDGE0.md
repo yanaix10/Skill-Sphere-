@@ -46,7 +46,7 @@ To enable cgroup v1 on your host:
 ---
 
 ## 4. Running Locally via Docker Compose
-Use the included [`docker-compose.judge0.yml`](file:///home/naitik/Projects/Skill-Sphere-/docker-compose.judge0.yml):
+Use the included [`docker-compose.judge0.yml`](docker-compose.judge0.yml):
 
 ```bash
 docker compose -f docker-compose.judge0.yml up -d

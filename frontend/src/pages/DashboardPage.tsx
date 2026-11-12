@@ -62,13 +62,13 @@ export const DashboardPage: React.FC = () => {
               }
             } catch (e) {}
           }
-          setFullName("Naitik");
+          setFullName(currentUser.displayName?.split(" ")[0] || "User");
           return;
         }
         try {
           const userDoc = await getDoc(doc(db, "users", currentUser.uid));
           if (userDoc.exists()) {
-            const fullDisplayName = userDoc.data().name as string;
+            const fullDisplayName = (userDoc.data().name as string) || currentUser.displayName || "User";
             const firstName = fullDisplayName.trim().split(" ")[0];
             setFullName(firstName);
           }

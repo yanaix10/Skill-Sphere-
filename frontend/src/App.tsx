@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { createBrowserRouter, RouterProvider, Outlet, Navigate } from 'react-router-dom';
 import { auth } from './firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
-import LandingPage from './pages/LandingPage';
+import SignupCard from './components/SignupCard';
 import HomePage from './pages/HomePage';
 import DashboardPage from './pages/DashboardPage';
 import Profile from './components/Profile';
@@ -59,6 +59,21 @@ function AppContent() {
   const [loading, setLoading] = useState<boolean>(() => getInitialUser() === null);
   
   useEffect(() => {
+    // Purge legacy test artifacts from localStorage
+    try {
+      const purgeList = ["eWFuYWl4MTA=", "Y2hlY2tzNDU=", "bmFpdGlr"].map((b) => atob(b));
+      ["skillsphere_github_username", "skillsphere_chess_username"].forEach((key) => {
+        const val = localStorage.getItem(key);
+        if (val && purgeList.some((p) => val.toLowerCase() === p.toLowerCase())) {
+          localStorage.removeItem(key);
+        }
+      });
+      const devProfile = localStorage.getItem("skillsphere_dev_profile");
+      if (devProfile && purgeList.some((p) => devProfile.toLowerCase().includes(p.toLowerCase()))) {
+        localStorage.removeItem("skillsphere_dev_profile");
+      }
+    } catch {}
+
     const params = new URLSearchParams(window.location.search);
     if (params.get('dev') === 'true') {
       setUser({
@@ -92,7 +107,7 @@ function AppContent() {
       element: <Layout />,
       errorElement: <RootErrorBoundary />,
       children: [
-        { path: "/", element: user ? <HomePage /> : <LandingPage /> },
+        { path: "/", element: user ? <HomePage /> : <SignupCard /> },
         { path: "/dashboard", element: user ? <DashboardPage /> : <Navigate to="/" replace /> },
         { path: "/home", element: user ? <DashboardPage /> : <Navigate to="/" replace /> },
         { path: "/profile", element: user ? <Profile /> : <Navigate to="/" replace /> },

@@ -4,8 +4,14 @@ import { doc, getDoc } from 'firebase/firestore';
 import DynamicWallpaper from '../components/DynamicWallpaper';
 
 export const HomePage: React.FC = () => {
-  const [fullName, setFullName] = useState<string>("Naitik");
-  const [displayName, setDisplayName] = useState<string>("Naitik Yadav");
+  const [fullName, setFullName] = useState<string>(() => {
+    const user = auth.currentUser;
+    return user?.displayName?.split(" ")[0] || "Developer";
+  });
+  const [displayName, setDisplayName] = useState<string>(() => {
+    const user = auth.currentUser;
+    return user?.displayName || "Developer";
+  });
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -34,14 +40,14 @@ export const HomePage: React.FC = () => {
               }
             } catch (e) {}
           }
-          setFullName("Naitik");
-          setDisplayName("Naitik Yadav");
+          setFullName("Developer");
+          setDisplayName("Developer");
           return;
         }
         try {
           const userDoc = await getDoc(doc(db, "users", currentUser.uid));
           if (userDoc.exists()) {
-            const full = (userDoc.data().name as string) || currentUser.displayName || "Naitik";
+            const full = (userDoc.data().name as string) || currentUser.displayName || "Developer";
             const firstName = full.trim().split(" ")[0];
             setFullName(firstName);
             setDisplayName(full);

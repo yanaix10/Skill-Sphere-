@@ -40,7 +40,7 @@ const DEFAULT_NOTIFICATIONS: FriendMessageNotification[] = [
     id: "notif-1",
     friendId: "friend-soul",
     friendName: "Soul Honest",
-    messageText: "Hey Naitik, did you check out the dynamic programming problem set?",
+    messageText: "Hey, did you check out the dynamic programming problem set?",
     timestamp: "10:42 AM",
     isRead: false,
   },
@@ -123,7 +123,7 @@ export default function Navbar() {
               }
             } catch (e) {}
           }
-          setFullName("Naitik Yadav");
+          setFullName(currentUser.displayName || "Developer");
           return;
         }
         try {

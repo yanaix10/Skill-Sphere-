@@ -283,10 +283,10 @@ export const DashboardSettings: React.FC = () => {
           </div>
           <div>
             <h4 className="text-sm font-bold text-foreground">
-              {currentUser?.displayName || "Naitik Yadav"}
+              {currentUser?.displayName || "Developer"}
             </h4>
             <p className="text-xs text-muted-foreground font-mono">
-              {currentUser?.email || "naitik.yadav@university.edu"}
+              {currentUser?.email || "No email connected"}
             </p>
           </div>
         </div>
