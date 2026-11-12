@@ -515,7 +515,7 @@ export const SignupCard: React.FC = () => {
         <div className="absolute -top-24 -right-24 w-72 h-72 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute -bottom-24 -left-24 w-72 h-72 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
 
-        <div className="w-full max-w-xs flex flex-col gap-6 relative z-10">
+        <div className="w-full max-w-sm p-8 sm:p-9 rounded-2xl bg-card border border-border shadow-sm flex flex-col gap-6 relative z-10">
           {/* Logo */}
           <div className="flex flex-col items-center gap-3 text-center">
             <img src="/logo.png" alt="SkillSphere" className="w-12 h-12 rounded-full object-contain drop-shadow" />
