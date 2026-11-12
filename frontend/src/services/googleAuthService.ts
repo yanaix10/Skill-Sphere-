@@ -40,7 +40,9 @@ export interface ClassroomAssignment {
   link?: string;
 }
 
-const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
+const CLIENT_ID =
+  import.meta.env.VITE_GOOGLE_CLIENT_ID ||
+  "558068409791-sjacgg7p3pr1hi4ngbeim38k06kcbvtn.apps.googleusercontent.com";
 
 const CALENDAR_SCOPES = [
   "https://www.googleapis.com/auth/userinfo.email",
