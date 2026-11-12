@@ -19,19 +19,19 @@ function RootErrorBoundary() {
       <h1 className="text-2xl font-extrabold text-foreground">Page Not Found</h1>
       <p className="text-xs text-muted-foreground font-mono">The requested route does not exist.</p>
       <a
-        href="/quizzes"
+        href="/"
         className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-xs font-bold uppercase tracking-wider hover:bg-primary/90 transition-colors"
       >
-        Go to Quizzes & Duels
+        Return to Home
       </a>
     </div>
   );
 }
 
-function Layout() {
+function Layout({ user }: { user: User | null }) {
   return (
     <div className="flex flex-col h-screen w-screen overflow-hidden bg-background text-foreground">
-      <Navbar /> 
+      {user && <Navbar />} 
       <main className="flex-1 overflow-y-auto min-h-0">
         <Outlet />
       </main>
@@ -115,7 +115,7 @@ function AppContent() {
   const router = useMemo(() => createBrowserRouter([
     {
       path: "/",
-      element: <Layout />,
+      element: <Layout user={user} />,
       errorElement: <RootErrorBoundary />,
       children: [
         { path: "/", element: user ? <HomePage /> : <SignupCard /> },
@@ -123,11 +123,11 @@ function AppContent() {
         { path: "/home", element: user ? <DashboardPage /> : <Navigate to="/" replace /> },
         { path: "/profile", element: user ? <Profile /> : <Navigate to="/" replace /> },
         { path: "/friends", element: user ? <Friends /> : <Navigate to="/" replace /> },
-        { path: "/quizzes", element: <Quizzes /> },
+        { path: "/quizzes", element: user ? <Quizzes /> : <Navigate to="/" replace /> },
         { path: "/privacy", element: <PrivacyPolicy /> },
         { path: "/terms", element: <TermsOfService /> },
-        { path: "/games", element: <Navigate to="/quizzes" replace /> },
-        { path: "*", element: <Navigate to="/quizzes" replace /> },
+        { path: "/games", element: <Navigate to={user ? "/quizzes" : "/"} replace /> },
+        { path: "*", element: <Navigate to="/" replace /> },
       ]
     }
   ]), [user]);

@@ -449,12 +449,9 @@ export const SignupCard: React.FC = () => {
   useEffect(() => {
     getRedirectResult(auth)
       .then((result) => {
-        if (result?.user) {
-          setIsLoading(false);
-        }
+        if (result?.user) setIsLoading(false);
       })
       .catch((error: any) => {
-        console.error('Firebase redirect result error:', error);
         handleAuthError(error);
         setIsLoading(false);
       });
@@ -462,63 +459,45 @@ export const SignupCard: React.FC = () => {
 
   const handleAuthError = (error: any) => {
     const code = error?.code || '';
-    const msg = error?.message || 'Authentication failed. Please try again.';
-
     if (code === 'auth/popup-blocked') {
       setPopupBlocked(true);
-      setErrorMessage(
-        "Browser blocked the Google popup window. You can click 'Sign In via Redirect' below instead."
-      );
-    } else if (code === 'auth/cancelled-popup-request') {
-      setErrorMessage('Sign-in popup was cancelled due to multiple attempts. Please click once and wait.');
+      setErrorMessage("Popup was blocked. Use the redirect option below.");
+    } else if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') {
+      setErrorMessage(null);
     } else if (code === 'auth/unauthorized-domain') {
-      const currentHost = typeof window !== 'undefined' ? window.location.hostname : 'your domain';
-      setErrorMessage(
-        `Domain "${currentHost}" is not authorized in Firebase. Please add "${currentHost}" to Firebase Console -> Authentication -> Settings -> Authorized Domains.`
-      );
-    } else if (code === 'auth/popup-closed-by-user') {
-      setErrorMessage('Sign-in popup was closed before completing. Click again when ready.');
+      const host = typeof window !== 'undefined' ? window.location.hostname : 'this domain';
+      setErrorMessage(`Domain "${host}" is not authorized. Add it in Firebase Console → Authentication → Authorized Domains.`);
     } else if (code === 'auth/network-request-failed') {
-      setErrorMessage('Network error during authentication. Check your internet connection or ad-blocker.');
-    } else {
-      setErrorMessage(msg);
+      setErrorMessage('Network error. Check your internet connection.');
+    } else if (error?.message) {
+      setErrorMessage(error.message);
     }
   };
 
-  const signupWithGooglePopup = async () => {
+  const signIn = async () => {
     if (isLoading) return;
     setIsLoading(true);
     setErrorMessage(null);
     setPopupBlocked(false);
-
     try {
       await signInWithPopup(auth, googleProvider);
     } catch (error: any) {
-      console.error('Firebase popup sign-in error:', error);
       handleAuthError(error);
-
       if (error?.code === 'auth/popup-blocked') {
-        try {
-          await signInWithRedirect(auth, googleProvider);
-        } catch (redirectErr: any) {
-          console.error('Fallback redirect error:', redirectErr);
-          handleAuthError(redirectErr);
-        }
+        try { await signInWithRedirect(auth, googleProvider); } catch {}
       }
     } finally {
       setIsLoading(false);
     }
   };
 
-  const signupWithGoogleRedirect = async () => {
+  const signInRedirect = async () => {
     if (isLoading) return;
     setIsLoading(true);
     setErrorMessage(null);
-
     try {
       await signInWithRedirect(auth, googleProvider);
     } catch (error: any) {
-      console.error('Firebase redirect sign-in error:', error);
       handleAuthError(error);
       setIsLoading(false);
     }
@@ -526,145 +505,69 @@ export const SignupCard: React.FC = () => {
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-background text-foreground">
-      {/* Left Column: Tech Orbit Display (Desktop) */}
+      {/* Left — Orbit display on desktop */}
       <div className="hidden lg:flex lg:w-1/2 h-full relative items-center justify-center border-r border-border/60 bg-gradient-to-br from-card/30 via-background to-secondary/30">
         <TechOrbitDisplay iconsArray={TECH_ORBIT_ICONS} />
       </div>
 
-      {/* Right Column: Google Login & App Bullet Points */}
-      <div className="w-full lg:w-1/2 h-full flex flex-col justify-center items-center px-6 sm:px-12 relative overflow-y-auto">
-        {/* Subtle decorative background glow */}
+      {/* Right — Sign in card */}
+      <div className="w-full lg:w-1/2 h-full flex flex-col justify-center items-center px-6 sm:px-12 relative">
         <div className="absolute -top-24 -right-24 w-72 h-72 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute -bottom-24 -left-24 w-72 h-72 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
 
-        <div className="w-full max-w-sm flex flex-col gap-6 relative z-10">
-          {/* Logo & Heading */}
-          <div className="space-y-2">
-            <BoxReveal boxColor="var(--primary)" duration={0.3}>
-              <div className="flex items-center gap-3">
-                <img
-                  src="/logo.png"
-                  alt="SkillSphere Logo"
-                  className="w-10 h-10 object-contain drop-shadow-sm rounded-full"
-                />
-                <h2 className="font-extrabold text-2xl sm:text-3xl tracking-tight text-foreground">
-                  SkillSphere
-                </h2>
-              </div>
-            </BoxReveal>
-
-            <BoxReveal boxColor="var(--primary)" duration={0.3}>
-              <p className="text-xs text-muted-foreground font-medium">
-                Sign in with your Google account to get started.
-              </p>
-            </BoxReveal>
+        <div className="w-full max-w-xs flex flex-col gap-6 relative z-10">
+          {/* Logo */}
+          <div className="flex flex-col items-center gap-3 text-center">
+            <img src="/logo.png" alt="SkillSphere" className="w-12 h-12 rounded-full object-contain drop-shadow" />
+            <div>
+              <h1 className="text-2xl font-extrabold tracking-tight text-foreground">SkillSphere</h1>
+              <p className="text-xs text-muted-foreground mt-1">Sign in to continue</p>
+            </div>
           </div>
 
-          {/* 3 Core Highlights in 3 Bullet Point Lines */}
-          <BoxReveal boxColor="var(--primary)" duration={0.35} width="100%">
-            <div className="p-4 rounded-xl bg-secondary/50 border border-border/80 space-y-2.5">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground block mb-1">
-                Platform Highlights
-              </span>
-              <ul className="space-y-2 list-none p-0 m-0">
-                <li className="flex items-center gap-2.5 text-xs sm:text-sm text-foreground">
-                  <span className="w-2 h-2 rounded-full bg-primary shrink-0 shadow-xs shadow-primary" />
-                  <span className="font-medium">Real-Time Coding Duels</span>
-                </li>
-                <li className="flex items-center gap-2.5 text-xs sm:text-sm text-foreground">
-                  <span className="w-2 h-2 rounded-full bg-primary shrink-0 shadow-xs shadow-primary" />
-                  <span className="font-medium">Quizzes</span>
-                </li>
-                <li className="flex items-center gap-2.5 text-xs sm:text-sm text-foreground">
-                  <span className="w-2 h-2 rounded-full bg-primary shrink-0 shadow-xs shadow-primary" />
-                  <span className="font-medium">Skill Arena</span>
-                </li>
-              </ul>
-            </div>
-          </BoxReveal>
-
-          {/* Error Banner */}
+          {/* Error */}
           {errorMessage && (
-            <div className="p-3.5 rounded-xl bg-destructive/10 border border-destructive/30 text-destructive text-left text-xs leading-relaxed flex items-start gap-2.5">
+            <div className="p-3 rounded-xl bg-destructive/10 border border-destructive/30 text-destructive text-xs flex items-start gap-2">
               <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-              <div>
-                <span className="font-semibold block mb-0.5">Authentication Notice</span>
-                <span>{errorMessage}</span>
-              </div>
+              <span>{errorMessage}</span>
             </div>
           )}
 
-          {/* App Overview & Google Scope Purpose for Reviewers */}
-          <div className="p-3.5 rounded-xl bg-card/60 border border-border/80 text-[12px] text-muted-foreground space-y-1.5 leading-relaxed text-left">
-            <p className="font-medium text-foreground m-0">
-              SkillSphere is an interactive developer learning platform featuring real-time 1v1 coding duels, practice quizzes, and academic scheduling.
-            </p>
-            <p className="m-0 text-[11px] text-muted-foreground/90">
-              Google Calendar & Google Classroom integrations sync course deadlines and study meetings directly onto your dashboard.
-            </p>
-          </div>
+          {/* Sign in button */}
+          <div className="flex flex-col gap-2.5">
+            <button
+              onClick={signIn}
+              disabled={isLoading}
+              type="button"
+              className="relative w-full h-11 rounded-xl bg-card hover:bg-secondary border border-border text-foreground font-semibold text-sm flex items-center justify-center gap-3 transition-all duration-200 shadow-sm hover:shadow-md hover:border-primary/50 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isLoading ? (
+                <Loader2 className="w-5 h-5 animate-spin text-primary" />
+              ) : (
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" className="w-5 h-5" />
+              )}
+              <span>{isLoading ? 'Signing in...' : 'Continue with Google'}</span>
+            </button>
 
-          {/* Single Google Login Option */}
-          <BoxReveal boxColor="var(--primary)" duration={0.4} width="100%" overflow="visible">
-            <div className="space-y-2.5">
+            {(popupBlocked || errorMessage) && (
               <button
-                onClick={signupWithGooglePopup}
+                onClick={signInRedirect}
                 disabled={isLoading}
                 type="button"
-                className="group/btn relative w-full h-11 rounded-xl bg-card hover:bg-secondary border border-border/90 text-foreground font-semibold text-sm flex items-center justify-center gap-3 transition-all duration-200 shadow-sm hover:shadow-md hover:border-primary/50 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed outline-none"
+                className="w-full h-9 rounded-xl bg-secondary/70 hover:bg-secondary text-foreground border border-border text-xs font-medium flex items-center justify-center gap-2 transition-colors cursor-pointer"
               >
-                {isLoading ? (
-                  <Loader2 className="w-5 h-5 animate-spin text-primary" />
-                ) : (
-                  <img
-                    src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
-                    alt="Google"
-                    className="w-5 h-5"
-                  />
-                )}
-                <span>{isLoading ? 'Signing in with Google...' : 'Continue with Google'}</span>
-                <BottomGradient />
+                <Globe className="w-3.5 h-3.5 text-primary" />
+                Sign in via Redirect
               </button>
+            )}
+          </div>
 
-              {/* Guest explorer link so reviewers can view the app without login */}
-              <a
-                href="/quizzes"
-                className="flex items-center justify-center gap-2 w-full bg-secondary/60 hover:bg-secondary text-foreground border border-border py-2 px-3 rounded-xl text-xs font-medium transition-colors no-underline text-center"
-              >
-                <span>Explore Platform as Guest</span>
-              </a>
-
-              {/* Redirect fallback if popups are blocked */}
-              {(popupBlocked || errorMessage) && (
-                <button
-                  onClick={signupWithGoogleRedirect}
-                  disabled={isLoading}
-                  type="button"
-                  className="flex items-center justify-center gap-2 w-full bg-secondary/70 hover:bg-secondary text-foreground border border-border py-2 px-3 rounded-xl text-xs font-medium transition-colors cursor-pointer"
-                >
-                  <Globe className="w-3.5 h-3.5 text-primary" />
-                  <span>Sign In via Redirect (No Popup)</span>
-                </button>
-              )}
-            </div>
-          </BoxReveal>
-
-          {/* Clean Security Badge & Legal Links */}
-          <footer className="pt-2 text-muted-foreground text-[11px] flex flex-col items-center justify-center gap-2">
-            <div className="flex items-center gap-1.5">
-              <ShieldCheck className="w-3.5 h-3.5 text-primary/80" />
-              <span>Protected by Google Firebase Authentication</span>
-            </div>
-            <div className="flex items-center gap-3 text-[11px] text-muted-foreground/80">
-              <a href="/privacy" className="hover:text-foreground hover:underline transition-colors no-underline">
-                Privacy Policy
-              </a>
-              <span>•</span>
-              <a href="/terms" className="hover:text-foreground hover:underline transition-colors no-underline">
-                Terms of Service
-              </a>
-            </div>
-          </footer>
+          {/* Footer */}
+          <div className="flex items-center justify-center gap-3 text-[11px] text-muted-foreground/70">
+            <a href="/privacy" className="hover:text-foreground transition-colors no-underline">Privacy</a>
+            <span>·</span>
+            <a href="/terms" className="hover:text-foreground transition-colors no-underline">Terms</a>
+          </div>
         </div>
       </div>
     </div>
