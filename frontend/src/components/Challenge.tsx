@@ -61,7 +61,7 @@ function getPersistentPlayerId(): string {
 
 const socket: Socket = io(BACKEND_URL, {
   withCredentials: true,
-  transports: ["websocket", "polling"],
+  transports: ["polling", "websocket"],
   reconnectionAttempts: 10,
   reconnectionDelay: 1500,
   auth: (cb) => {
@@ -344,7 +344,12 @@ export default function Challenge({
       }
     };
 
+    const handleConnectError = (err: Error) => {
+      console.warn("[SkillSphere Socket] Connection issue / server warming up:", err.message);
+    };
+
     socket.on("connect", handleConnect);
+    socket.on("connect_error", handleConnectError);
     if (socket.connected) {
       handleConnect();
     }
@@ -538,6 +543,7 @@ export default function Challenge({
 
     return () => {
       socket.off("connect", handleConnect);
+      socket.off("connect_error", handleConnectError);
       socket.off("challenge_state");
       socket.off("challenge_ready");
       socket.off("challenge_countdown");
