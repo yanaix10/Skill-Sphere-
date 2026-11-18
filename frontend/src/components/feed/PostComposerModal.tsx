@@ -31,6 +31,7 @@ export const PostComposerModal: React.FC<PostComposerModalProps> = ({
   onClose,
   onPostCreated,
 }) => {
+  const [title, setTitle] = useState('');
   const [wordCount, setWordCount] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -277,6 +278,7 @@ export const PostComposerModal: React.FC<PostComposerModalProps> = ({
 
     try {
       const newPost = await createPost({
+        title: title.trim(),
         content_html: html,
         content_plain: plainText,
         mentions: recordedMentions,
@@ -284,6 +286,7 @@ export const PostComposerModal: React.FC<PostComposerModalProps> = ({
 
       onPostCreated(newPost);
       editor.commands.setContent('');
+      setTitle('');
       setRecordedMentions([]);
       setWordCount(0);
       onClose();
@@ -376,6 +379,17 @@ export const PostComposerModal: React.FC<PostComposerModalProps> = ({
               <span>@movie/</span>
             </button>
           </div>
+        </div>
+
+        {/* Title Input */}
+        <div className="px-5 pt-3.5 pb-2 border-b border-border/50 bg-card">
+          <input
+            type="text"
+            placeholder="Review Title (e.g., A Masterpiece on Personal Destiny & Life Pursuits)"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            className="w-full bg-transparent text-sm sm:text-base font-bold text-foreground placeholder:text-muted-foreground/50 focus:outline-none"
+          />
         </div>
 
         {/* Editor Body */}

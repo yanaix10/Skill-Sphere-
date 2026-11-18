@@ -11,6 +11,7 @@ import DashboardClassroom from "../components/dashboard/DashboardClassroom";
 import DashboardCalendar from "../components/dashboard/DashboardCalendar";
 import DashboardSettings from "../components/dashboard/DashboardSettings";
 import DeveloperActivityCard from "../components/dashboard/DeveloperActivityCard";
+import DashboardSavedPosts from "../components/dashboard/DashboardSavedPosts";
 import { PanelLeftOpen, LayoutDashboard, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -44,10 +45,6 @@ export const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
 
   const handleSelectSection = (section: SidebarSection) => {
-    if (section === "feed") {
-      navigate("/feed");
-      return;
-    }
     setActiveSection(section);
     try {
       localStorage.setItem("skillsphere_active_section", section);
@@ -91,6 +88,8 @@ export const DashboardPage: React.FC = () => {
     switch (sec) {
       case "overview":
         return "Overview";
+      case "saved":
+        return "Saved Posts";
       case "media":
         return "Media & Resources";
       case "todo":
@@ -144,6 +143,12 @@ export const DashboardPage: React.FC = () => {
           {activeSection === "overview" && (
             <div className="animate-in fade-in duration-200">
               <DashboardOverview userName={fullName} onNavigate={handleSelectSection} />
+            </div>
+          )}
+
+          {activeSection === "saved" && (
+            <div className="animate-in fade-in duration-200">
+              <DashboardSavedPosts />
             </div>
           )}
 

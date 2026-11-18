@@ -1,13 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Heart,
+  Bookmark,
+  MessageSquare,
   BookOpen,
   Film,
   ExternalLink,
-  Share2,
-  Check,
+  Clock,
+  Send,
+  Loader2,
 } from 'lucide-react';
-import { Post, likePost, unlikePost } from '../../services/feedService';
+import { Post, likePost, unlikePost, addComment, PostComment } from '../../services/feedService';
+import { isPostSaved, toggleSavePost, SAVED_POSTS_EVENT } from '../../utils/savedPosts';
+import { auth } from '../../firebase';
 
 interface PostCardProps {
   post: Post;
@@ -15,7 +20,29 @@ interface PostCardProps {
 }
 
 /**
- * Format relative time (e.g. "Just now", "5m ago", "2h ago", "Yesterday")
+ * Format full date and time (e.g. "Nov 18, 2026 • 7:15 PM")
+ */
+function formatDateTime(dateString: string): string {
+  try {
+    const date = new Date(dateString);
+    const datePart = date.toLocaleDateString(undefined, {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
+    const timePart = date.toLocaleTimeString(undefined, {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    });
+    return `${datePart} • ${timePart}`;
+  } catch {
+    return 'Recently';
+  }
+}
+
+/**
+ * Format relative time for comments (e.g. "Just now", "5m ago", "2h ago")
  */
 function formatRelativeTime(dateString: string): string {
   try {
@@ -26,7 +53,6 @@ function formatRelativeTime(dateString: string): string {
     if (diffSec < 60) return 'Just now';
     if (diffSec < 3600) return `${Math.floor(diffSec / 60)}m ago`;
     if (diffSec < 86400) return `${Math.floor(diffSec / 3600)}h ago`;
-    if (diffSec < 172800) return 'Yesterday';
     return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
   } catch {
     return 'Recently';
@@ -47,7 +73,6 @@ function getSourceUrl(mention: { type: 'book' | 'movie'; external_id: string; ti
     }
     return `https://openlibrary.org/search?q=${encodeURIComponent(mention.title)}`;
   } else {
-    // Movie
     if (mention.external_id.startsWith('tmdb-')) {
       const tmdbId = mention.external_id.replace('tmdb-', '');
       return `https://www.themoviedb.org/movie/${tmdbId}`;
@@ -60,16 +85,43 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
   const [likeCount, setLikeCount] = useState<number>(post.like_count || 0);
   const [hasLiked, setHasLiked] = useState<boolean>(Boolean(post.hasLiked));
   const [isLiking, setIsLiking] = useState<boolean>(false);
-  const [copied, setCopied] = useState<boolean>(false);
 
-  // Optimistic like/unlike toggle
+  // Saved state
+  const [isSaved, setIsSaved] = useState<boolean>(() => isPostSaved(post.id));
+
+  // Comments state
+  const [comments, setComments] = useState<PostComment[]>(post.comments || []);
+  const [commentCount, setCommentCount] = useState<number>(
+    post.comment_count || (post.comments?.length || 0)
+  );
+  const [showComments, setShowComments] = useState<boolean>(false);
+  const [commentInput, setCommentInput] = useState<string>('');
+  const [isSubmittingComment, setIsSubmittingComment] = useState<boolean>(false);
+
+  // Sync saved state when other components update saved posts
+  useEffect(() => {
+    const handleStorageUpdate = () => {
+      setIsSaved(isPostSaved(post.id));
+    };
+    window.addEventListener(SAVED_POSTS_EVENT, handleStorageUpdate);
+    window.addEventListener('storage', handleStorageUpdate);
+    return () => {
+      window.removeEventListener(SAVED_POSTS_EVENT, handleStorageUpdate);
+      window.removeEventListener('storage', handleStorageUpdate);
+    };
+  }, [post.id]);
+
+  // Read time & word count
+  const wordCount = (post.content_plain || '').trim().split(/\s+/).filter(Boolean).length;
+  const readTimeMinutes = Math.max(1, Math.ceil(wordCount / 180));
+
+  // Optimistic like toggle
   const handleToggleLike = async () => {
     if (isLiking) return;
 
     const previousLiked = hasLiked;
     const previousCount = likeCount;
 
-    // Apply optimistic update immediately
     const nextLiked = !hasLiked;
     const nextCount = nextLiked ? previousCount + 1 : Math.max(0, previousCount - 1);
 
@@ -88,7 +140,6 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
         setHasLiked(res.hasLiked);
       }
     } catch (err) {
-      // Revert on error
       console.warn('[PostCard] Like toggle failed, rolling back:', err);
       setHasLiked(previousLiked);
       setLikeCount(previousCount);
@@ -97,20 +148,39 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
     }
   };
 
-  const handleShare = () => {
-    const textToCopy = `${post.author_name}'s review on SkillSphere:\n\n${post.content_plain.slice(0, 150)}...\n\nRead more on SkillSphere Feed!`;
-    navigator.clipboard?.writeText(textToCopy);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  // Toggle Save button
+  const handleToggleSave = () => {
+    const nextState = toggleSavePost(post);
+    setIsSaved(nextState);
+  };
+
+  // Add Comment
+  const handleCommentSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!commentInput.trim() || isSubmittingComment) return;
+
+    const textToSubmit = commentInput.trim();
+    setIsSubmittingComment(true);
+
+    try {
+      const res = await addComment(post.id, textToSubmit);
+      setComments((prev) => [...prev, res.comment]);
+      setCommentCount(res.comment_count);
+      setCommentInput('');
+    } catch (err) {
+      console.error('[PostCard] Error adding comment:', err);
+    } finally {
+      setIsSubmittingComment(false);
+    }
   };
 
   const authorInitial = (post.author_name || 'U').charAt(0).toUpperCase();
 
   return (
-    <article className="w-full bg-card border border-border rounded-2xl p-5 sm:p-6 shadow-sm hover:shadow-md transition-all flex flex-col gap-4 text-card-foreground">
-      {/* Post Header: Author + Timestamp */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
+    <article className="w-full bg-card border border-border rounded-2xl p-5 sm:p-6 shadow-xs hover:shadow-md transition-all flex flex-col gap-4 text-card-foreground">
+      {/* Post Header: Author, Date & Time, Min Read Time, and Save Button */}
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex items-center gap-3 min-w-0">
           {/* Avatar */}
           <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center font-bold text-sm text-white ring-2 ring-primary/20 shadow-xs shrink-0 overflow-hidden">
             {post.author_avatar ? (
@@ -118,34 +188,57 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
                 src={post.author_avatar}
                 alt={post.author_name}
                 className="w-full h-full object-cover"
-                onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }}
+                onError={(e) => {
+                  (e.target as HTMLElement).style.display = 'none';
+                }}
               />
             ) : (
               authorInitial
             )}
           </div>
 
-          <div className="flex flex-col">
-            <span className="font-bold text-sm text-foreground leading-tight hover:underline cursor-pointer">
+          <div className="flex flex-col min-w-0">
+            <span className="font-bold text-sm text-foreground leading-tight truncate">
               {post.author_name}
             </span>
-            <span className="text-[11px] text-muted-foreground mt-0.5">
-              {formatRelativeTime(post.created_at)}
-            </span>
+            <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground font-mono mt-0.5">
+              <span>{formatDateTime(post.created_at)}</span>
+              <span>•</span>
+              <span className="flex items-center gap-0.5 text-primary font-medium">
+                <Clock className="w-3 h-3" />
+                {readTimeMinutes} min read
+              </span>
+            </div>
           </div>
         </div>
 
-        {/* Share Button */}
+        {/* Save to Dashboard Button */}
         <button
-          onClick={handleShare}
-          className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer border-none bg-transparent"
-          title="Share Review"
+          onClick={handleToggleSave}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer border ${
+            isSaved
+              ? 'bg-primary/10 border-primary/30 text-primary shadow-xs'
+              : 'border-border/60 hover:bg-muted text-muted-foreground hover:text-foreground bg-transparent'
+          }`}
+          title={isSaved ? 'Saved to Dashboard (Click to unsave)' : 'Save to Dashboard'}
         >
-          {copied ? <Check className="w-4 h-4 text-emerald-500" /> : <Share2 className="w-4 h-4" />}
+          <Bookmark className={`w-3.5 h-3.5 transition-transform ${isSaved ? 'fill-primary' : ''}`} />
+          <span>{isSaved ? 'Saved' : 'Save'}</span>
         </button>
       </div>
 
-      {/* Rendered Review Text */}
+      {/* Post Title */}
+      {post.title ? (
+        <h2 className="text-base sm:text-lg font-bold text-foreground tracking-tight leading-snug">
+          {post.title}
+        </h2>
+      ) : (
+        <h2 className="text-base sm:text-lg font-bold text-foreground tracking-tight leading-snug">
+          Book & Movie Review
+        </h2>
+      )}
+
+      {/* Rendered Review HTML */}
       <div
         className="prose dark:prose-invert prose-sm max-w-none text-foreground/90 leading-relaxed font-normal space-y-2 break-words"
         dangerouslySetInnerHTML={{ __html: post.content_html }}
@@ -172,7 +265,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
                   className="flex items-stretch gap-3 p-3 rounded-xl bg-muted/40 hover:bg-muted/70 border border-border/70 hover:border-border transition-all group no-underline text-card-foreground shadow-xs cursor-pointer"
                 >
                   {/* 2:3 Cover Poster Thumbnail */}
-                  <div className="w-20 sm:w-24 aspect-[2/3] shrink-0 rounded-lg overflow-hidden bg-muted border border-border/50 shadow-sm relative flex items-center justify-center">
+                  <div className="w-20 sm:w-24 aspect-[2/3] shrink-0 rounded-lg overflow-hidden bg-muted border border-border/50 shadow-xs relative flex items-center justify-center">
                     {item.cover_url ? (
                       <img
                         src={item.cover_url}
@@ -183,12 +276,10 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
                           (e.target as HTMLElement).style.display = 'none';
                         }}
                       />
+                    ) : isBook ? (
+                      <BookOpen className="w-6 h-6 text-muted-foreground opacity-50" />
                     ) : (
-                      isBook ? (
-                        <BookOpen className="w-6 h-6 text-muted-foreground opacity-50" />
-                      ) : (
-                        <Film className="w-6 h-6 text-muted-foreground opacity-50" />
-                      )
+                      <Film className="w-6 h-6 text-muted-foreground opacity-50" />
                     )}
                   </div>
 
@@ -229,7 +320,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
 
                     {/* Source Link */}
                     <div className="mt-2 flex items-center gap-1 text-[11px] font-semibold text-primary group-hover:underline">
-                      <span>{isBook ? 'Open Library' : 'TMDB'}</span>
+                      <span>{isBook ? 'Open Library' : 'View details'}</span>
                       <ExternalLink className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
                     </div>
                   </div>
@@ -240,33 +331,110 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
         </div>
       )}
 
-      {/* Post Footer: Like Button with Count */}
-      <div className="flex items-center justify-between pt-3 border-t border-border/40 text-xs">
-        <button
-          onClick={handleToggleLike}
-          disabled={isLiking}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-all cursor-pointer border ${
-            hasLiked
-              ? 'bg-rose-500/10 border-rose-500/30 text-rose-600 dark:text-rose-400 font-bold'
-              : 'border-border/60 hover:bg-muted text-muted-foreground hover:text-foreground font-medium'
-          }`}
-          title={hasLiked ? 'Unlike review' : 'Like review'}
-        >
-          <Heart
-            className={`w-4 h-4 transition-transform ${
-              hasLiked ? 'fill-current scale-110' : 'group-hover:scale-110'
+      {/* Post Actions: Like, Comment, Words & Read time */}
+      <div className="flex items-center justify-between pt-3 border-t border-border/50 text-xs">
+        <div className="flex items-center gap-2 sm:gap-3">
+          {/* Like Button */}
+          <button
+            onClick={handleToggleLike}
+            disabled={isLiking}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-all cursor-pointer border ${
+              hasLiked
+                ? 'bg-rose-500/10 border-rose-500/30 text-rose-600 dark:text-rose-400 font-bold'
+                : 'border-border/60 hover:bg-muted text-muted-foreground hover:text-foreground font-medium'
             }`}
-          />
-          <span>{likeCount}</span>
-        </button>
+            title={hasLiked ? 'Unlike review' : 'Like review'}
+          >
+            <Heart
+              className={`w-4 h-4 transition-transform ${
+                hasLiked ? 'fill-current scale-110' : 'group-hover:scale-110'
+              }`}
+            />
+            <span>{likeCount}</span>
+          </button>
 
-        <span className="text-[11px] text-muted-foreground">
-          {post.content_plain.trim().split(/\s+/).filter(Boolean).length} words
-        </span>
+          {/* Comment Button */}
+          <button
+            onClick={() => setShowComments((prev) => !prev)}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-all cursor-pointer border ${
+              showComments
+                ? 'bg-primary/10 border-primary/30 text-primary font-bold'
+                : 'border-border/60 hover:bg-muted text-muted-foreground hover:text-foreground font-medium'
+            }`}
+            title="Comments"
+          >
+            <MessageSquare className="w-4 h-4" />
+            <span>{commentCount}</span>
+          </button>
+        </div>
+
+        {/* Word count & Read time */}
+        <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground font-mono">
+          <span>{wordCount} words</span>
+          <span>•</span>
+          <span>{readTimeMinutes} min</span>
+        </div>
       </div>
+
+      {/* Expandable Comments Drawer */}
+      {showComments && (
+        <div className="pt-3 border-t border-border/40 space-y-3 animate-in fade-in duration-200">
+          {/* Add Comment Input Form */}
+          <form onSubmit={handleCommentSubmit} className="flex items-center gap-2">
+            <input
+              type="text"
+              placeholder="Write a thoughtful comment..."
+              value={commentInput}
+              onChange={(e) => setCommentInput(e.target.value)}
+              className="flex-1 px-3.5 py-2 rounded-xl bg-muted/40 border border-border text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors"
+            />
+            <button
+              type="submit"
+              disabled={!commentInput.trim() || isSubmittingComment}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-bold hover:bg-primary/90 transition-all disabled:opacity-50 cursor-pointer border-none shadow-xs"
+            >
+              {isSubmittingComment ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <>
+                  <Send className="w-3.5 h-3.5" />
+                  <span>Reply</span>
+                </>
+              )}
+            </button>
+          </form>
+
+          {/* Comment List */}
+          {comments.length > 0 ? (
+            <div className="space-y-2.5 pt-1">
+              {comments.map((c, i) => (
+                <div
+                  key={c.id || i}
+                  className="p-3 rounded-xl bg-muted/30 border border-border/50 text-xs flex flex-col gap-1"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-foreground text-[11px]">
+                      {c.author_name}
+                    </span>
+                    <span className="text-[10px] text-muted-foreground font-mono">
+                      {formatRelativeTime(c.created_at)}
+                    </span>
+                  </div>
+                  <p className="text-foreground/90 text-xs leading-relaxed break-words">
+                    {c.text}
+                  </p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-[11px] text-muted-foreground text-center py-2">
+              No comments yet. Start the conversation!
+            </p>
+          )}
+        </div>
+      )}
     </article>
   );
 };
 
 export default PostCard;
-

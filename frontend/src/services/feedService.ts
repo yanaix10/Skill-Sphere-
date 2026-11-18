@@ -10,14 +10,26 @@ export interface PostMention {
   year?: string;
 }
 
+export interface PostComment {
+  id?: string;
+  author_id: string;
+  author_name: string;
+  author_avatar?: string;
+  text: string;
+  created_at: string;
+}
+
 export interface Post {
   id: string;
+  title?: string;
   author_id: string;
   author_name: string;
   author_avatar?: string;
   content_html: string;
   content_plain: string;
   like_count: number;
+  comments?: PostComment[];
+  comment_count?: number;
   mentions: PostMention[];
   created_at: string;
   hasLiked?: boolean;
@@ -103,6 +115,7 @@ export async function fetchFeed(sort: 'recent' | 'popular' = 'recent', page = 1,
  * POST /api/posts
  */
 export async function createPost(payload: {
+  title?: string;
   content_html: string;
   content_plain: string;
   mentions: PostMention[];
@@ -129,6 +142,37 @@ export async function createPost(payload: {
   }
 
   return data.post;
+}
+
+/**
+ * POST /api/posts/:id/comments
+ */
+export async function addComment(
+  postId: string,
+  text: string
+): Promise<{ success: boolean; comment: PostComment; comment_count: number }> {
+  const headers = await getAuthHeaders();
+  const user = auth.currentUser;
+
+  const body = {
+    text,
+    author_id: user?.uid || 'test-user-123',
+    author_name: user?.displayName || user?.email?.split('@')[0] || 'Developer',
+    author_avatar: user?.photoURL || '',
+  };
+
+  const res = await fetch(`${BACKEND_URL}/api/posts/${postId}/comments`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(body),
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error || 'Failed to add comment');
+  }
+
+  return data;
 }
 
 /**

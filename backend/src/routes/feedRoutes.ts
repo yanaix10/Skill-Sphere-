@@ -65,5 +65,8 @@ router.post('/posts', optionalAuth as any, postController.createPost as any);
 router.post('/posts/:id/like', optionalAuth as any, postController.likePost as any);
 router.delete('/posts/:id/like', optionalAuth as any, postController.unlikePost as any);
 
+// 5. Add comment endpoint
+router.post('/posts/:id/comments', optionalAuth as any, postController.addComment as any);
+
 export default router;
 

@@ -23,7 +23,7 @@ export function countWords(text: string): number {
  */
 export async function createPost(req: AuthenticatedRequest, res: Response): Promise<any> {
   try {
-    const { content_html, content_plain, mentions } = req.body;
+    const { title, content_html, content_plain, mentions } = req.body;
 
     if (!content_html || typeof content_html !== 'string') {
       return res.status(400).json({ error: 'Missing or invalid content_html' });
@@ -61,13 +61,18 @@ export async function createPost(req: AuthenticatedRequest, res: Response): Prom
         })).filter(m => Boolean(m.external_id && m.title))
       : [];
 
+    const postTitle = title && typeof title === 'string' && title.trim() ? title.trim() : '';
+
     const newPost = new Post({
+      title: postTitle,
       author_id: authorId,
       author_name: authorName,
       author_avatar: authorAvatar,
       content_html,
       content_plain,
       like_count: 0,
+      comments: [],
+      comment_count: 0,
       mentions: sanitizedMentions,
     });
 
@@ -77,12 +82,15 @@ export async function createPost(req: AuthenticatedRequest, res: Response): Prom
       success: true,
       post: {
         id: String(newPost._id),
+        title: newPost.title,
         author_id: newPost.author_id,
         author_name: newPost.author_name,
         author_avatar: newPost.author_avatar,
         content_html: newPost.content_html,
         content_plain: newPost.content_plain,
         like_count: newPost.like_count,
+        comments: [],
+        comment_count: 0,
         mentions: newPost.mentions,
         created_at: newPost.created_at,
         hasLiked: false,
@@ -131,12 +139,15 @@ export async function getFeed(req: AuthenticatedRequest, res: Response): Promise
 
     const posts = rawPosts.map((p: any) => ({
       id: String(p._id),
+      title: p.title || '',
       author_id: p.author_id,
       author_name: p.author_name,
       author_avatar: p.author_avatar,
       content_html: p.content_html,
       content_plain: p.content_plain,
       like_count: p.like_count || 0,
+      comment_count: p.comment_count || (Array.isArray(p.comments) ? p.comments.length : 0),
+      comments: Array.isArray(p.comments) ? p.comments : [],
       mentions: p.mentions || [],
       created_at: p.created_at,
       hasLiked: userLikedPostIds.has(String(p._id)),
@@ -230,4 +241,59 @@ export async function unlikePost(req: AuthenticatedRequest, res: Response): Prom
     return res.status(500).json({ error: 'Failed to unlike post' });
   }
 }
+
+/**
+ * POST /api/posts/:id/comments
+ * Adds a comment to a review post
+ */
+export async function addComment(req: AuthenticatedRequest, res: Response): Promise<any> {
+  try {
+    const postId = req.params.id;
+    const { text } = req.body;
+
+    if (!postId) {
+      return res.status(400).json({ error: 'Missing post ID' });
+    }
+
+    if (!text || typeof text !== 'string' || !text.trim()) {
+      return res.status(400).json({ error: 'Comment text cannot be empty' });
+    }
+
+    const post = await Post.findById(postId);
+    if (!post) {
+      return res.status(404).json({ error: 'Post not found' });
+    }
+
+    const user = req.user || {};
+    const authorId = user.uid || req.body.author_id || 'test-user-123';
+    const authorName = user.name || req.body.author_name || user.email?.split('@')[0] || 'SkillSphere Member';
+    const authorAvatar = user.picture || req.body.author_avatar || '';
+
+    const newComment = {
+      author_id: authorId,
+      author_name: authorName,
+      author_avatar: authorAvatar,
+      text: text.trim(),
+      created_at: new Date(),
+    };
+
+    if (!Array.isArray(post.comments)) {
+      post.comments = [];
+    }
+
+    post.comments.push(newComment as any);
+    post.comment_count = post.comments.length;
+    await post.save();
+
+    return res.status(201).json({
+      success: true,
+      comment: newComment,
+      comment_count: post.comment_count,
+    });
+  } catch (err: any) {
+    console.error('[PostController] Error adding comment:', err);
+    return res.status(500).json({ error: 'Failed to add comment' });
+  }
+}
+
 

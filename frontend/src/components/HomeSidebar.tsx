@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
-  Newspaper,
+  Bookmark,
   Settings,
   Briefcase,
   CheckSquare,
@@ -17,7 +17,7 @@ import { auth } from "../firebase";
 
 export type SidebarSection =
   | "overview"
-  | "feed"
+  | "saved"
   | "media"
   | "todo"
   | "jobs"
@@ -62,7 +62,7 @@ export const HomeSidebar: React.FC<HomeSidebarProps> = ({
 
   const coreSections: { id: SidebarSection; label: string; icon: React.FC<{ className?: string }> }[] = [
     { id: "overview", label: "Overview", icon: LayoutDashboard },
-    { id: "feed", label: "Feed", icon: Newspaper },
+    { id: "saved", label: "Saved posts", icon: Bookmark },
     { id: "media", label: "Media & resources", icon: ImageIcon },
     { id: "todo", label: "To-do tasks", icon: CheckSquare },
     { id: "jobs", label: "Job applications", icon: Briefcase },
@@ -71,12 +71,8 @@ export const HomeSidebar: React.FC<HomeSidebarProps> = ({
   ];
 
   const handleSectionClick = (id: SidebarSection) => {
-    if (id === "feed") {
-      navigate("/feed");
-    } else {
-      if (typeof window !== "undefined" && window.location.pathname === "/feed") {
-        navigate("/dashboard");
-      }
+    if (typeof window !== "undefined" && window.location.pathname !== "/dashboard") {
+      navigate("/dashboard");
     }
     onSelectSection(id);
   };
