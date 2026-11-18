@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from "react";
-import Sidebar, { ChallengeConfig } from "../components/Sidebar";
-import SessionDetails from "../components/SessionDetails";
+import {
+  Sidebar,
+  SessionDetails,
+  QuestArena,
+  Challenge,
+  ChallengeConfig,
+} from "../components/duels";
 import Practice from "./Practice";
-import QuestArena from "../components/QuestArena";
-import Challenge from "../components/Challenge";
 
 interface QuizConfig {
   difficulty: string;

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { db, auth } from '../firebase'; 
 import { doc, setDoc, getDoc } from 'firebase/firestore';
-import ProfileView from './ProfileView';
+import { ProfileView } from './friends';
 import ProfileDialog from '@/components/ui/profile-dialog';
 import DeveloperActivityCard from './dashboard/DeveloperActivityCard';
 

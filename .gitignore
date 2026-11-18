@@ -42,7 +42,7 @@ test-*/
 # Local dev/seed scripts (kept locally on device, not tracked in repo)
 backend/src/scripts/
 backend/src/seedDsa.ts
-frontend/src/components/templates/
+templates/
 frontend/src/components/blocks/
 
 # Logs

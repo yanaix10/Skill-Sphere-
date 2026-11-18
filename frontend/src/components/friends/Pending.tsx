@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { db, auth } from '../firebase';
+import { db, auth } from '../../firebase';
 import { collection, query, where, onSnapshot, doc, deleteDoc } from 'firebase/firestore';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';

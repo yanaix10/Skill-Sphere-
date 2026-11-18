@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import SegmentedControl from './ui/segmented-control';
+import SegmentedControl from '@/components/ui/segmented-control';
 
 interface ChallengeCardProps {
   setMode?: (mode: string) => void;

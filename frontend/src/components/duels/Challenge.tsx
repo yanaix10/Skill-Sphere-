@@ -24,10 +24,10 @@ import {
   Share2
 } from "lucide-react";
 import CodeEditor from "./CodeEditor";
-import { auth } from "../firebase";
-import { BACKEND_URL } from "../utils/api";
-import defaultWebdevQuestions from "../data/defaultWebdevQuestions.json";
-import defaultDsaQuestions from "../data/defaultDsaQuestions.json";
+import { auth } from "../../firebase";
+import { BACKEND_URL } from "../../utils/api";
+import defaultWebdevQuestions from "../../data/defaultWebdevQuestions.json";
+import defaultDsaQuestions from "../../data/defaultDsaQuestions.json";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";

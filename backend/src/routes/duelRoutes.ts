@@ -6,6 +6,9 @@ import fs from 'fs';
 import path from 'path';
 import { getCodeRunner } from '../runner/index.js';
 import DsaQuestion from '../models/DsaQuestion.js';
+import ChallengeSession from '../models/ChallengeSession.js';
+import { getMatchManager } from '../match/MatchManager.js';
+import { sanitizeQuestionForClient } from '../match/questionSelector.js';
 
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'skillsphere-coding-duel-secret-2026';
@@ -174,6 +177,59 @@ router.get('/health', async (_req: Request, res: Response) => {
     },
     timestamp: Date.now()
   });
+});
+
+/**
+ * GET /api/match/:roomCode (and /api/duel/match/:roomCode)
+ * Returns live match state including sanitized questions for the given room.
+ */
+router.get('/match/:roomCode', (req: Request, res: Response): any => {
+  const code = String(req.params.roomCode || '').toUpperCase().trim();
+  if (!code) return res.status(400).json({ success: false, message: 'Missing room code' });
+
+  const manager = getMatchManager();
+  const match = manager.getMatchByRoomCode(code);
+  if (!match) {
+    return res.status(404).json({ success: false, message: 'Match not found or expired' });
+  }
+
+  const countdownSec = parseInt(process.env.COUNTDOWN_SEC || '10', 10);
+  return res.json({
+    success: true,
+    challengeId: match.roomCode || match.id,
+    status: match.state === 'in_progress' ? 'started' : match.state,
+    gameMode: match.gameMode || 'dsa_sprint',
+    countdownStartsAt: match.countdownStartsAt,
+    countdownSec,
+    serverTime: Date.now(),
+    players: [...match.players.values()].map((p) => ({
+      socketId: p.socketId,
+      userDetails: { name: p.nickname },
+      score: p.score,
+      currentIndex: p.currentIndex
+    })),
+    questions: match.questions.map(sanitizeQuestionForClient)
+  });
+});
+
+/**
+ * GET /api/sessions (and /api/duel/sessions)
+ * Returns completed challenge sessions for a user
+ */
+router.get('/sessions', async (req: Request, res: Response): Promise<any> => {
+  try {
+    const { userId } = req.query;
+    if (!userId) return res.status(400).json({ success: false, message: 'Missing userId' });
+
+    const sessions = await ChallengeSession.find({
+      status: 'completed',
+      'players.userDetails.name': userId
+    }).sort({ updatedAt: -1 } as any);
+
+    return res.json(sessions);
+  } catch (error: any) {
+    return res.status(500).json({ error: error.message });
+  }
 });
 
 export default router;

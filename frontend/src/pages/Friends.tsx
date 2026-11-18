@@ -40,11 +40,13 @@ import {
   UserCheck,
   UserPlus,
 } from "lucide-react";
-import ChatBox from "../components/ChatBox";
-import ProfileView from "../components/ProfileView";
-import RequestsList from "../components/Requests";
-import PendingList from "../components/Pending";
-import AddFriend from "../components/AddFriend";
+import {
+  ChatBox,
+  ProfileView,
+  RequestsList,
+  PendingList,
+  AddFriend,
+} from "../components/friends";
 
 export interface Friend {
   id: string;

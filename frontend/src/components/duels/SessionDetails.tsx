@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { BACKEND_URL } from "../utils/api";
+import { BACKEND_URL } from "../../utils/api";
 
 interface AnswerOption {
   id: string;

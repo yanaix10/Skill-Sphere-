@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { db, auth } from "../firebase";
+import { db, auth } from "../../firebase";
 import { collection, onSnapshot } from "firebase/firestore";
 import { getRankTier, ACHIEVEMENT_BADGES } from "@/utils/ranks";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
