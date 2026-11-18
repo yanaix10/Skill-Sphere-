@@ -20,10 +20,10 @@
   --popover-foreground: #000000;
   --border: #e4e4e7;
   --input: #e4e4e7;
-  --text: #000000;
-  --foreground: #000000;
-  --text-muted: #09090b;
-  --muted-foreground: #09090b;
+  --text: #09090b;
+  --foreground: #09090b;
+  --text-muted: #71717a;
+  --muted-foreground: #71717a;
   --secondary: #f4f4f5;
   --secondary-foreground: #000000;
   --muted: #f4f4f5;

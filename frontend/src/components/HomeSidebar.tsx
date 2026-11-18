@@ -226,8 +226,8 @@ export const HomeSidebar: React.FC<HomeSidebarProps> = ({
             alt="SkillSphere"
             className="w-6 h-6 rounded-full object-contain shrink-0"
           />
-          <span className="font-semibold text-[14px] text-foreground tracking-tight">
-            SkillSphere
+          <span className="font-bold text-[16px] text-foreground tracking-tight">
+            Dashboard
           </span>
         </div>
 

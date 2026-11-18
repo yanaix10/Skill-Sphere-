@@ -6,10 +6,8 @@ import {
   Laptop,
   Check,
   Bell,
-  Volume2,
   Sliders,
   User,
-  Shield,
   Palette,
   Mountain,
   Waves,
@@ -53,251 +51,276 @@ export const DashboardSettings: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto text-foreground">
-      {/* Header */}
-      <div className="pb-3 border-b border-border">
-        <h2 className="text-[18px] font-semibold tracking-tight text-foreground flex items-center gap-2 m-0">
-          <Settings className="w-4 h-4 text-primary" />
-          <span>Settings</span>
-        </h2>
-      </div>
-
-      {/* ─── Appearance & Theme Section ─── */}
-      <div className="p-4 sm:p-5 rounded-xl bg-card border border-border shadow-xs space-y-3.5">
-        <h3 className="text-[15px] font-semibold text-foreground flex items-center gap-2 m-0">
-          <Palette className="w-4 h-4 text-muted-foreground" />
-          <span>Theme & appearance</span>
-        </h3>
-
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          {/* Light Theme Card */}
-          <button
-            onClick={() => setTheme("light")}
-            className={cn(
-              "p-3.5 rounded-lg border text-left transition-all cursor-pointer relative shadow-xs flex flex-col justify-between h-20",
-              theme === "light"
-                ? "border-primary ring-1 ring-primary/40 bg-surface-muted"
-                : "border-border bg-card hover:bg-surface-muted/60"
-            )}
-          >
-            <div className="flex items-center justify-between">
-              <Sun className="w-4 h-4 text-amber-500" />
-              {theme === "light" && <Check className="w-4 h-4 text-primary" />}
-            </div>
-            <div>
-              <div className="text-[14px] font-medium text-foreground">Light</div>
-            </div>
-          </button>
-
-          {/* Dark Theme Card */}
-          <button
-            onClick={() => setTheme("dark")}
-            className={cn(
-              "p-3.5 rounded-lg border text-left transition-all cursor-pointer relative shadow-xs flex flex-col justify-between h-20",
-              theme === "dark"
-                ? "border-primary ring-1 ring-primary/40 bg-surface-muted"
-                : "border-border bg-card hover:bg-surface-muted/60"
-            )}
-          >
-            <div className="flex items-center justify-between">
-              <Moon className="w-4 h-4 text-muted-foreground" />
-              {theme === "dark" && <Check className="w-4 h-4 text-primary" />}
-            </div>
-            <div>
-              <div className="text-[14px] font-medium text-foreground">Dark</div>
-            </div>
-          </button>
-
-          {/* System Theme Card */}
-          <button
-            onClick={() => setTheme("system")}
-            className={cn(
-              "p-3.5 rounded-lg border text-left transition-all cursor-pointer relative shadow-xs flex flex-col justify-between h-20",
-              theme === "system"
-                ? "border-primary ring-1 ring-primary/40 bg-surface-muted"
-                : "border-border bg-card hover:bg-surface-muted/60"
-            )}
-          >
-            <div className="flex items-center justify-between">
-              <Laptop className="w-4 h-4 text-muted-foreground" />
-              {theme === "system" && <Check className="w-4 h-4 text-primary" />}
-            </div>
-            <div>
-              <div className="text-[14px] font-medium text-foreground">System ({resolvedTheme})</div>
-            </div>
-          </button>
+    <div className="space-y-5 max-w-3xl mx-auto pb-8 text-foreground">
+      {/* Settings Header */}
+      <div className="pb-3 border-b border-border flex items-center justify-between">
+        <div>
+          <h2 className="text-base sm:text-lg font-bold tracking-tight text-foreground flex items-center gap-2">
+            <Settings className="w-4 h-4 text-primary" />
+            <span>Settings</span>
+          </h2>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Manage your interface theme, environment effects, and notification preferences.
+          </p>
         </div>
       </div>
 
-      {/* ─── Wallpaper Engine Settings ─── */}
-      <div className="p-4 sm:p-5 rounded-xl bg-card border border-border shadow-xs space-y-3.5">
-        <h3 className="text-[15px] font-semibold text-foreground flex items-center gap-2 m-0">
-          <Sliders className="w-4 h-4 text-muted-foreground" />
-          <span>Dynamic wallpaper engine</span>
-        </h3>
+      {/* ─── Appearance & Theme Section ─── */}
+      <section className="p-4 sm:p-5 rounded-xl bg-card border border-border shadow-2xs space-y-3.5">
+        <div className="flex items-center gap-2">
+          <Palette className="w-4 h-4 text-muted-foreground" />
+          <h3 className="text-xs sm:text-sm font-semibold text-foreground">
+            Theme & Appearance
+          </h3>
+        </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="grid grid-cols-3 gap-2.5 sm:gap-3">
+          {/* Light Theme */}
           <button
+            type="button"
+            onClick={() => setTheme("light")}
+            className={cn(
+              "p-3 rounded-lg border text-left transition-all cursor-pointer flex flex-col justify-between h-18 sm:h-20",
+              theme === "light"
+                ? "border-primary bg-primary/5 ring-1 ring-primary/30"
+                : "border-border bg-card hover:bg-muted/50"
+            )}
+          >
+            <div className="flex items-center justify-between w-full">
+              <Sun className="w-4 h-4 text-amber-500" />
+              {theme === "light" && <Check className="w-3.5 h-3.5 text-primary" />}
+            </div>
+            <div>
+              <div className="text-xs sm:text-sm font-medium text-foreground">Light</div>
+            </div>
+          </button>
+
+          {/* Dark Theme */}
+          <button
+            type="button"
+            onClick={() => setTheme("dark")}
+            className={cn(
+              "p-3 rounded-lg border text-left transition-all cursor-pointer flex flex-col justify-between h-18 sm:h-20",
+              theme === "dark"
+                ? "border-primary bg-primary/5 ring-1 ring-primary/30"
+                : "border-border bg-card hover:bg-muted/50"
+            )}
+          >
+            <div className="flex items-center justify-between w-full">
+              <Moon className="w-4 h-4 text-sky-400" />
+              {theme === "dark" && <Check className="w-3.5 h-3.5 text-primary" />}
+            </div>
+            <div>
+              <div className="text-xs sm:text-sm font-medium text-foreground">Dark</div>
+            </div>
+          </button>
+
+          {/* System Theme */}
+          <button
+            type="button"
+            onClick={() => setTheme("system")}
+            className={cn(
+              "p-3 rounded-lg border text-left transition-all cursor-pointer flex flex-col justify-between h-18 sm:h-20",
+              theme === "system"
+                ? "border-primary bg-primary/5 ring-1 ring-primary/30"
+                : "border-border bg-card hover:bg-muted/50"
+            )}
+          >
+            <div className="flex items-center justify-between w-full">
+              <Laptop className="w-4 h-4 text-muted-foreground" />
+              {theme === "system" && <Check className="w-3.5 h-3.5 text-primary" />}
+            </div>
+            <div>
+              <div className="text-xs sm:text-sm font-medium text-foreground">
+                System <span className="text-[10px] text-muted-foreground hidden sm:inline">({resolvedTheme})</span>
+              </div>
+            </div>
+          </button>
+        </div>
+      </section>
+
+      {/* ─── Wallpaper Engine Settings ─── */}
+      <section className="p-4 sm:p-5 rounded-xl bg-card border border-border shadow-2xs space-y-3.5">
+        <div className="flex items-center gap-2">
+          <Sliders className="w-4 h-4 text-muted-foreground" />
+          <h3 className="text-xs sm:text-sm font-semibold text-foreground">
+            Dynamic Wallpaper Engine
+          </h3>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
+          <button
+            type="button"
             onClick={() => handleSceneChange("mountains")}
             className={cn(
-              "p-3 rounded-lg border text-left transition-all cursor-pointer flex items-center gap-3",
+              "px-3 py-2.5 rounded-lg border text-left transition-all cursor-pointer flex items-center gap-2.5",
               wallpaperScene === "mountains"
-                ? "border-primary bg-surface-muted ring-1 ring-primary/40"
-                : "border-border bg-card hover:bg-surface-muted/60"
+                ? "border-primary bg-primary/5 ring-1 ring-primary/30"
+                : "border-border bg-card hover:bg-muted/50"
             )}
           >
-            <Mountain className="w-4 h-4 text-primary" />
-            <div>
-              <div className="text-[14px] font-medium text-foreground">Alpine mountains</div>
-            </div>
+            <Mountain className="w-4 h-4 text-primary shrink-0" />
+            <span className="text-xs sm:text-sm font-medium text-foreground truncate">
+              Alpine mountains
+            </span>
           </button>
 
           <button
+            type="button"
             onClick={() => handleSceneChange("beaches")}
             className={cn(
-              "p-3 rounded-lg border text-left transition-all cursor-pointer flex items-center gap-3",
+              "px-3 py-2.5 rounded-lg border text-left transition-all cursor-pointer flex items-center gap-2.5",
               wallpaperScene === "beaches"
-                ? "border-primary bg-surface-muted ring-1 ring-primary/40"
-                : "border-border bg-card hover:bg-surface-muted/60"
+                ? "border-primary bg-primary/5 ring-1 ring-primary/30"
+                : "border-border bg-card hover:bg-muted/50"
             )}
           >
-            <Waves className="w-4 h-4 text-primary" />
-            <div>
-              <div className="text-[14px] font-medium text-foreground">Coastal beach</div>
-            </div>
+            <Waves className="w-4 h-4 text-primary shrink-0" />
+            <span className="text-xs sm:text-sm font-medium text-foreground truncate">
+              Coastal beach
+            </span>
           </button>
 
           <button
+            type="button"
             onClick={() => handleSceneChange("plains")}
             className={cn(
-              "p-3 rounded-lg border text-left transition-all cursor-pointer flex items-center gap-3",
+              "px-3 py-2.5 rounded-lg border text-left transition-all cursor-pointer flex items-center gap-2.5",
               wallpaperScene === "plains"
-                ? "border-primary bg-surface-muted ring-1 ring-primary/40"
-                : "border-border bg-card hover:bg-surface-muted/60"
+                ? "border-primary bg-primary/5 ring-1 ring-primary/30"
+                : "border-border bg-card hover:bg-muted/50"
             )}
           >
-            <Trees className="w-4 h-4 text-primary" />
-            <div>
-              <div className="text-[14px] font-medium text-foreground">Open plains</div>
-            </div>
+            <Trees className="w-4 h-4 text-primary shrink-0" />
+            <span className="text-xs sm:text-sm font-medium text-foreground truncate">
+              Open plains
+            </span>
           </button>
         </div>
 
         <div className="pt-2 border-t border-border/50 flex items-center justify-between">
-          <div className="text-[13px] font-medium text-foreground">Particle weather effects</div>
+          <span className="text-xs font-medium text-foreground">Particle weather effects</span>
           <button
+            type="button"
             onClick={handleParticlesToggle}
             className={cn(
-              "w-10 h-5 rounded-full transition-colors relative cursor-pointer border-none",
-              particlesEnabled ? "bg-primary" : "bg-surface-muted border border-border"
+              "w-9 h-5 rounded-full transition-colors relative cursor-pointer border-none shrink-0",
+              particlesEnabled ? "bg-primary" : "bg-muted border border-border"
             )}
+            title="Toggle particle weather effects"
           >
-            <div
+            <span
               className={cn(
-                "w-3.5 h-3.5 rounded-full bg-white transition-transform absolute top-0.75",
-                particlesEnabled ? "left-5.5" : "left-1"
+                "block w-3.5 h-3.5 rounded-full bg-white transition-transform absolute top-0.75",
+                particlesEnabled ? "left-4.5" : "left-1"
               )}
             />
           </button>
         </div>
-      </div>
+      </section>
 
       {/* ─── Notifications Section ─── */}
-      <div className="p-4 sm:p-5 rounded-xl bg-card border border-border shadow-xs space-y-3.5">
-        <h3 className="text-[15px] font-semibold text-foreground flex items-center gap-2 m-0">
+      <section className="p-4 sm:p-5 rounded-xl bg-card border border-border shadow-2xs space-y-3.5">
+        <div className="flex items-center gap-2">
           <Bell className="w-4 h-4 text-muted-foreground" />
-          <span>Notifications</span>
-        </h3>
+          <h3 className="text-xs sm:text-sm font-semibold text-foreground">
+            Notification Preferences
+          </h3>
+        </div>
 
-        <div className="space-y-3">
-          <div className="flex items-center justify-between py-1">
+        <div className="divide-y divide-border/60">
+          <div className="flex items-center justify-between py-2.5">
             <div>
-              <div className="text-xs font-bold text-foreground">Coding Duel Invitations</div>
-              <div className="text-[11px] text-muted-foreground">Sound notification when a challenger matches</div>
+              <div className="text-xs font-semibold text-foreground">Coding Duel Invitations</div>
+              <div className="text-[11px] text-muted-foreground">Sound and alert when a challenger matches</div>
             </div>
             <button
+              type="button"
               onClick={() => setNotifyDuels(!notifyDuels)}
               className={cn(
-                "w-11 h-6 rounded-full transition-colors relative cursor-pointer border-none",
-                notifyDuels ? "bg-primary" : "bg-secondary"
+                "w-9 h-5 rounded-full transition-colors relative cursor-pointer border-none shrink-0",
+                notifyDuels ? "bg-primary" : "bg-muted border border-border"
               )}
             >
-              <div
+              <span
                 className={cn(
-                  "w-4 h-4 rounded-full bg-white transition-transform absolute top-1",
-                  notifyDuels ? "left-6" : "left-1"
+                  "block w-3.5 h-3.5 rounded-full bg-white transition-transform absolute top-0.75",
+                  notifyDuels ? "left-4.5" : "left-1"
                 )}
               />
             </button>
           </div>
 
-          <div className="flex items-center justify-between py-1 border-t border-border/60">
+          <div className="flex items-center justify-between py-2.5">
             <div>
-              <div className="text-xs font-bold text-foreground">Google Classroom Deadlines</div>
-              <div className="text-[11px] text-muted-foreground">Alert 24 hours before assignment due time</div>
+              <div className="text-xs font-semibold text-foreground">Google Classroom Deadlines</div>
+              <div className="text-[11px] text-muted-foreground">Alert 24 hours before coursework due time</div>
             </div>
             <button
+              type="button"
               onClick={() => setNotifyAssignments(!notifyAssignments)}
               className={cn(
-                "w-11 h-6 rounded-full transition-colors relative cursor-pointer border-none",
-                notifyAssignments ? "bg-primary" : "bg-secondary"
+                "w-9 h-5 rounded-full transition-colors relative cursor-pointer border-none shrink-0",
+                notifyAssignments ? "bg-primary" : "bg-muted border border-border"
               )}
             >
-              <div
+              <span
                 className={cn(
-                  "w-4 h-4 rounded-full bg-white transition-transform absolute top-1",
-                  notifyAssignments ? "left-6" : "left-1"
+                  "block w-3.5 h-3.5 rounded-full bg-white transition-transform absolute top-0.75",
+                  notifyAssignments ? "left-4.5" : "left-1"
                 )}
               />
             </button>
           </div>
 
-          <div className="flex items-center justify-between py-1 border-t border-border/60">
+          <div className="flex items-center justify-between py-2.5">
             <div>
-              <div className="text-xs font-bold text-foreground">Google Calendar Meetings</div>
-              <div className="text-[11px] text-muted-foreground">Pop-up reminders 15 minutes before meeting start</div>
+              <div className="text-xs font-semibold text-foreground">Google Calendar Meetings</div>
+              <div className="text-[11px] text-muted-foreground">Pop-up reminders 15 minutes before event start</div>
             </div>
             <button
+              type="button"
               onClick={() => setNotifyCalendar(!notifyCalendar)}
               className={cn(
-                "w-11 h-6 rounded-full transition-colors relative cursor-pointer border-none",
-                notifyCalendar ? "bg-primary" : "bg-secondary"
+                "w-9 h-5 rounded-full transition-colors relative cursor-pointer border-none shrink-0",
+                notifyCalendar ? "bg-primary" : "bg-muted border border-border"
               )}
             >
-              <div
+              <span
                 className={cn(
-                  "w-4 h-4 rounded-full bg-white transition-transform absolute top-1",
-                  notifyCalendar ? "left-6" : "left-1"
+                  "block w-3.5 h-3.5 rounded-full bg-white transition-transform absolute top-0.75",
+                  notifyCalendar ? "left-4.5" : "left-1"
                 )}
               />
             </button>
           </div>
         </div>
-      </div>
+      </section>
 
       {/* ─── Profile Dialog Trigger ─── */}
-      <div className="p-5 rounded-2xl bg-card border border-border shadow-xs flex items-center justify-between">
-        <div className="flex items-center gap-3.5">
-          <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-bold">
-            <User className="w-5 h-5" />
+      <section className="p-4 rounded-xl bg-card border border-border shadow-2xs flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-9 h-9 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xs shrink-0 ring-1 ring-primary/20">
+            <User className="w-4 h-4" />
           </div>
-          <div>
-            <h4 className="text-sm font-bold text-foreground">
+          <div className="min-w-0">
+            <div className="text-xs sm:text-sm font-semibold text-foreground truncate">
               {currentUser?.displayName || "Developer"}
-            </h4>
-            <p className="text-xs text-muted-foreground font-mono">
+            </div>
+            <div className="text-[11px] text-muted-foreground truncate">
               {currentUser?.email || "No email connected"}
-            </p>
+            </div>
           </div>
         </div>
 
         <button
+          type="button"
           onClick={() => setIsProfileOpen(true)}
-          className="px-4 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-bold uppercase tracking-wider hover:bg-primary/90 transition-colors shadow-xs cursor-pointer border-none"
+          className="px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90 transition-all shadow-2xs cursor-pointer border-none shrink-0"
         >
           Edit Profile
         </button>
-      </div>
+      </section>
 
       <ProfileDialog open={isProfileOpen} onOpenChange={setIsProfileOpen} />
     </div>
@@ -305,4 +328,3 @@ export const DashboardSettings: React.FC = () => {
 };
 
 export default DashboardSettings;
-

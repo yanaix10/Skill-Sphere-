@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { Post, likePost, unlikePost, addComment, PostComment } from '../../services/feedService';
 import { isPostSaved, toggleSavePost, SAVED_POSTS_EVENT } from '../../utils/savedPosts';
+import AvatarCircles from '../ui/avatar-circles';
 import { auth } from '../../firebase';
 
 interface PostCardProps {
@@ -352,6 +353,17 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
             />
             <span>{likeCount}</span>
           </button>
+
+          {likeCount > 0 && (
+            <AvatarCircles
+              avatarUrls={[
+                'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&h=80&fit=crop&crop=faces',
+                'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&h=80&fit=crop&crop=faces',
+                'https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=80&h=80&fit=crop&crop=faces',
+              ].slice(0, Math.min(3, likeCount))}
+              numPeople={likeCount > 3 ? likeCount - 3 : undefined}
+            />
+          )}
 
           {/* Comment Button */}
           <button
