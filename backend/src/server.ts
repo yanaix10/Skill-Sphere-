@@ -11,6 +11,7 @@ import questionRoutes from "./routes/questionRoutes.js";
 import challengeRoutes from './routes/challengeRoutes.js';
 import duelRoutes from './routes/duelRoutes.js';
 import googleRoutes from './routes/googleRoutes.js';
+import feedRoutes from './routes/feedRoutes.js';
 import { setupSocketGateway } from './gateway/socketGateway.js';
 import { markUnfinishedMatchesAsAbandoned } from './match/persistence.js';
 import { getMatchManager } from './match/MatchManager.js';
@@ -69,6 +70,7 @@ app.use('/api/duel', duelRoutes);
 app.use('/api/quiz', questionRoutes);
 app.use('/api/challenge', challengeRoutes);
 app.use('/api/google', googleRoutes);
+app.use('/api', feedRoutes);
 
 app.get("/", (req, res) => {
   res.send("Server working");

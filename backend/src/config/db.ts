@@ -6,7 +6,10 @@ const collections: Record<string, Map<string, any>> = {
   Challenge: new Map(),
   DsaQuestion: new Map(),
   Question: new Map(),
-  Session: new Map()
+  Session: new Map(),
+  Post: new Map(),
+  PostLike: new Map(),
+  MediaCache: new Map()
 };
 
 const setupInMemoryMock = () => {
@@ -96,6 +99,29 @@ const setupInMemoryMock = () => {
       }
       return this;
     }
+
+    limit(limitNum: number) {
+      if (Array.isArray(this.result)) {
+        this.result = this.result.slice(0, limitNum);
+      }
+      return this;
+    }
+
+    skip(skipNum: number) {
+      if (Array.isArray(this.result)) {
+        this.result = this.result.slice(skipNum);
+      }
+      return this;
+    }
+
+    async countDocuments() {
+      if (Array.isArray(this.result)) return this.result.length;
+      return this.result ? 1 : 0;
+    }
+
+    exec() {
+      return this;
+    }
     
     async then(onfulfilled?: (value: any) => any, onrejected?: (reason: any) => any) {
       try {
@@ -124,7 +150,8 @@ const setupInMemoryMock = () => {
   // Monkey-patch static find
   (mongoose.Model as any).find = function(this: any, query: any = {}) {
     const modelName = this.modelName;
-    const docs = Array.from(collections[modelName]?.values() || []);
+    if (!collections[modelName]) collections[modelName] = new Map();
+    const docs = Array.from(collections[modelName].values() || []);
     const filtered = docs.filter(doc => {
       for (const key in query) {
         if (key.includes('.')) {
@@ -133,14 +160,24 @@ const setupInMemoryMock = () => {
           for (const part of parts) {
             val = val ? val[part] : undefined;
           }
-          if (String(val) !== String(query[key])) return false;
+          if (query[key] instanceof RegExp) {
+            if (!query[key].test(String(val || ''))) return false;
+          } else if (String(val) !== String(query[key])) return false;
         } else {
-          if (String(doc[key]) !== String(query[key])) return false;
+          if (query[key] instanceof RegExp) {
+            if (!query[key].test(String(doc[key] || ''))) return false;
+          } else if (String(doc[key]) !== String(query[key])) return false;
         }
       }
       return true;
     });
     return new MockQuery(this, filtered);
+  };
+
+  // Monkey-patch static countDocuments
+  (mongoose.Model as any).countDocuments = async function(this: any, query: any = {}) {
+    const queryObj = (mongoose.Model as any).find.call(this, query);
+    return queryObj.result ? (Array.isArray(queryObj.result) ? queryObj.result.length : 1) : 0;
   };
 
   // Monkey-patch static findOne

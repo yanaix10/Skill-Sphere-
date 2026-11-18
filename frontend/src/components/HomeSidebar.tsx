@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
+  Newspaper,
   Settings,
   Briefcase,
   CheckSquare,
@@ -15,6 +17,7 @@ import { auth } from "../firebase";
 
 export type SidebarSection =
   | "overview"
+  | "feed"
   | "media"
   | "todo"
   | "jobs"
@@ -36,6 +39,7 @@ export const HomeSidebar: React.FC<HomeSidebarProps> = ({
   activeSection,
   onSelectSection,
 }) => {
+  const navigate = useNavigate();
   const user = auth.currentUser;
   const displayName = user?.displayName || user?.email?.split("@")[0] || "Developer";
 
@@ -58,12 +62,24 @@ export const HomeSidebar: React.FC<HomeSidebarProps> = ({
 
   const coreSections: { id: SidebarSection; label: string; icon: React.FC<{ className?: string }> }[] = [
     { id: "overview", label: "Overview", icon: LayoutDashboard },
+    { id: "feed", label: "Feed", icon: Newspaper },
     { id: "media", label: "Media & resources", icon: ImageIcon },
     { id: "todo", label: "To-do tasks", icon: CheckSquare },
     { id: "jobs", label: "Job applications", icon: Briefcase },
     { id: "activity", label: "Profile & activity", icon: TrendingUp },
     { id: "settings", label: "Settings", icon: Settings },
   ];
+
+  const handleSectionClick = (id: SidebarSection) => {
+    if (id === "feed") {
+      navigate("/feed");
+    } else {
+      if (typeof window !== "undefined" && window.location.pathname === "/feed") {
+        navigate("/dashboard");
+      }
+    }
+    onSelectSection(id);
+  };
 
   /* ─── Compact Gemini-Style Icon Rail when Closed ───────────── */
   if (!isOpen) {
@@ -97,7 +113,7 @@ export const HomeSidebar: React.FC<HomeSidebarProps> = ({
               return (
                 <button
                   key={id}
-                  onClick={() => onSelectSection(id)}
+                  onClick={() => handleSectionClick(id)}
                   className={cn(
                     "w-10 h-10 rounded-xl flex items-center justify-center transition-all cursor-pointer border-none relative group",
                     isActive
@@ -239,7 +255,7 @@ export const HomeSidebar: React.FC<HomeSidebarProps> = ({
             return (
               <button
                 key={id}
-                onClick={() => onSelectSection(id)}
+                onClick={() => handleSectionClick(id)}
                 className={cn(
                   "w-full flex items-center gap-2.5 px-3 py-2 rounded-md text-[13px] font-medium transition-all cursor-pointer border-none text-left",
                   isActive

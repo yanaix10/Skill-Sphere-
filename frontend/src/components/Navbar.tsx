@@ -39,6 +39,7 @@ const DEFAULT_NOTIFICATIONS: FriendMessageNotification[] = [];
 
 const authenticatedLinks = [
   { href: "/dashboard", label: "Home" },
+  { href: "/feed", label: "Feed" },
   { href: "/quizzes", label: "Quizzes & duels" },
   { href: "/friends", label: "Friends" },
 ];

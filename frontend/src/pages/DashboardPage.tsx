@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { auth, db } from "../firebase";
 import { doc, getDoc } from "firebase/firestore";
 import HomeSidebar, { SidebarSection } from "../components/HomeSidebar";
@@ -40,7 +41,13 @@ export const DashboardPage: React.FC = () => {
     });
   };
 
+  const navigate = useNavigate();
+
   const handleSelectSection = (section: SidebarSection) => {
+    if (section === "feed") {
+      navigate("/feed");
+      return;
+    }
     setActiveSection(section);
     try {
       localStorage.setItem("skillsphere_active_section", section);

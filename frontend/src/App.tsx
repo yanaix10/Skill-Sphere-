@@ -9,6 +9,7 @@ import Profile from './components/Profile';
 import Navbar from './components/Navbar';
 import Friends from './pages/Friends';
 import Quizzes from './pages/Quizzes';
+import FeedPage from './pages/FeedPage';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsOfService from './pages/TermsOfService';
 import { ThemeProvider } from './context/ThemeContext';
@@ -123,6 +124,7 @@ function AppContent() {
         { path: "/home", element: user ? <DashboardPage /> : <Navigate to="/" replace /> },
         { path: "/profile", element: user ? <Profile /> : <Navigate to="/" replace /> },
         { path: "/friends", element: user ? <Friends /> : <Navigate to="/" replace /> },
+        { path: "/feed", element: user ? <FeedPage /> : <SignupCard /> },
         { path: "/quizzes", element: user ? <Quizzes /> : <Navigate to="/" replace /> },
         { path: "/privacy", element: <PrivacyPolicy /> },
         { path: "/terms", element: <TermsOfService /> },
