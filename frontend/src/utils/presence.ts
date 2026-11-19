@@ -116,3 +116,4 @@ export function formatLastSeen(lastSeen?: any): string {
   const diffDays = Math.floor(diffHours / 24);
   return `Last seen ${diffDays}d ago`;
 }
+
