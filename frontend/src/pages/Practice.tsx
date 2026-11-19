@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { updateUserStatsAndBadges, getRankTier, BadgeDefinition } from "@/utils/ranks";
+import { recordPracticeAttempt } from "../utils/quizStats";
 
 interface QuizConfig {
   category?: string;
@@ -193,6 +194,9 @@ export const Practice: React.FC<PracticeProps> = ({ setMode, quizConfig }) => {
         const points = data.earnedPoints || (data.score * 15 + 15);
         const ratingDelta = data.ratingDelta || (data.score * 5);
         const isPerfect = !!(data.isPerfectScore ?? (data.score === questions.length && questions.length > 0));
+
+        // Record real-time quiz statistics
+        recordPracticeAttempt(quizConfig?.category || "Web Dev", data.score, questions.length);
 
         try {
           const resStats = await updateUserStatsAndBadges({

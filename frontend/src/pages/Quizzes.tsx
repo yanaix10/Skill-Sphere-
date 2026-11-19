@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from "react";
 import {
-  Sidebar,
+  QuizDashboardView,
   SessionDetails,
   QuestArena,
   Challenge,
+  Sessions,
+  Coders,
   ChallengeConfig,
 } from "../components/duels";
 import Practice from "./Practice";
@@ -19,6 +21,8 @@ const STORAGE_ROOM_KEY = "skillsphere_active_room";
 const STORAGE_CHALLENGE_KEY = "skillsphere_challenge_config";
 
 export default function Quizzes(): React.ReactElement {
+  const [activeTopTab, setActiveTopTab] = useState<string>("+ Code");
+
   // Restore initial state from sessionStorage to survive page refreshes & tab reopening
   const [mode, setModeInternal] = useState<string>(() => {
     if (typeof window !== "undefined") {
@@ -41,7 +45,7 @@ export default function Quizzes(): React.ReactElement {
   const [quizConfig, setQuizConfig] = useState<QuizConfig>({
     difficulty: "Medium",
     limit: "10",
-    category: "Web Dev"
+    category: "Web Dev",
   });
 
   const [challengeConfig, setChallengeConfig] = useState<ChallengeConfig>(() => {
@@ -58,14 +62,14 @@ export default function Quizzes(): React.ReactElement {
         return {
           gameMode: "webdev_arena",
           language: "javascript",
-          roomCode: savedRoom
+          roomCode: savedRoom,
         };
       }
     }
     return {
       gameMode: "webdev_arena",
       language: "javascript",
-      questionCount: 5
+      questionCount: 5,
     };
   });
 
@@ -96,6 +100,7 @@ export default function Quizzes(): React.ReactElement {
   const handleLaunchChallenge = (config: ChallengeConfig) => {
     setChallengeConfig(config);
     setMode("challenge");
+    setActiveTopTab("+ Code");
     if (typeof window !== "undefined") {
       sessionStorage.setItem(STORAGE_CHALLENGE_KEY, JSON.stringify(config));
       if (config.roomCode) {
@@ -103,6 +108,14 @@ export default function Quizzes(): React.ReactElement {
         setActiveRoomCode(config.roomCode);
       }
     }
+  };
+
+  const handleStartPractice = () => {
+    if (typeof window !== "undefined") {
+      sessionStorage.removeItem("skillsphere_practice_state");
+    }
+    setMode("practice");
+    setActiveTopTab("+ Code");
   };
 
   const handleRoomCreated = (code: string) => {
@@ -113,38 +126,142 @@ export default function Quizzes(): React.ReactElement {
   };
 
   return (
-    <div className="w-full h-full bg-background text-foreground flex flex-row overflow-hidden p-0 transition-colors duration-200">
-      {/* Main Center Area: Sandboxing & Arena or Practice Quiz */}
-      <div className="flex-1 h-full min-w-0 overflow-hidden relative">
-        {mode === "practice" && <Practice setMode={setMode} quizConfig={quizConfig} />}
-        {mode === "quest" && <QuestArena />}
-        {mode === "session" && selectedSessionId && (
-          <SessionDetails sessionId={selectedSessionId} setMode={setMode} />
+    <div className="w-full h-full bg-background text-foreground flex flex-col overflow-hidden p-0 transition-colors duration-200">
+      {/* ─── Top Header Bar (matches UI: + Code, Sessions, Coders on right) ─── */}
+      <header className="h-14 border-b border-border/80 bg-card/60 backdrop-blur-sm px-6 sm:px-10 flex items-center justify-between shrink-0 select-none">
+        <div className="flex items-center gap-2">
+          {mode !== "main" && (
+            <button
+              type="button"
+              onClick={() => setMode("main")}
+              className="text-xs font-semibold text-muted-foreground hover:text-foreground flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-muted/60 transition-colors cursor-pointer border-none"
+            >
+              ← Back to Practice Hub
+            </button>
+          )}
+        </div>
+
+        {/* Top-Right Navigation Tabs: + Code, Sessions, Coders */}
+        <div className="flex items-center gap-6 sm:gap-8 text-xs sm:text-sm">
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTopTab("+ Code");
+              if (mode === "session") setMode("main");
+            }}
+            className={`font-semibold cursor-pointer border-none bg-transparent transition-colors ${
+              activeTopTab === "+ Code"
+                ? "text-[#0d9488] font-bold"
+                : "text-foreground hover:text-[#0d9488]"
+            }`}
+          >
+            + Code
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTopTab("Sessions")}
+            className={`font-semibold cursor-pointer border-none bg-transparent transition-colors ${
+              activeTopTab === "Sessions"
+                ? "text-[#0d9488] font-bold"
+                : "text-foreground hover:text-[#0d9488]"
+            }`}
+          >
+            Sessions
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTopTab("Coders")}
+            className={`font-semibold cursor-pointer border-none bg-transparent transition-colors ${
+              activeTopTab === "Coders"
+                ? "text-[#0d9488] font-bold"
+                : "text-foreground hover:text-[#0d9488]"
+            }`}
+          >
+            Coders
+          </button>
+        </div>
+      </header>
+
+      {/* ─── Main Content View ─── */}
+      <main className="flex-1 min-h-0 overflow-hidden relative">
+        {activeTopTab === "Sessions" && (
+          <div className="h-full w-full overflow-y-auto max-w-4xl mx-auto p-4 sm:p-8">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-xl font-bold text-foreground">Duel & Quiz Sessions</h2>
+              <button
+                type="button"
+                onClick={() => setActiveTopTab("+ Code")}
+                className="text-xs text-muted-foreground hover:text-foreground cursor-pointer bg-transparent border-none"
+              >
+                Close Sessions
+              </button>
+            </div>
+            <Sessions
+              setSelectedSessionId={(id) => {
+                setSelectedSessionId(id);
+                setMode("session");
+                setActiveTopTab("+ Code");
+              }}
+              setMode={setMode}
+            />
+          </div>
         )}
 
-        {/* Sandboxing & 1v1 Battle Arena (Active in both main and challenge modes) */}
-        {(mode === "main" || mode === "challenge") && (
-          <Challenge
-            setMode={setMode}
-            isDuelActive={mode === "challenge"}
-            challengeConfig={challengeConfig}
-            onRoomCreated={handleRoomCreated}
-            onOpponentChange={(name) => setOpponentName(name)}
-          />
+        {activeTopTab === "Coders" && (
+          <div className="h-full w-full overflow-y-auto max-w-4xl mx-auto p-4 sm:p-8">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-xl font-bold text-foreground">Coder Leaderboard & Rivals</h2>
+              <button
+                type="button"
+                onClick={() => setActiveTopTab("+ Code")}
+                className="text-xs text-muted-foreground hover:text-foreground cursor-pointer bg-transparent border-none"
+              >
+                Back to Practice
+              </button>
+            </div>
+            <Coders />
+          </div>
         )}
-      </div>
 
-      {/* Right Sidebar: Unified Quiz & 1v1 Challenge Controls */}
-      <Sidebar
-        mode={mode}
-        setMode={setMode}
-        setSelectedSessionId={setSelectedSessionId}
-        quizConfig={quizConfig}
-        setQuizConfig={setQuizConfig}
-        onLaunchChallenge={handleLaunchChallenge}
-        activeRoomCode={activeRoomCode}
-        opponentName={opponentName}
-      />
+        {activeTopTab === "+ Code" && (
+          <>
+            {mode === "practice" && (
+              <Practice setMode={setMode} quizConfig={quizConfig} />
+            )}
+
+            {mode === "quest" && <QuestArena />}
+
+            {mode === "session" && selectedSessionId && (
+              <SessionDetails sessionId={selectedSessionId} setMode={setMode} />
+            )}
+
+            {mode === "challenge" && (
+              <Challenge
+                setMode={setMode}
+                isDuelActive={true}
+                challengeConfig={challengeConfig}
+                onRoomCreated={handleRoomCreated}
+                onOpponentChange={(name) => setOpponentName(name)}
+              />
+            )}
+
+            {mode === "main" && (
+              <QuizDashboardView
+                quizConfig={quizConfig}
+                setQuizConfig={setQuizConfig}
+                onStartPractice={handleStartPractice}
+                onLaunchChallenge={handleLaunchChallenge}
+                activeRoomCode={activeRoomCode}
+                setActiveRoomCode={setActiveRoomCode}
+                opponentName={opponentName}
+                setOpponentName={setOpponentName}
+              />
+            )}
+          </>
+        )}
+      </main>
     </div>
   );
 }

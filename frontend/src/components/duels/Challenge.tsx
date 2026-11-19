@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { io, Socket } from "socket.io-client";
+import { Socket } from "socket.io-client";
+import { socket, getPersistentPlayerId, getUserNickname } from "../../utils/duelSocket";
+import { recordDuelAttempt } from "../../utils/quizStats";
 import {
   RotateCcw,
   Copy,
@@ -47,30 +49,6 @@ import { SegmentedControl } from "@/components/ui/segmented-control";
 import { OtpInput } from "@/components/ui/otp-input";
 import { cn } from "@/lib/utils";
 import { updateUserStatsAndBadges, getRankTier, BadgeDefinition } from "@/utils/ranks";
-
-function getPersistentPlayerId(): string {
-  if (typeof window === "undefined") return "guest";
-  let id = localStorage.getItem("skillsphere_player_id");
-  if (!id) {
-    id = "p_" + Math.random().toString(36).substring(2, 10);
-    localStorage.setItem("skillsphere_player_id", id);
-  }
-  const uid = auth.currentUser?.uid;
-  return uid ? `${uid}_${id}` : id;
-}
-
-const socket: Socket = io(BACKEND_URL, {
-  withCredentials: true,
-  transports: ["polling", "websocket"],
-  reconnectionAttempts: 10,
-  reconnectionDelay: 1500,
-  auth: (cb) => {
-    cb({
-      playerId: getPersistentPlayerId(),
-      nickname: auth.currentUser?.displayName || auth.currentUser?.email?.split("@")[0] || "Player"
-    });
-  }
-});
 
 interface Player {
   socketId: string;
@@ -672,6 +650,7 @@ export default function Challenge({
     const ratingDelta = outcome === "win" ? 30 : outcome === "draw" ? 5 : -10;
 
     const currentTrack = challengeConfig?.gameMode === "webdev_arena" ? "webdev_arena" : "dsa_sprint";
+    recordDuelAttempt(currentTrack, p1Score, totalQuestions);
 
     updateUserStatsAndBadges({
       pointsDelta: points,

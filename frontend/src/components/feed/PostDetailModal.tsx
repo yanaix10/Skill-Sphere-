@@ -389,3 +389,4 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
 };
 
 export default PostDetailModal;
+
