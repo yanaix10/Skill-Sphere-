@@ -11,8 +11,6 @@ Live Application: [https://xskillsphere.vercel.app](https://xskillsphere.vercel.
 
 ![SkillSphere Dashboard](docs/screenshots/dashboard.png)
 
-![SkillSphere Home](docs/screenshots/home.jpg)
-
 ---
 
 ## Features
