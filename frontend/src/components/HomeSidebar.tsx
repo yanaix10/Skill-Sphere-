@@ -220,16 +220,9 @@ export const HomeSidebar: React.FC<HomeSidebarProps> = ({
     >
       {/* Sidebar Header */}
       <div className="h-14 px-4 border-b border-border flex items-center justify-between shrink-0">
-        <div className="flex items-center gap-2.5">
-          <img
-            src="/logo.png"
-            alt="SkillSphere"
-            className="w-6 h-6 rounded-full object-contain shrink-0"
-          />
-          <span className="font-bold text-[16px] text-foreground tracking-tight">
-            Dashboard
-          </span>
-        </div>
+        <span className="font-extrabold text-[19px] sm:text-[20px] text-foreground tracking-tight">
+          Dashboard
+        </span>
 
         {onToggle && (
           <button
