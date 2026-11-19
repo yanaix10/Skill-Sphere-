@@ -38,20 +38,20 @@ const STATUS_DEFAULT_LABELS: Record<ApplicationStatus, string> = {
 };
 
 const statChipVariants = cva(
-  "inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-[13px] font-medium transition-all cursor-pointer border select-none outline-none",
+  "inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-[13px] font-medium transition-all cursor-pointer border select-none outline-none",
   {
     variants: {
       status: {
-        all: "border-border text-foreground hover:bg-surface-muted",
-        saved: "border-border text-[var(--status-saved)] hover:bg-surface-muted",
-        applied: "border-border text-[var(--status-applied)] hover:bg-surface-muted",
-        interview: "border-border text-[var(--status-interview)] hover:bg-surface-muted",
-        offer: "border-border text-[var(--status-offer)] hover:bg-surface-muted",
-        rejected: "border-border text-[var(--status-rejected)] hover:bg-surface-muted",
+        all: "border-border/70 text-foreground hover:bg-card/50",
+        saved: "border-border/70 text-[var(--status-saved,#3b82f6)] hover:bg-card/50",
+        applied: "border-border/70 text-[var(--status-applied,#10b981)] hover:bg-card/50",
+        interview: "border-border/70 text-[var(--status-interview,#f59e0b)] hover:bg-card/50",
+        offer: "border-border/70 text-[var(--status-offer,#8b5cf6)] hover:bg-card/50",
+        rejected: "border-border/70 text-[var(--status-rejected,#ef4444)] hover:bg-card/50",
       },
       active: {
-        true: "bg-surface-muted border-border font-semibold shadow-xs ring-1 ring-border/80",
-        false: "bg-surface hover:bg-surface-muted/60 opacity-80 hover:opacity-100",
+        true: "bg-card/90 border-white/30 dark:border-white/20 font-bold shadow-xs text-foreground",
+        false: "bg-card/40 hover:bg-card/70 backdrop-blur-sm border-white/10 dark:border-white/5 opacity-85 hover:opacity-100",
       },
     },
     defaultVariants: {
@@ -90,7 +90,7 @@ export const StatChip: React.FC<StatChipProps> = ({
       <Icon className="w-3.5 h-3.5 shrink-0" />
       <span>{displayLabel}</span>
       {typeof count === "number" && (
-        <span className="font-mono text-[12px] font-semibold tabular-nums ml-0.5 px-1.5 py-0.2 rounded bg-surface-muted/80 text-foreground border border-border/50">
+        <span className="font-mono text-[11px] font-bold tabular-nums ml-1 px-1.5 py-0.5 rounded-lg bg-card/60 backdrop-blur-xs text-foreground border border-white/15 dark:border-white/10 shadow-2xs">
           {count}
         </span>
       )}

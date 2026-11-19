@@ -249,14 +249,9 @@ export const QuizDashboardView: React.FC<QuizDashboardViewProps> = ({
             {/* Card Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
               <div>
-                <div className="flex items-center gap-2.5">
-                  <h2 className="text-base sm:text-lg font-bold text-foreground">
-                    Skill Mastery & Category Accuracy
-                  </h2>
-                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[#0d9488]/10 text-[#0d9488] border border-[#0d9488]/20">
-                    <Sparkles className="w-3 h-3" /> Live Dynamic
-                  </span>
-                </div>
+                <h2 className="text-base sm:text-lg font-bold text-foreground">
+                  Skill Mastery & Category Accuracy
+                </h2>
                 <p className="text-xs sm:text-sm text-muted-foreground mt-1">
                   Live proficiency calculated from question tags and your practice activity.
                 </p>

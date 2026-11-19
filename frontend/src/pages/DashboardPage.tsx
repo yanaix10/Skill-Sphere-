@@ -12,6 +12,7 @@ import DashboardCalendar from "../components/dashboard/DashboardCalendar";
 import DashboardSettings from "../components/dashboard/DashboardSettings";
 import DeveloperActivityCard from "../components/dashboard/DeveloperActivityCard";
 import DashboardSavedPosts from "../components/dashboard/DashboardSavedPosts";
+import GlassWorkspace from "../components/dashboard/GlassWorkspace";
 import { PanelLeftOpen, LayoutDashboard, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -184,7 +185,9 @@ export const DashboardPage: React.FC = () => {
 
           {activeSection === "activity" && (
             <div className="animate-in fade-in duration-200 max-w-5xl mx-auto">
-              <DeveloperActivityCard />
+              <GlassWorkspace brand="SkillSphere" useHostTheme={true}>
+                <DeveloperActivityCard />
+              </GlassWorkspace>
             </div>
           )}
 

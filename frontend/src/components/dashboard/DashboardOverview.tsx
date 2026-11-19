@@ -175,17 +175,15 @@ const DashboardOverviewContent: React.FC<DashboardOverviewProps> = ({ userName, 
       </div>
 
       {/* ─── 3. Centerpiece: Developer Activity Card (Glass Styled) ─── */}
-      <div className="gw-glass rounded-2xl overflow-hidden shadow-xs">
-        <DeveloperActivityCard />
-      </div>
+      <DeveloperActivityCard />
 
       {/* ─── 4. Lower Glance Grid (Glass Styled) ─── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Schedule */}
         <div className="gw-glass p-4 sm:p-5 rounded-2xl shadow-xs space-y-3">
-          <div className="flex items-center justify-between border-b border-border/60 pb-3">
+          <div className="flex items-center justify-between border-b border-border/40 pb-3">
             <h3 className="text-[15px] font-semibold text-foreground flex items-center gap-2 m-0">
-              <Calendar className="w-4 h-4 text-muted-foreground" />
+              <Calendar className="w-4 h-4 text-primary" />
               <span>Today's schedule</span>
             </h3>
             <button
@@ -206,7 +204,7 @@ const DashboardOverviewContent: React.FC<DashboardOverviewProps> = ({ userName, 
               todayMeetings.map((event) => (
                 <div
                   key={event.id}
-                  className="p-3 rounded-xl bg-card/40 border border-border/60 flex items-center justify-between text-[13px]"
+                  className="p-3 rounded-xl bg-card/40 backdrop-blur-sm border border-white/15 dark:border-white/10 flex items-center justify-between text-[13px] shadow-xs"
                 >
                   <div>
                     <div className="font-medium text-foreground">{event.title}</div>
@@ -219,7 +217,7 @@ const DashboardOverviewContent: React.FC<DashboardOverviewProps> = ({ userName, 
                       href={event.meetLink}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="px-2.5 py-1 rounded-lg bg-primary text-primary-foreground text-[12px] font-medium shrink-0 no-underline"
+                      className="px-2.5 py-1 rounded-lg bg-primary text-primary-foreground text-[12px] font-medium shrink-0 no-underline shadow-xs"
                     >
                       Join
                     </a>
@@ -232,9 +230,9 @@ const DashboardOverviewContent: React.FC<DashboardOverviewProps> = ({ userName, 
 
         {/* Pending Classroom Tasks */}
         <div className="gw-glass p-4 sm:p-5 rounded-2xl shadow-xs space-y-3">
-          <div className="flex items-center justify-between border-b border-border/60 pb-3">
+          <div className="flex items-center justify-between border-b border-border/40 pb-3">
             <h3 className="text-[15px] font-semibold text-foreground flex items-center gap-2 m-0">
-              <GraduationCap className="w-4 h-4 text-muted-foreground" />
+              <GraduationCap className="w-4 h-4 text-primary" />
               <span>Pending assignments</span>
             </h3>
             <button
@@ -255,7 +253,7 @@ const DashboardOverviewContent: React.FC<DashboardOverviewProps> = ({ userName, 
               pendingAssignments.slice(0, 3).map((assign) => (
                 <div
                   key={assign.id}
-                  className="p-3 rounded-xl bg-card/40 border border-border/60 flex items-center justify-between text-[13px]"
+                  className="p-3 rounded-xl bg-card/40 backdrop-blur-sm border border-white/15 dark:border-white/10 flex items-center justify-between text-[13px] shadow-xs"
                 >
                   <div className="min-w-0 pr-2">
                     <div className="font-medium text-foreground truncate">{assign.title}</div>
