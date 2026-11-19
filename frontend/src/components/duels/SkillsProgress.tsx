@@ -40,22 +40,26 @@ export default function SkillsProgress() {
       </div>
 
       <div className="space-y-4">
-        {skills.map(({ label, value, attempted, indicatorClass, trackClass }) => (
+        {skills.map(({ label, value, attempted, color }) => (
           <div key={label} className="space-y-1.5">
             <div className="flex items-center justify-between">
-              <span className="text-xs sm:text-sm font-medium text-foreground">{label}</span>
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: color }} />
+                <span className="text-xs sm:text-sm font-medium text-foreground">{label}</span>
+              </div>
               <span className="text-xs font-semibold tabular-nums text-muted-foreground">
                 {attempted > 0 ? (mounted ? `${value}%` : "0%") : "—"}
               </span>
             </div>
-            <Progress
-              value={mounted ? value : 0}
-              className={cn(
-                "**:data-[slot='progress-track']:h-2! **:data-[slot='progress-indicator']:duration-1000!",
-                indicatorClass,
-                trackClass
-              )}
-            />
+            <div className="h-2 w-full bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
+              <div
+                className="h-full rounded-full transition-all duration-700 ease-out"
+                style={{
+                  width: `${attempted > 0 && mounted ? Math.min(100, Math.max(0, value)) : 0}%`,
+                  backgroundColor: color,
+                }}
+              />
+            </div>
           </div>
         ))}
       </div>

@@ -14,6 +14,7 @@ export interface SkillProgressItem {
   value: number; // 0 - 100
   attempted: number;
   correct: number;
+  color: string;
   indicatorClass: string;
   trackClass: string;
 }
@@ -50,36 +51,41 @@ const STORAGE_STATS_KEY = "skillsphere_quiz_realtime_stats";
 export const DEFAULT_SKILLS_META = [
   {
     label: "React / Next.js",
-    indicatorClass: "**:data-[slot='progress-indicator']:bg-blue-500!",
-    trackClass: "**:data-[slot='progress-track']:bg-blue-500/20!",
+    color: "#3b82f6",
+    indicatorClass: "bg-blue-500",
+    trackClass: "bg-blue-500/20",
     relevantCategories: ["Web Dev", "Code"],
     relevantKeywords: ["react", "next", "jsx", "tsx", "frontend", "hooks", "dom", "component"],
   },
   {
     label: "TypeScript",
-    indicatorClass: "**:data-[slot='progress-indicator']:bg-orange-400!",
-    trackClass: "**:data-[slot='progress-track']:bg-orange-400/20!",
+    color: "#f59e0b",
+    indicatorClass: "bg-amber-500",
+    trackClass: "bg-amber-500/20",
     relevantCategories: ["Code", "Web Dev"],
     relevantKeywords: ["typescript", "ts", "javascript", "js", "types", "generics", "interface"],
   },
   {
     label: "Tailwind CSS",
-    indicatorClass: "**:data-[slot='progress-indicator']:bg-sky-400!",
-    trackClass: "**:data-[slot='progress-track']:bg-sky-400/20!",
+    color: "#0ea5e9",
+    indicatorClass: "bg-sky-500",
+    trackClass: "bg-sky-500/20",
     relevantCategories: ["Web Dev"],
     relevantKeywords: ["tailwind", "css", "html", "style", "flexbox", "grid", "responsive"],
   },
   {
     label: "Node.js",
-    indicatorClass: "**:data-[slot='progress-indicator']:bg-teal-400!",
-    trackClass: "**:data-[slot='progress-track']:bg-teal-400/20!",
+    color: "#10b981",
+    indicatorClass: "bg-emerald-500",
+    trackClass: "bg-emerald-500/20",
     relevantCategories: ["DevOps", "Linux", "SQL", "Code"],
     relevantKeywords: ["node", "express", "backend", "server", "api", "npm", "async", "event loop"],
   },
   {
     label: "UI / UX Design",
-    indicatorClass: "**:data-[slot='progress-indicator']:bg-amber-300!",
-    trackClass: "**:data-[slot='progress-track']:bg-amber-300/20!",
+    color: "#8b5cf6",
+    indicatorClass: "bg-purple-500",
+    trackClass: "bg-purple-500/20",
     relevantCategories: ["Web Dev"],
     relevantKeywords: ["ui", "ux", "design", "accessibility", "a11y", "color", "typography", "animation"],
   },
@@ -309,6 +315,7 @@ export function useSkillsProgress(): SkillProgressItem[] {
       value,
       attempted: entry.attempted,
       correct: entry.correct,
+      color: meta.color,
       indicatorClass: meta.indicatorClass,
       trackClass: meta.trackClass,
     };

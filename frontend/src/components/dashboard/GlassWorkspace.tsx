@@ -7,6 +7,7 @@ import React, {
   useState,
   type CSSProperties,
 } from "react";
+import { createPortal } from "react-dom";
 import { gsap } from "gsap";
 import { useGSAP } from "@gsap/react";
 import {
@@ -168,128 +169,136 @@ export default function GlassWorkspace({
           {children}
         </div>
 
-        {/* Adjust Glass Material Popover / Drawer */}
-        {settingsOpen && (
-          <aside
-            className="gw-material gw-glass"
-            id={`${id}-material`}
-            aria-label="Glass appearance"
-          >
-            <div className="gw-material-title">
-              <div className="flex items-center gap-2">
-                <span className="gw-material-icon">
-                  <Settings2 size={18} aria-hidden="true" />
-                </span>
-                <h2>Glass appearance</h2>
+        {/* Adjust Glass Material Popover / Drawer rendered safely via Portal */}
+        {settingsOpen && typeof document !== "undefined" && createPortal(
+          <>
+            <div
+              className="fixed inset-0 z-[99990] bg-black/25 backdrop-blur-[2px] transition-opacity"
+              onClick={closeSettings}
+              aria-hidden="true"
+            />
+            <aside
+              className="gw-material gw-glass"
+              id={`${id}-material`}
+              aria-label="Glass appearance"
+            >
+              <div className="gw-material-title">
+                <div className="flex items-center gap-2">
+                  <span className="gw-material-icon">
+                    <Settings2 size={18} aria-hidden="true" />
+                  </span>
+                  <h2>Glass appearance</h2>
+                </div>
+                <button
+                  type="button"
+                  className="gw-icon-button"
+                  aria-label="Close glass settings"
+                  onClick={closeSettings}
+                >
+                  <X size={18} aria-hidden="true" />
+                </button>
               </div>
-              <button
-                type="button"
-                className="gw-icon-button"
-                aria-label="Close glass settings"
-                onClick={closeSettings}
-              >
-                <X size={18} aria-hidden="true" />
-              </button>
-            </div>
-            <p>Fine-tune frosted glass material & specular shine.</p>
+              <p>Fine-tune frosted glass material & specular shine.</p>
 
-            <div className="gw-material-sample" aria-hidden="true">
-              <Layers size={26} strokeWidth={1.3} />
-              <span>Live material preview</span>
-            </div>
+              <div className="gw-material-sample" aria-hidden="true">
+                <Layers size={26} strokeWidth={1.3} />
+                <span>Live material preview</span>
+              </div>
 
-            <div className="gw-presets" aria-label="Glass presets">
+              <div className="gw-presets" aria-label="Glass presets">
+                {[
+                  {
+                    name: "Clear",
+                    value: { blur: 10, opacity: 0.15, saturation: 1.1, edge: 0.8 },
+                  },
+                  { name: "Frosted", value: defaults },
+                  {
+                    name: "Solid",
+                    value: { blur: 32, opacity: 0.82, saturation: 1, edge: 0.35 },
+                  },
+                ].map((p) => (
+                  <button
+                    key={p.name}
+                    type="button"
+                    onClick={() => updateGlass(p.value)}
+                  >
+                    {p.name}
+                  </button>
+                ))}
+              </div>
+
               {[
                 {
-                  name: "Clear",
-                  value: { blur: 10, opacity: 0.15, saturation: 1.1, edge: 0.8 },
+                  key: "blur",
+                  label: "Blur",
+                  min: 0,
+                  max: 40,
+                  step: 1,
+                  value: `${Math.round(material.blur)} px`,
                 },
-                { name: "Frosted", value: defaults },
                 {
-                  name: "Solid",
-                  value: { blur: 32, opacity: 0.82, saturation: 1, edge: 0.35 },
+                  key: "opacity",
+                  label: "Opacity",
+                  min: 0.08,
+                  max: 0.9,
+                  step: 0.01,
+                  value: `${Math.round(material.opacity * 100)}%`,
                 },
-              ].map((p) => (
-                <button
-                  key={p.name}
-                  type="button"
-                  onClick={() => updateGlass(p.value)}
-                >
-                  {p.name}
-                </button>
+                {
+                  key: "saturation",
+                  label: "Saturation",
+                  min: 0.5,
+                  max: 2,
+                  step: 0.05,
+                  value: `${Math.round(material.saturation * 100)}%`,
+                },
+                {
+                  key: "edge",
+                  label: "Edge light",
+                  min: 0,
+                  max: 1,
+                  step: 0.05,
+                  value: `${Math.round(material.edge * 100)}%`,
+                },
+              ].map((c) => (
+                <label className="gw-range" key={c.key}>
+                  <span>
+                    {c.label}
+                    <output>{c.value}</output>
+                  </span>
+                  <input
+                    type="range"
+                    aria-label={c.label}
+                    min={c.min}
+                    max={c.max}
+                    step={c.step}
+                    value={material[c.key as keyof GlassSettings]}
+                    onChange={(e) =>
+                      updateGlass({ [c.key]: Number(e.target.value) })
+                    }
+                  />
+                </label>
               ))}
-            </div>
 
-            {[
-              {
-                key: "blur",
-                label: "Blur",
-                min: 0,
-                max: 40,
-                step: 1,
-                value: `${Math.round(material.blur)} px`,
-              },
-              {
-                key: "opacity",
-                label: "Opacity",
-                min: 0.08,
-                max: 0.9,
-                step: 0.01,
-                value: `${Math.round(material.opacity * 100)}%`,
-              },
-              {
-                key: "saturation",
-                label: "Saturation",
-                min: 0.5,
-                max: 2,
-                step: 0.05,
-                value: `${Math.round(material.saturation * 100)}%`,
-              },
-              {
-                key: "edge",
-                label: "Edge light",
-                min: 0,
-                max: 1,
-                step: 0.05,
-                value: `${Math.round(material.edge * 100)}%`,
-              },
-            ].map((c) => (
-              <label className="gw-range" key={c.key}>
-                <span>
-                  {c.label}
-                  <output>{c.value}</output>
-                </span>
+              <label className="gw-tint">
+                Glass tint{" "}
                 <input
-                  type="range"
-                  aria-label={c.label}
-                  min={c.min}
-                  max={c.max}
-                  step={c.step}
-                  value={material[c.key as keyof GlassSettings]}
-                  onChange={(e) =>
-                    updateGlass({ [c.key]: Number(e.target.value) })
-                  }
+                  type="color"
+                  value={material.tint}
+                  onChange={(e) => updateGlass({ tint: e.target.value })}
                 />
               </label>
-            ))}
 
-            <label className="gw-tint">
-              Glass tint{" "}
-              <input
-                type="color"
-                value={material.tint}
-                onChange={(e) => updateGlass({ tint: e.target.value })}
-              />
-            </label>
-
-            <button
-              className="gw-reset"
-              type="button"
-              onClick={resetGlass}
-            >
-              Reset appearance
-            </button>
-          </aside>
+              <button
+                className="gw-reset"
+                type="button"
+                onClick={resetGlass}
+              >
+                Reset appearance
+              </button>
+            </aside>
+          </>,
+          document.body
         )}
       </div>
     </GlassContext.Provider>
@@ -396,16 +405,17 @@ const styles = `
 .gw-material {
   position: fixed;
   top: 76px;
-  right: 28px;
-  width: 310px;
-  max-width: calc(100vw - 40px);
+  right: 20px;
+  width: 320px;
+  max-width: calc(100vw - 36px);
   padding: 22px;
   border-radius: 20px;
-  z-index: 100;
+  z-index: 99999;
   display: flex;
   flex-direction: column;
   gap: 14px;
-  box-shadow: 0 24px 60px -15px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 24px 60px -15px rgba(0, 0, 0, 0.5);
+  box-sizing: border-box;
 }
 
 .gw-material-title {

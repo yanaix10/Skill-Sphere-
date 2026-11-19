@@ -8,8 +8,7 @@ import {
   Code2,
   Terminal,
 } from "lucide-react";
-import { useRealtimeQuizStats } from "../../utils/quizStats";
-import SkillsProgress from "./SkillsProgress";
+import { useRealtimeQuizStats, useSkillsProgress } from "../../utils/quizStats";
 import { socket, getPersistentPlayerId, getUserNickname } from "../../utils/duelSocket";
 import { ChallengeConfig } from "./Sidebar";
 import { auth } from "../../firebase";
@@ -42,6 +41,8 @@ export const QuizDashboardView: React.FC<QuizDashboardViewProps> = ({
   setOpponentName,
 }) => {
   const stats = useRealtimeQuizStats();
+  const skills = useSkillsProgress();
+  const [breakdownTab, setBreakdownTab] = useState<"all" | "categories" | "skills">("all");
   const [panelTab, setPanelTab] = useState<"practice" | "challenge">(() => {
     return activeRoomCode ? "challenge" : "practice";
   });
@@ -228,51 +229,197 @@ export const QuizDashboardView: React.FC<QuizDashboardViewProps> = ({
             </div>
           </div>
 
-          {/* Accuracy by Category Card */}
-          <div className="rounded-2xl border border-border/70 bg-card p-6 sm:p-8 shadow-xs">
-            <h2 className="text-base sm:text-lg font-bold text-foreground">
-              Accuracy by category
-            </h2>
-            <p className="text-xs sm:text-sm text-muted-foreground mt-1 mb-6">
-              Where today's {quizConfig.category} · {quizConfig.difficulty} set should help most.
-            </p>
+          {/* ─── Integrated Performance & Skills Card ─── */}
+          <div className="rounded-2xl border border-border/70 bg-card p-6 sm:p-7 shadow-xs">
+            {/* Card Header with Segmented Filter Pill */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+              <div>
+                <h2 className="text-base sm:text-lg font-bold text-foreground">
+                  Accuracy & Skill Set
+                </h2>
+                <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
+                  {breakdownTab === "categories"
+                    ? `Where today's ${quizConfig.category} · ${quizConfig.difficulty} set helps you improve.`
+                    : breakdownTab === "skills"
+                      ? "Live dynamic progress calculated across your coding and design skills."
+                      : `Real-time mastery by category and skill set (updates live as you practice).`}
+                </p>
+              </div>
 
-            <div className="space-y-4">
-              {categories.map((cat) => (
-                <div key={cat.name} className="flex items-center gap-3 sm:gap-4">
-                  <span className="text-xs sm:text-sm font-medium text-foreground w-16 sm:w-20 shrink-0">
-                    {cat.name}
-                  </span>
-                  <div className="flex-1 bg-zinc-100 dark:bg-zinc-800 rounded-full h-2.5 overflow-hidden">
-                    <div
-                      className="bg-[#0d9488] h-full rounded-full transition-all duration-700 ease-out"
-                      style={{ width: `${Math.min(100, Math.max(0, cat.accuracy))}%` }}
-                    />
-                  </div>
-                  <span className="text-xs sm:text-sm font-medium text-muted-foreground w-10 text-right shrink-0">
-                    {cat.attempted > 0 ? `${cat.accuracy}%` : "—"}
-                  </span>
-                </div>
-              ))}
+              <div className="flex items-center gap-1 p-1 bg-muted/60 dark:bg-muted/40 rounded-xl shrink-0 self-start sm:self-auto select-none border border-border/40">
+                <button
+                  type="button"
+                  onClick={() => setBreakdownTab("all")}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer border-none ${
+                    breakdownTab === "all"
+                      ? "bg-card text-foreground shadow-xs font-bold"
+                      : "text-muted-foreground hover:text-foreground bg-transparent"
+                  }`}
+                >
+                  All
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setBreakdownTab("categories")}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer border-none ${
+                    breakdownTab === "categories"
+                      ? "bg-card text-foreground shadow-xs font-bold"
+                      : "text-muted-foreground hover:text-foreground bg-transparent"
+                  }`}
+                >
+                  Categories
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setBreakdownTab("skills")}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer border-none ${
+                    breakdownTab === "skills"
+                      ? "bg-card text-foreground shadow-xs font-bold"
+                      : "text-muted-foreground hover:text-foreground bg-transparent"
+                  }`}
+                >
+                  Skill Set
+                </button>
+              </div>
             </div>
-          </div>
 
-          {/* Real-time Dynamic Skill Progress Breakdown */}
-          <SkillsProgress />
+            {/* Unified Content View */}
+            {breakdownTab === "all" ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8 pt-1">
+                {/* Left Column: Categories */}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between pb-1 border-b border-border/40">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                      Categories
+                    </span>
+                    <span className="text-[11px] font-medium text-[#0d9488]">
+                      {categories.some((c) => c.attempted > 0) ? "Active" : "Practice"}
+                    </span>
+                  </div>
+                  <div className="space-y-3.5">
+                    {categories.map((cat) => (
+                      <div key={cat.name} className="flex items-center gap-3">
+                        <span className="text-xs sm:text-sm font-medium text-foreground w-18 shrink-0">
+                          {cat.name}
+                        </span>
+                        <div className="flex-1 bg-zinc-100 dark:bg-zinc-800 rounded-full h-2.5 overflow-hidden">
+                          <div
+                            className="bg-[#0d9488] h-full rounded-full transition-all duration-700 ease-out"
+                            style={{ width: `${Math.min(100, Math.max(0, cat.accuracy))}%` }}
+                          />
+                        </div>
+                        <span className="text-xs sm:text-sm font-medium text-muted-foreground w-10 text-right shrink-0">
+                          {cat.attempted > 0 ? `${cat.accuracy}%` : "—"}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Right Column: Skill Set with Distinct Vibrant Colored Bars */}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between pb-1 border-b border-border/40">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                      Skill Set
+                    </span>
+                    <span className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
+                      Live Progress
+                    </span>
+                  </div>
+                  <div className="space-y-3.5">
+                    {skills.map((skill) => (
+                      <div key={skill.label} className="space-y-1">
+                        <div className="flex items-center justify-between text-xs sm:text-sm">
+                          <div className="flex items-center gap-2">
+                            <span
+                              className="w-2.5 h-2.5 rounded-full shrink-0"
+                              style={{ backgroundColor: skill.color }}
+                            />
+                            <span className="font-medium text-foreground">{skill.label}</span>
+                          </div>
+                          <span className="font-semibold tabular-nums text-muted-foreground">
+                            {skill.attempted > 0 ? `${skill.value}%` : "—"}
+                          </span>
+                        </div>
+                        <div className="h-2 w-full bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
+                          <div
+                            className="h-full rounded-full transition-all duration-700 ease-out"
+                            style={{
+                              width: `${skill.attempted > 0 ? Math.min(100, Math.max(0, skill.value)) : 0}%`,
+                              backgroundColor: skill.color,
+                            }}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ) : breakdownTab === "categories" ? (
+              /* Full Categories List */
+              <div className="space-y-4 pt-1">
+                {categories.map((cat) => (
+                  <div key={cat.name} className="flex items-center gap-3 sm:gap-4">
+                    <span className="text-xs sm:text-sm font-medium text-foreground w-20 shrink-0">
+                      {cat.name}
+                    </span>
+                    <div className="flex-1 bg-zinc-100 dark:bg-zinc-800 rounded-full h-2.5 overflow-hidden">
+                      <div
+                        className="bg-[#0d9488] h-full rounded-full transition-all duration-700 ease-out"
+                        style={{ width: `${Math.min(100, Math.max(0, cat.accuracy))}%` }}
+                      />
+                    </div>
+                    <span className="text-xs sm:text-sm font-medium text-muted-foreground w-12 text-right shrink-0">
+                      {cat.attempted > 0 ? `${cat.accuracy}%` : "—"}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              /* Full Skills List with Vibrant Colored Bars */
+              <div className="space-y-4 pt-1">
+                {skills.map((skill) => (
+                  <div key={skill.label} className="space-y-1.5">
+                    <div className="flex items-center justify-between text-xs sm:text-sm">
+                      <div className="flex items-center gap-2">
+                        <span
+                          className="w-2.5 h-2.5 rounded-full shrink-0"
+                          style={{ backgroundColor: skill.color }}
+                        />
+                        <span className="font-medium text-foreground">{skill.label}</span>
+                      </div>
+                      <span className="font-semibold tabular-nums text-muted-foreground">
+                        {skill.attempted > 0 ? `${skill.value}%` : "—"}
+                      </span>
+                    </div>
+                    <div className="h-2.5 w-full bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
+                      <div
+                        className="h-full rounded-full transition-all duration-700 ease-out"
+                        style={{
+                          width: `${skill.attempted > 0 ? Math.min(100, Math.max(0, skill.value)) : 0}%`,
+                          backgroundColor: skill.color,
+                        }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
       {/* ─── RIGHT COLUMN: Control Panel ─── */}
       <div className="w-[340px] lg:w-[360px] shrink-0 h-full border-l border-border bg-card flex flex-col overflow-y-auto">
-        <div className="p-5 space-y-5 flex-1">
+        <div className="p-6 space-y-6 flex-1">
           {/* Top Segmented Pill Control */}
-          <div className="p-1 rounded-xl bg-zinc-100 dark:bg-zinc-800/80 flex gap-1 select-none">
+          <div className="p-1.5 rounded-xl bg-zinc-100 dark:bg-zinc-800/80 flex gap-1.5 select-none mb-3">
             <button
               type="button"
               onClick={() => setPanelTab("practice")}
-              className={`flex-1 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer border-none ${
+              className={`flex-1 py-2.5 rounded-lg text-xs font-semibold transition-all cursor-pointer border-none ${
                 panelTab === "practice"
-                  ? "bg-card text-foreground shadow-xs"
+                  ? "bg-card text-foreground shadow-xs font-bold"
                   : "text-muted-foreground hover:text-foreground bg-transparent"
               }`}
             >
@@ -281,9 +428,9 @@ export const QuizDashboardView: React.FC<QuizDashboardViewProps> = ({
             <button
               type="button"
               onClick={() => setPanelTab("challenge")}
-              className={`flex-1 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer border-none ${
+              className={`flex-1 py-2.5 rounded-lg text-xs font-semibold transition-all cursor-pointer border-none ${
                 panelTab === "challenge"
-                  ? "bg-card text-foreground shadow-xs"
+                  ? "bg-card text-foreground shadow-xs font-bold"
                   : "text-muted-foreground hover:text-foreground bg-transparent"
               }`}
             >
@@ -293,13 +440,13 @@ export const QuizDashboardView: React.FC<QuizDashboardViewProps> = ({
 
           {/* ─── TAB 1: PRACTICE QUIZ ─── */}
           {panelTab === "practice" && (
-            <div className="space-y-4">
+            <div className="space-y-6">
               {/* Select difficulty */}
               <div>
-                <label className="text-[11px] font-semibold text-muted-foreground block mb-2 uppercase tracking-wide">
+                <label className="text-[11px] font-bold text-muted-foreground block mb-2.5 uppercase tracking-wider">
                   Select difficulty
                 </label>
-                <div className="grid grid-cols-3 gap-1.5">
+                <div className="grid grid-cols-3 gap-2.5">
                   {["Easy", "Medium", "Hard"].map((diff) => {
                     const isSelected = quizConfig.difficulty.toLowerCase() === diff.toLowerCase();
                     return (
@@ -307,9 +454,9 @@ export const QuizDashboardView: React.FC<QuizDashboardViewProps> = ({
                         key={diff}
                         type="button"
                         onClick={() => setQuizConfig((prev) => ({ ...prev, difficulty: diff }))}
-                        className={`h-9 rounded-lg text-xs font-medium transition-all cursor-pointer flex items-center justify-center ${
+                        className={`h-10 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center justify-center ${
                           isSelected
-                            ? "border-2 border-[#0d9488] text-[#0d9488] bg-[#0d9488]/5 font-semibold"
+                            ? "border-2 border-[#0d9488] text-[#0d9488] bg-[#0d9488]/5 font-bold shadow-xs"
                             : "border border-border/80 text-foreground hover:bg-muted/40 bg-background"
                         }`}
                       >
@@ -322,10 +469,10 @@ export const QuizDashboardView: React.FC<QuizDashboardViewProps> = ({
 
               {/* Number of questions */}
               <div>
-                <label className="text-[11px] font-semibold text-muted-foreground block mb-2 uppercase tracking-wide">
+                <label className="text-[11px] font-bold text-muted-foreground block mb-2.5 uppercase tracking-wider">
                   Number of questions
                 </label>
-                <div className="grid grid-cols-3 gap-1.5">
+                <div className="grid grid-cols-3 gap-2.5">
                   {["5", "10", "20"].map((count) => {
                     const isSelected = quizConfig.limit === count;
                     return (
@@ -333,9 +480,9 @@ export const QuizDashboardView: React.FC<QuizDashboardViewProps> = ({
                         key={count}
                         type="button"
                         onClick={() => setQuizConfig((prev) => ({ ...prev, limit: count }))}
-                        className={`h-9 rounded-lg text-xs font-medium transition-all cursor-pointer flex items-center justify-center ${
+                        className={`h-10 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center justify-center ${
                           isSelected
-                            ? "border-2 border-[#0d9488] text-[#0d9488] bg-[#0d9488]/5 font-semibold"
+                            ? "border-2 border-[#0d9488] text-[#0d9488] bg-[#0d9488]/5 font-bold shadow-xs"
                             : "border border-border/80 text-foreground hover:bg-muted/40 bg-background"
                         }`}
                       >
@@ -348,10 +495,10 @@ export const QuizDashboardView: React.FC<QuizDashboardViewProps> = ({
 
               {/* Select category */}
               <div>
-                <label className="text-[11px] font-semibold text-muted-foreground block mb-2 uppercase tracking-wide">
+                <label className="text-[11px] font-bold text-muted-foreground block mb-2.5 uppercase tracking-wider">
                   Select category
                 </label>
-                <div className="grid grid-cols-3 gap-1.5">
+                <div className="grid grid-cols-3 gap-2.5">
                   {["Web Dev", "Linux", "DevOps", "Code", "SQL", "Cloud"].map((cat) => {
                     const isSelected = quizConfig.category === cat;
                     return (
@@ -359,9 +506,9 @@ export const QuizDashboardView: React.FC<QuizDashboardViewProps> = ({
                         key={cat}
                         type="button"
                         onClick={() => setQuizConfig((prev) => ({ ...prev, category: cat }))}
-                        className={`h-9 rounded-lg text-xs font-medium transition-all cursor-pointer flex items-center justify-center truncate px-1 ${
+                        className={`h-10 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center justify-center truncate px-1 ${
                           isSelected
-                            ? "border-2 border-[#0d9488] text-[#0d9488] bg-[#0d9488]/5 font-semibold"
+                            ? "border-2 border-[#0d9488] text-[#0d9488] bg-[#0d9488]/5 font-bold shadow-xs"
                             : "border border-border/80 text-foreground hover:bg-muted/40 bg-background"
                         }`}
                       >
@@ -376,7 +523,7 @@ export const QuizDashboardView: React.FC<QuizDashboardViewProps> = ({
               <button
                 type="button"
                 onClick={onStartPractice}
-                className="w-full py-3 rounded-xl bg-[#0d9488] hover:bg-[#0f766e] text-white font-bold text-sm transition-all shadow-sm active:scale-[0.99] cursor-pointer border-none mt-2"
+                className="w-full py-3.5 rounded-xl bg-[#0d9488] hover:bg-[#0f766e] text-white font-bold text-sm transition-all shadow-sm active:scale-[0.99] cursor-pointer border-none mt-3"
               >
                 Start Practice
               </button>
@@ -385,36 +532,36 @@ export const QuizDashboardView: React.FC<QuizDashboardViewProps> = ({
 
           {/* ─── TAB 2: 1V1 CHALLENGE ─── */}
           {panelTab === "challenge" && (
-            <div className="space-y-4">
+            <div className="space-y-6">
               {/* Two Track Tabs: Web Dev Sprint vs DSA */}
               <div>
-                <label className="text-[11px] font-semibold text-muted-foreground block mb-2 uppercase tracking-wide">
+                <label className="text-[11px] font-bold text-muted-foreground block mb-2.5 uppercase tracking-wider">
                   Select Track
                 </label>
-                <div className="grid grid-cols-2 gap-1.5">
+                <div className="grid grid-cols-2 gap-3">
                   <button
                     type="button"
                     onClick={() => setChallengeTrack("webdev_arena")}
-                    className={`py-2.5 px-2 rounded-lg text-xs font-medium transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                    className={`py-3 px-3 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center justify-center gap-2 ${
                       challengeTrack === "webdev_arena"
-                        ? "border-2 border-[#0d9488] text-[#0d9488] bg-[#0d9488]/5 font-semibold"
+                        ? "border-2 border-[#0d9488] text-[#0d9488] bg-[#0d9488]/5 font-bold shadow-xs"
                         : "border border-border/80 text-foreground hover:bg-muted/40 bg-background"
                     }`}
                   >
-                    <Code2 className="w-3 h-3 shrink-0" />
+                    <Code2 className="w-3.5 h-3.5 shrink-0" />
                     <span>Web Dev Sprint</span>
                   </button>
 
                   <button
                     type="button"
                     onClick={() => setChallengeTrack("dsa_sprint")}
-                    className={`py-2.5 px-2 rounded-lg text-xs font-medium transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                    className={`py-3 px-3 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center justify-center gap-2 ${
                       challengeTrack === "dsa_sprint"
-                        ? "border-2 border-[#0d9488] text-[#0d9488] bg-[#0d9488]/5 font-semibold"
+                        ? "border-2 border-[#0d9488] text-[#0d9488] bg-[#0d9488]/5 font-bold shadow-xs"
                         : "border border-border/80 text-foreground hover:bg-muted/40 bg-background"
                     }`}
                   >
-                    <Terminal className="w-3 h-3 shrink-0" />
+                    <Terminal className="w-3.5 h-3.5 shrink-0" />
                     <span>DSA</span>
                   </button>
                 </div>
@@ -422,10 +569,10 @@ export const QuizDashboardView: React.FC<QuizDashboardViewProps> = ({
 
               {/* Number of Questions */}
               <div>
-                <label className="text-[11px] font-semibold text-muted-foreground block mb-2 uppercase tracking-wide">
+                <label className="text-[11px] font-bold text-muted-foreground block mb-2.5 uppercase tracking-wider">
                   Number of questions
                 </label>
-                <div className="grid grid-cols-3 gap-1.5">
+                <div className="grid grid-cols-3 gap-2.5">
                   {[3, 5, 8].map((count) => {
                     const isSelected = questionCount === count;
                     return (
@@ -433,9 +580,9 @@ export const QuizDashboardView: React.FC<QuizDashboardViewProps> = ({
                         key={count}
                         type="button"
                         onClick={() => setQuestionCount(count)}
-                        className={`h-9 rounded-lg text-xs font-medium transition-all cursor-pointer flex items-center justify-center ${
+                        className={`h-10 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center justify-center ${
                           isSelected
-                            ? "border-2 border-[#0d9488] text-[#0d9488] bg-[#0d9488]/5 font-semibold"
+                            ? "border-2 border-[#0d9488] text-[#0d9488] bg-[#0d9488]/5 font-bold shadow-xs"
                             : "border border-border/80 text-foreground hover:bg-muted/40 bg-background"
                         }`}
                       >
@@ -448,20 +595,20 @@ export const QuizDashboardView: React.FC<QuizDashboardViewProps> = ({
 
               {/* Active Room Section */}
               {activeRoomCode ? (
-                <div className="space-y-3 pt-1">
+                <div className="space-y-4 pt-1">
                   {/* Room Code Badge */}
-                  <div className="p-3.5 rounded-xl border-2 border-dashed border-[#0d9488]/50 bg-[#0d9488]/5 flex flex-col items-center gap-1.5">
+                  <div className="p-4 rounded-xl border-2 border-dashed border-[#0d9488]/50 bg-[#0d9488]/5 flex flex-col items-center gap-2">
                     <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
                       Room Code
                     </span>
-                    <div className="flex items-center gap-2.5">
+                    <div className="flex items-center gap-3">
                       <span className="text-2xl font-mono font-extrabold text-foreground tracking-widest">
                         {activeRoomCode}
                       </span>
                       <button
                         type="button"
                         onClick={handleCopyCode}
-                        className="p-1.5 px-2 rounded-lg bg-card border border-border hover:bg-muted text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer text-foreground"
+                        className="p-1.5 px-2.5 rounded-lg bg-card border border-border hover:bg-muted text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer text-foreground"
                       >
                         {copiedCode ? (
                           <Check className="w-3 h-3 text-emerald-500" />
@@ -471,13 +618,13 @@ export const QuizDashboardView: React.FC<QuizDashboardViewProps> = ({
                         <span>{copiedCode ? "Copied" : "Copy"}</span>
                       </button>
                     </div>
-                    <p className="text-[10px] text-muted-foreground text-center">
+                    <p className="text-[11px] text-muted-foreground text-center">
                       Share this code with your friend!
                     </p>
                   </div>
 
                   {/* Matchup VS Card */}
-                  <div className="p-3 rounded-xl border border-border bg-background flex items-center justify-between gap-2">
+                  <div className="p-3.5 rounded-xl border border-border bg-background flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2 min-w-0">
                       <div className="w-7 h-7 rounded-full bg-[#0d9488]/10 text-[#0d9488] font-bold flex items-center justify-center text-xs shrink-0 border border-[#0d9488]/30">
                         {userName.charAt(0).toUpperCase()}
@@ -517,7 +664,7 @@ export const QuizDashboardView: React.FC<QuizDashboardViewProps> = ({
                   <button
                     type="button"
                     onClick={handleStartDuel}
-                    className="w-full py-3 rounded-xl bg-[#0d9488] hover:bg-[#0f766e] text-white font-bold text-sm transition-all shadow-sm cursor-pointer border-none"
+                    className="w-full py-3.5 rounded-xl bg-[#0d9488] hover:bg-[#0f766e] text-white font-bold text-sm transition-all shadow-sm cursor-pointer border-none"
                   >
                     {opponentName ? "Start Duel Now!" : "Start Duel"}
                   </button>
@@ -533,39 +680,39 @@ export const QuizDashboardView: React.FC<QuizDashboardViewProps> = ({
                   </div>
                 </div>
               ) : (
-                <div className="space-y-3 pt-1">
+                <div className="space-y-4 pt-1">
                   <button
                     type="button"
                     onClick={handleCreateRoom}
                     disabled={isCreatingRoom}
-                    className="w-full py-3 rounded-xl bg-[#0d9488] hover:bg-[#0f766e] text-white font-bold text-sm transition-all shadow-sm active:scale-[0.99] cursor-pointer border-none flex items-center justify-center"
+                    className="w-full py-3.5 rounded-xl bg-[#0d9488] hover:bg-[#0f766e] text-white font-bold text-sm transition-all shadow-sm active:scale-[0.99] cursor-pointer border-none flex items-center justify-center mt-2"
                   >
                     {isCreatingRoom && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
                     <span>Create 1v1 Room</span>
                   </button>
 
-                  <div className="relative flex items-center gap-2 my-5">
+                  <div className="relative flex items-center gap-3 my-7">
                     <div className="flex-1 border-t border-border/70" />
-                    <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider shrink-0 px-1">
+                    <span className="text-[11px] uppercase font-bold text-muted-foreground tracking-widest shrink-0 px-2">
                       Or Join
                     </span>
                     <div className="flex-1 border-t border-border/70" />
                   </div>
 
-                  <div className="flex gap-2 pt-1">
+                  <div className="flex gap-2.5 pt-1">
                     <input
                       type="text"
                       maxLength={6}
                       placeholder="ROOM CODE"
                       value={joinCodeInput}
                       onChange={(e) => setJoinCodeInput(e.target.value.toUpperCase())}
-                      className="flex-1 h-10 bg-muted/40 text-foreground border border-border/80 rounded-lg px-2.5 text-xs font-mono uppercase tracking-widest text-center focus:outline-none focus:ring-1 focus:ring-[#0d9488]"
+                      className="flex-1 h-11 bg-muted/40 text-foreground border border-border/80 rounded-xl px-3 text-xs font-mono uppercase tracking-widest text-center focus:outline-none focus:ring-2 focus:ring-[#0d9488]"
                     />
                     <button
                       type="button"
                       onClick={handleJoinRoom}
                       disabled={isJoiningRoom || !joinCodeInput.trim()}
-                      className="h-10 px-3.5 rounded-lg text-xs font-bold uppercase bg-card hover:bg-muted text-foreground border border-border/80 cursor-pointer transition-colors shrink-0 disabled:opacity-50"
+                      className="h-11 px-4 rounded-xl text-xs font-bold uppercase bg-card hover:bg-muted text-foreground border border-border/80 cursor-pointer transition-colors shrink-0 disabled:opacity-50"
                     >
                       {isJoiningRoom ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Join"}
                     </button>
