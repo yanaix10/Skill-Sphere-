@@ -214,14 +214,14 @@ export const QuizDashboardView: React.FC<QuizDashboardViewProps> = ({
   return (
     <div className="w-full h-full flex overflow-hidden bg-background text-foreground">
       {/* ─── LEFT COLUMN: Big Screen Statistics & Categories ─── */}
-      <div className="flex-1 overflow-y-auto p-6 sm:p-10 lg:p-12">
-        <div className="w-full max-w-4xl xl:max-w-5xl space-y-7">
+      <div className="flex-1 overflow-y-auto p-6 sm:p-8 lg:p-10 xl:p-12">
+        <div className="w-full max-w-5xl 2xl:max-w-6xl space-y-6">
           {/* Header Heading */}
-          <div className="space-y-1.5">
-            <h1 className="text-3xl sm:text-[34px] font-extrabold tracking-tight text-foreground m-0 leading-tight">
+          <div className="space-y-1">
+            <h1 className="text-3xl sm:text-[32px] font-bold tracking-tight text-foreground m-0 leading-tight">
               Ready to practice?
             </h1>
-            <p className="text-sm sm:text-base text-muted-foreground m-0">
+            <p className="text-sm text-muted-foreground m-0">
               Pick up where you left off, or start a fresh set from the panel on the right.
             </p>
           </div>
@@ -229,7 +229,7 @@ export const QuizDashboardView: React.FC<QuizDashboardViewProps> = ({
           {/* 3 Real-time Stat Cards */}
           <div className="grid grid-cols-3 gap-4 sm:gap-5">
             {/* Card 1: Day Streak */}
-            <div className="rounded-2xl border border-border/70 bg-card p-5 sm:p-6 shadow-xs flex flex-col justify-center">
+            <div className="rounded-2xl border border-border/80 bg-card p-5 sm:p-6 shadow-xs flex flex-col justify-center">
               <div className="text-3xl sm:text-4xl font-extrabold text-foreground tracking-tight leading-none">
                 {stats.streak > 0 ? stats.streak : 6}
               </div>
@@ -239,7 +239,7 @@ export const QuizDashboardView: React.FC<QuizDashboardViewProps> = ({
             </div>
 
             {/* Card 2: 7d Accuracy */}
-            <div className="rounded-2xl border border-border/70 bg-card p-5 sm:p-6 shadow-xs flex flex-col justify-center">
+            <div className="rounded-2xl border border-border/80 bg-card p-5 sm:p-6 shadow-xs flex flex-col justify-center">
               <div className="text-3xl sm:text-4xl font-extrabold text-foreground tracking-tight leading-none">
                 {stats.accuracy7d > 0 ? `${stats.accuracy7d}%` : "78%"}
               </div>
@@ -249,56 +249,25 @@ export const QuizDashboardView: React.FC<QuizDashboardViewProps> = ({
             </div>
 
             {/* Card 3: Solved this week */}
-            <div className="rounded-2xl border border-border/70 bg-card p-5 sm:p-6 shadow-xs flex flex-col justify-center">
+            <div className="rounded-2xl border border-border/80 bg-card p-5 sm:p-6 shadow-xs flex flex-col justify-center">
               <div className="text-3xl sm:text-4xl font-extrabold text-foreground tracking-tight leading-none">
                 {stats.solvedThisWeek > 0 ? stats.solvedThisWeek : 24}
               </div>
               <div className="text-xs sm:text-sm text-muted-foreground mt-2 font-medium">
-                solved this week
-              </div>
-            </div>
-          </div>
-          <div className="grid grid-cols-3 gap-4">
-            {/* Card 1: Day Streak */}
-            <div className="rounded-2xl border border-border/70 bg-card p-5 sm:p-6 shadow-xs flex flex-col justify-center">
-              <div className="text-3xl sm:text-4xl font-extrabold text-foreground tracking-tight">
-                {stats.streak > 0 ? stats.streak : 6}
-              </div>
-              <div className="text-xs sm:text-sm text-muted-foreground mt-1.5 font-medium">
-                day streak
-              </div>
-            </div>
-
-            {/* Card 2: 7d Accuracy */}
-            <div className="rounded-2xl border border-border/70 bg-card p-5 sm:p-6 shadow-xs flex flex-col justify-center">
-              <div className="text-3xl sm:text-4xl font-extrabold text-foreground tracking-tight">
-                {stats.accuracy7d > 0 ? `${stats.accuracy7d}%` : "78%"}
-              </div>
-              <div className="text-xs sm:text-sm text-muted-foreground mt-1.5 font-medium">
-                accuracy (7d)
-              </div>
-            </div>
-
-            {/* Card 3: Solved this week */}
-            <div className="rounded-2xl border border-border/70 bg-card p-5 sm:p-6 shadow-xs flex flex-col justify-center">
-              <div className="text-3xl sm:text-4xl font-extrabold text-foreground tracking-tight">
-                {stats.solvedThisWeek > 0 ? stats.solvedThisWeek : 24}
-              </div>
-              <div className="text-xs sm:text-sm text-muted-foreground mt-1.5 font-medium">
                 solved this week
               </div>
             </div>
           </div>
 
           {/* ─── SINGLE FEATURED UI: Skill Set & Category Performance ─── */}
-          <div className="rounded-2xl border border-border/70 bg-card p-6 sm:p-7 shadow-xs">
+          <div className="rounded-2xl border border-border/80 bg-card p-6 sm:p-7 shadow-xs">
             {/* Card Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
               <div>
-                <h2 className="text-base sm:text-lg font-bold text-foreground">
+                <h2 className="text-base sm:text-lg font-bold text-foreground m-0">
                   Skill Mastery & Category Accuracy
                 </h2>
-                <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+                <p className="text-xs sm:text-sm text-muted-foreground mt-1 m-0">
                   Live proficiency calculated from question tags and your practice activity.
                 </p>
               </div>
