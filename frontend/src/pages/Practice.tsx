@@ -195,8 +195,11 @@ export const Practice: React.FC<PracticeProps> = ({ setMode, quizConfig }) => {
         const ratingDelta = data.ratingDelta || (data.score * 5);
         const isPerfect = !!(data.isPerfectScore ?? (data.score === questions.length && questions.length > 0));
 
-        // Record real-time quiz statistics
-        recordPracticeAttempt(quizConfig?.category || "Web Dev", data.score, questions.length);
+        // Record real-time quiz statistics with question tags for skill set tracking
+        const questionTags = questions.flatMap((q: any) =>
+          Array.isArray(q.tags) ? q.tags : q.category ? [q.category] : []
+        );
+        recordPracticeAttempt(quizConfig?.category || "Web Dev", data.score, questions.length, questionTags);
 
         try {
           const resStats = await updateUserStatsAndBadges({

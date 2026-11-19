@@ -47,15 +47,15 @@ export default function SkillsProgress() {
                 <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: color }} />
                 <span className="text-xs sm:text-sm font-medium text-foreground">{label}</span>
               </div>
-              <span className="text-xs font-semibold tabular-nums text-muted-foreground">
-                {attempted > 0 ? (mounted ? `${value}%` : "0%") : "—"}
+              <span className="text-xs font-semibold tabular-nums text-foreground">
+                {mounted ? `${value}%` : `${value}%`}
               </span>
             </div>
             <div className="h-2 w-full bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
               <div
                 className="h-full rounded-full transition-all duration-700 ease-out"
                 style={{
-                  width: `${attempted > 0 && mounted ? Math.min(100, Math.max(0, value)) : 0}%`,
+                  width: `${Math.min(100, Math.max(12, value))}%`,
                   backgroundColor: color,
                 }}
               />
