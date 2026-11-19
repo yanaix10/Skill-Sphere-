@@ -29,3 +29,4 @@ export const socket: Socket = io(BACKEND_URL, {
     });
   }
 });
+

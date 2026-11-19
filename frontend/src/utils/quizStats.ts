@@ -36,18 +36,18 @@ export interface RealtimeQuizStats {
 export const STAT_UPDATED_EVENT = "skillsphere_stats_updated";
 const STORAGE_STATS_KEY = "skillsphere_quiz_realtime_stats";
 
-// Realistic baseline so initial render matches the target UI exactly, but evolves dynamically
+// Real zero-baseline — stats are earned, never faked
 const DEFAULT_INITIAL_STATS: RealtimeQuizStats = {
-  streak: 6,
-  accuracy7d: 78,
-  solvedThisWeek: 24,
+  streak: 0,
+  accuracy7d: 0,
+  solvedThisWeek: 0,
   categories: {
-    "Web Dev": { name: "Web Dev", accuracy: 82, attempted: 50, correct: 41 },
-    SQL: { name: "SQL", accuracy: 64, attempted: 25, correct: 16 },
-    Linux: { name: "Linux", accuracy: 71, attempted: 31, correct: 22 },
-    DevOps: { name: "DevOps", accuracy: 55, attempted: 20, correct: 11 },
-    Code: { name: "Code", accuracy: 75, attempted: 20, correct: 15 },
-    Cloud: { name: "Cloud", accuracy: 60, attempted: 15, correct: 9 },
+    "Web Dev": { name: "Web Dev", accuracy: 0, attempted: 0, correct: 0 },
+    SQL: { name: "SQL", accuracy: 0, attempted: 0, correct: 0 },
+    Linux: { name: "Linux", accuracy: 0, attempted: 0, correct: 0 },
+    DevOps: { name: "DevOps", accuracy: 0, attempted: 0, correct: 0 },
+    Code: { name: "Code", accuracy: 0, attempted: 0, correct: 0 },
+    Cloud: { name: "Cloud", accuracy: 0, attempted: 0, correct: 0 },
   },
   recentSessions: [],
 };
@@ -58,6 +58,7 @@ export function getRealtimeQuizStats(): RealtimeQuizStats {
     const raw = localStorage.getItem(STORAGE_STATS_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
+      // Merge only stored keys on top of zero-baseline, never inject fake data
       return {
         ...DEFAULT_INITIAL_STATS,
         ...parsed,
@@ -221,3 +222,4 @@ export function useRealtimeQuizStats(): RealtimeQuizStats {
 
   return stats;
 }
+
