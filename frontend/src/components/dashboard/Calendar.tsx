@@ -36,7 +36,7 @@ const CATEGORY_COLORS: Record<string, { bg: string; text: string; badge: string 
   Task:      { bg: "bg-zinc-500/10 text-zinc-600 dark:text-zinc-400 border-l-2 border-zinc-500", text: "text-zinc-600 dark:text-zinc-400", badge: "bg-zinc-500/15 text-zinc-600 dark:text-zinc-400 border border-zinc-500/30" },
 };
 
-export const DashboardCalendar: React.FC = () => {
+export const Calendar: React.FC = () => {
   const [events, setEvents] = useState<CalendarEvent[]>(() => {
     try {
       const stored = localStorage.getItem("skillsphere_calendar_meetings");
@@ -707,4 +707,4 @@ export const DashboardCalendar: React.FC = () => {
   );
 };
 
-export default DashboardCalendar;
+export default Calendar;

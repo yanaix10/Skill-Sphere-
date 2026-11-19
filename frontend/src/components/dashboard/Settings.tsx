@@ -18,7 +18,7 @@ import { useTheme } from "../../context/ThemeContext";
 import { auth } from "../../firebase";
 import ProfileDialog from "@/components/ui/profile-dialog";
 
-export const DashboardSettings: React.FC = () => {
+export const Settings: React.FC = () => {
   const { theme, setTheme, resolvedTheme } = useTheme();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
 
@@ -327,4 +327,4 @@ export const DashboardSettings: React.FC = () => {
   );
 };
 
-export default DashboardSettings;
+export default Settings;

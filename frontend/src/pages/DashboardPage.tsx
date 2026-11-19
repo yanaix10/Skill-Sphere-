@@ -3,15 +3,15 @@ import { useNavigate } from "react-router-dom";
 import { auth, db } from "../firebase";
 import { doc, getDoc } from "firebase/firestore";
 import HomeSidebar, { SidebarSection } from "../components/HomeSidebar";
-import DashboardOverview from "../components/dashboard/DashboardOverview";
-import DashboardMedia from "../components/dashboard/DashboardMedia";
-import DashboardTodos from "../components/dashboard/DashboardTodos";
-import DashboardJobs from "../components/dashboard/DashboardJobs";
-import DashboardClassroom from "../components/dashboard/DashboardClassroom";
-import DashboardCalendar from "../components/dashboard/DashboardCalendar";
-import DashboardSettings from "../components/dashboard/DashboardSettings";
+import Overview from "../components/dashboard/Overview";
+import Media from "../components/dashboard/Media";
+import Todos from "../components/dashboard/Todos";
+import Jobs from "../components/dashboard/Jobs";
+import Classroom from "../components/dashboard/Classroom";
+import Calendar from "../components/dashboard/Calendar";
+import Settings from "../components/dashboard/Settings";
 import DeveloperActivityCard from "../components/dashboard/DeveloperActivityCard";
-import DashboardSavedPosts from "../components/dashboard/DashboardSavedPosts";
+import SavedPosts from "../components/dashboard/SavedPosts";
 import GlassWorkspace from "../components/dashboard/GlassWorkspace";
 import { PanelLeftOpen, LayoutDashboard, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -143,43 +143,43 @@ export const DashboardPage: React.FC = () => {
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
           {activeSection === "overview" && (
             <div className="animate-in fade-in duration-200">
-              <DashboardOverview userName={fullName} onNavigate={handleSelectSection} />
+              <Overview userName={fullName} onNavigate={handleSelectSection} />
             </div>
           )}
 
           {activeSection === "saved" && (
             <div className="animate-in fade-in duration-200">
-              <DashboardSavedPosts />
+              <SavedPosts />
             </div>
           )}
 
           {activeSection === "media" && (
             <div className="animate-in fade-in duration-200">
-              <DashboardMedia />
+              <Media />
             </div>
           )}
 
           {activeSection === "todo" && (
             <div className="animate-in fade-in duration-200">
-              <DashboardTodos />
+              <Todos />
             </div>
           )}
 
           {activeSection === "jobs" && (
             <div className="animate-in fade-in duration-200">
-              <DashboardJobs />
+              <Jobs />
             </div>
           )}
 
           {activeSection === "classroom" && (
             <div className="animate-in fade-in duration-200">
-              <DashboardClassroom />
+              <Classroom />
             </div>
           )}
 
           {activeSection === "calendar" && (
             <div className="animate-in fade-in duration-200">
-              <DashboardCalendar />
+              <Calendar />
             </div>
           )}
 
@@ -193,7 +193,7 @@ export const DashboardPage: React.FC = () => {
 
           {activeSection === "settings" && (
             <div className="animate-in fade-in duration-200">
-              <DashboardSettings />
+              <Settings />
             </div>
           )}
         </div>

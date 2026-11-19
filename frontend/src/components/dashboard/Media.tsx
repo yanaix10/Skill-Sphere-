@@ -84,7 +84,7 @@ function saveLinksToLS(data: ResourceLinkItem[]) {
    Component
 ══════════════════════════════════════════════════════════════════ */
 
-export const DashboardMedia: React.FC = () => {
+export const Media: React.FC = () => {
   /* ── Persisted state ─────────────────────────────────────────── */
   const [files, setFiles] = useState<MediaFileItem[]>([]);
   const [links, setLinks] = useState<ResourceLinkItem[]>(loadLinksFromLS);
@@ -595,4 +595,4 @@ export const DashboardMedia: React.FC = () => {
   );
 };
 
-export default DashboardMedia;
+export default Media;

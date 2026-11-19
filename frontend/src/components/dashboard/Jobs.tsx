@@ -29,7 +29,7 @@ export interface JobApplication {
   notes?: string;
 }
 
-const DashboardJobsContent: React.FC = () => {
+const JobsContent: React.FC = () => {
   const [jobs, setJobs] = useState<JobApplication[]>(() => {
     try {
       const stored = localStorage.getItem("skillsphere_home_jobs");
@@ -426,12 +426,12 @@ const DashboardJobsContent: React.FC = () => {
   );
 };
 
-export const DashboardJobs: React.FC = () => {
+export const Jobs: React.FC = () => {
   return (
     <GlassWorkspace brand="SkillSphere" useHostTheme={true}>
-      <DashboardJobsContent />
+      <JobsContent />
     </GlassWorkspace>
   );
 };
 
-export default DashboardJobs;
+export default Jobs;

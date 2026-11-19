@@ -82,7 +82,7 @@ const CURATED_DEFAULT_POSTS: Post[] = [
   },
 ];
 
-export const DashboardSavedPosts: React.FC = () => {
+export const SavedPosts: React.FC = () => {
   const [savedPosts, setSavedPosts] = useState<Post[]>(getSavedPosts);
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const navigate = useNavigate();
@@ -235,4 +235,4 @@ export const DashboardSavedPosts: React.FC = () => {
   );
 };
 
-export default DashboardSavedPosts;
+export default SavedPosts;

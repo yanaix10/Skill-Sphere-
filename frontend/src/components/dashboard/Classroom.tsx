@@ -21,7 +21,7 @@ import {
   ClassroomAssignment,
 } from "../../services/googleAuthService";
 
-export const DashboardClassroom: React.FC = () => {
+export const Classroom: React.FC = () => {
   const [courses, setCourses] = useState<ClassroomCourse[]>(() => {
     try {
       const stored = localStorage.getItem("skillsphere_classroom_courses");
@@ -538,4 +538,4 @@ export const DashboardClassroom: React.FC = () => {
   );
 };
 
-export default DashboardClassroom;
+export default Classroom;

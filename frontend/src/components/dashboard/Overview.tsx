@@ -11,13 +11,13 @@ import {
 } from "lucide-react";
 import DeveloperActivityCard from "./DeveloperActivityCard";
 
-interface DashboardOverviewProps {
+interface OverviewProps {
   userName: string;
   onNavigate: (section: "media" | "todo" | "jobs" | "classroom" | "calendar" | "activity" | "settings") => void;
 }
 
 // Inner component so it can access the GlassContext controls (e.g. Adjust Glass)
-const DashboardOverviewContent: React.FC<DashboardOverviewProps> = ({ userName, onNavigate }) => {
+const OverviewContent: React.FC<OverviewProps> = ({ userName, onNavigate }) => {
   const [calendarEvents, setCalendarEvents] = useState<any[]>([]);
   const [classroomAssignments, setClassroomAssignments] = useState<any[]>([]);
   const [todos, setTodos] = useState<any[]>([]);
@@ -272,12 +272,12 @@ const DashboardOverviewContent: React.FC<DashboardOverviewProps> = ({ userName, 
   );
 };
 
-export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ userName, onNavigate }) => {
+export const Overview: React.FC<OverviewProps> = ({ userName, onNavigate }) => {
   return (
     <GlassWorkspace brand="SkillSphere" userName={userName} useHostTheme={true}>
-      <DashboardOverviewContent userName={userName} onNavigate={onNavigate} />
+      <OverviewContent userName={userName} onNavigate={onNavigate} />
     </GlassWorkspace>
   );
 };
 
-export default DashboardOverview;
+export default Overview;

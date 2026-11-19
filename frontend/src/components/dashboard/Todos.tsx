@@ -10,7 +10,7 @@ export interface SimpleTodo {
   createdAt: number;
 }
 
-const DashboardTodosContent: React.FC = () => {
+const TodosContent: React.FC = () => {
   const [todos, setTodos] = useState<SimpleTodo[]>(() => {
     try {
       const stored = localStorage.getItem("skillsphere_home_todos");
@@ -221,12 +221,12 @@ const DashboardTodosContent: React.FC = () => {
   );
 };
 
-export const DashboardTodos: React.FC = () => {
+export const Todos: React.FC = () => {
   return (
     <GlassWorkspace brand="SkillSphere" useHostTheme={true}>
-      <DashboardTodosContent />
+      <TodosContent />
     </GlassWorkspace>
   );
 };
 
-export default DashboardTodos;
+export default Todos;
