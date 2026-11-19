@@ -127,22 +127,25 @@ export default function Quizzes(): React.ReactElement {
 
   return (
     <div className="w-full h-full bg-background text-foreground flex flex-col overflow-hidden p-0 transition-colors duration-200">
-      {/* ─── Top Header Bar (matches UI: + Code, Sessions, Coders on right) ─── */}
-      <header className="h-14 border-b border-border/80 bg-card/60 backdrop-blur-sm px-6 sm:px-10 flex items-center justify-between shrink-0 select-none">
-        <div className="flex items-center gap-2">
-          {mode !== "main" && (
-            <button
-              type="button"
-              onClick={() => setMode("main")}
-              className="text-xs font-semibold text-muted-foreground hover:text-foreground flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-muted/60 transition-colors cursor-pointer border-none"
-            >
-              ← Back to Practice Hub
-            </button>
-          )}
+      {/* ─── Top Header Bar (matches UI: + Code, Sessions, Coders aligned with right sidebar) ─── */}
+      <header className="h-14 border-b border-border/80 bg-card/60 backdrop-blur-sm flex items-center shrink-0 select-none">
+        {/* Left header area: spans the entire left column width */}
+        <div className="flex-1 px-6 sm:px-10 lg:px-12 flex items-center justify-between h-full">
+          <div className="flex items-center gap-2">
+            {mode !== "main" && (
+              <button
+                type="button"
+                onClick={() => setMode("main")}
+                className="text-xs font-semibold text-muted-foreground hover:text-foreground flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-muted/60 transition-colors cursor-pointer border-none"
+              >
+                ← Back to Practice Hub
+              </button>
+            )}
+          </div>
         </div>
 
-        {/* Top-Right Navigation Tabs: + Code, Sessions, Coders */}
-        <div className="flex items-center gap-6 sm:gap-8 text-xs sm:text-sm">
+        {/* Top-Right Navigation Tabs: EXACT same width & border-l alignment as the right sidebar */}
+        <div className="w-[340px] lg:w-[360px] shrink-0 border-l border-border/80 h-full px-6 sm:px-8 flex items-center justify-between text-xs sm:text-sm">
           <button
             type="button"
             onClick={() => {

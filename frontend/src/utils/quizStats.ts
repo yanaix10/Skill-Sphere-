@@ -9,11 +9,21 @@ export interface CategoryStat {
   correct: number;
 }
 
+export interface SkillProgressItem {
+  label: string;
+  value: number; // 0 - 100
+  attempted: number;
+  correct: number;
+  indicatorClass: string;
+  trackClass: string;
+}
+
 export interface QuizSessionRecord {
   id: string;
   category: string;
   score: number;
   total: number;
+  tags?: string[];
   timestamp: number; // Date.now()
   type: "quiz" | "duel";
 }
@@ -30,11 +40,50 @@ export interface RealtimeQuizStats {
     Code: CategoryStat;
     Cloud: CategoryStat;
   };
+  skills: Record<string, { attempted: number; correct: number }>;
   recentSessions: QuizSessionRecord[];
 }
 
 export const STAT_UPDATED_EVENT = "skillsphere_stats_updated";
 const STORAGE_STATS_KEY = "skillsphere_quiz_realtime_stats";
+
+export const DEFAULT_SKILLS_META = [
+  {
+    label: "React / Next.js",
+    indicatorClass: "**:data-[slot='progress-indicator']:bg-blue-500!",
+    trackClass: "**:data-[slot='progress-track']:bg-blue-500/20!",
+    relevantCategories: ["Web Dev", "Code"],
+    relevantKeywords: ["react", "next", "jsx", "tsx", "frontend", "hooks", "dom", "component"],
+  },
+  {
+    label: "TypeScript",
+    indicatorClass: "**:data-[slot='progress-indicator']:bg-orange-400!",
+    trackClass: "**:data-[slot='progress-track']:bg-orange-400/20!",
+    relevantCategories: ["Code", "Web Dev"],
+    relevantKeywords: ["typescript", "ts", "javascript", "js", "types", "generics", "interface"],
+  },
+  {
+    label: "Tailwind CSS",
+    indicatorClass: "**:data-[slot='progress-indicator']:bg-sky-400!",
+    trackClass: "**:data-[slot='progress-track']:bg-sky-400/20!",
+    relevantCategories: ["Web Dev"],
+    relevantKeywords: ["tailwind", "css", "html", "style", "flexbox", "grid", "responsive"],
+  },
+  {
+    label: "Node.js",
+    indicatorClass: "**:data-[slot='progress-indicator']:bg-teal-400!",
+    trackClass: "**:data-[slot='progress-track']:bg-teal-400/20!",
+    relevantCategories: ["DevOps", "Linux", "SQL", "Code"],
+    relevantKeywords: ["node", "express", "backend", "server", "api", "npm", "async", "event loop"],
+  },
+  {
+    label: "UI / UX Design",
+    indicatorClass: "**:data-[slot='progress-indicator']:bg-amber-300!",
+    trackClass: "**:data-[slot='progress-track']:bg-amber-300/20!",
+    relevantCategories: ["Web Dev"],
+    relevantKeywords: ["ui", "ux", "design", "accessibility", "a11y", "color", "typography", "animation"],
+  },
+];
 
 // Real zero-baseline — stats are earned, never faked
 const DEFAULT_INITIAL_STATS: RealtimeQuizStats = {
@@ -49,6 +98,13 @@ const DEFAULT_INITIAL_STATS: RealtimeQuizStats = {
     Code: { name: "Code", accuracy: 0, attempted: 0, correct: 0 },
     Cloud: { name: "Cloud", accuracy: 0, attempted: 0, correct: 0 },
   },
+  skills: {
+    "React / Next.js": { attempted: 0, correct: 0 },
+    "TypeScript": { attempted: 0, correct: 0 },
+    "Tailwind CSS": { attempted: 0, correct: 0 },
+    "Node.js": { attempted: 0, correct: 0 },
+    "UI / UX Design": { attempted: 0, correct: 0 },
+  },
   recentSessions: [],
 };
 
@@ -58,13 +114,16 @@ export function getRealtimeQuizStats(): RealtimeQuizStats {
     const raw = localStorage.getItem(STORAGE_STATS_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      // Merge only stored keys on top of zero-baseline, never inject fake data
       return {
         ...DEFAULT_INITIAL_STATS,
         ...parsed,
         categories: {
           ...DEFAULT_INITIAL_STATS.categories,
           ...(parsed.categories || {}),
+        },
+        skills: {
+          ...DEFAULT_INITIAL_STATS.skills,
+          ...(parsed.skills || {}),
         },
       };
     }
@@ -75,7 +134,7 @@ export function getRealtimeQuizStats(): RealtimeQuizStats {
 }
 
 function calculateStreak(sessions: QuizSessionRecord[]): number {
-  if (!sessions || sessions.length === 0) return 6; // default baseline
+  if (!sessions || sessions.length === 0) return 0;
 
   const daysSet = new Set<string>();
   sessions.forEach((s) => {
@@ -93,36 +152,27 @@ function calculateStreak(sessions: QuizSessionRecord[]): number {
     if (daysSet.has(dStr)) {
       streak += 1;
     } else if (i === 0) {
-      // If haven't taken today, check yesterday
+      // Haven't taken today yet, check yesterday
       continue;
     } else {
       break;
     }
   }
 
-  return Math.max(streak, 6);
+  return streak;
 }
 
-function calculate7dAccuracy(sessions: QuizSessionRecord[], baseAccuracy: number): number {
+function calculate7dAccuracy(sessions: QuizSessionRecord[]): number {
   const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
   const recent = sessions.filter((s) => s.timestamp >= oneWeekAgo);
 
-  if (recent.length === 0) return baseAccuracy;
+  if (recent.length === 0) return 0;
 
   const totalAttempted = recent.reduce((sum, s) => sum + (s.total || 0), 0);
   const totalCorrect = recent.reduce((sum, s) => sum + (s.score || 0), 0);
 
-  if (totalAttempted === 0) return baseAccuracy;
-
-  // Weighted blend with baseline
+  if (totalAttempted === 0) return 0;
   return Math.min(100, Math.max(0, Math.round((totalCorrect / totalAttempted) * 100)));
-}
-
-function calculateWeeklySolved(sessions: QuizSessionRecord[], baseSolved: number): number {
-  const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
-  const recent = sessions.filter((s) => s.timestamp >= oneWeekAgo);
-  const additionalSolved = recent.reduce((sum, s) => sum + (s.total || 0), 0);
-  return baseSolved + additionalSolved;
 }
 
 export function saveQuizStats(stats: RealtimeQuizStats): void {
@@ -143,37 +193,59 @@ export function saveQuizStats(stats: RealtimeQuizStats): void {
 export function recordPracticeAttempt(
   categoryName: string,
   score: number,
-  total: number
+  total: number,
+  tags: string[] = []
 ): RealtimeQuizStats {
   const current = getRealtimeQuizStats();
   const safeCat = (categoryName || "Web Dev") as keyof typeof current.categories;
 
   const prevCat = current.categories[safeCat] || {
     name: categoryName,
-    accuracy: 70,
-    attempted: 10,
-    correct: 7,
+    accuracy: 0,
+    attempted: 0,
+    correct: 0,
   };
 
   const newAttempted = prevCat.attempted + total;
   const newCorrect = prevCat.correct + score;
-  const newAccuracy = Math.min(100, Math.max(0, Math.round((newCorrect / newAttempted) * 100)));
+  const newAccuracy = newAttempted > 0 ? Math.min(100, Math.max(0, Math.round((newCorrect / newAttempted) * 100))) : 0;
 
   const newSession: QuizSessionRecord = {
     id: "session_" + Math.random().toString(36).substring(2, 9),
     category: categoryName,
     score,
     total,
+    tags,
     timestamp: Date.now(),
     type: "quiz",
   };
 
   const updatedSessions = [newSession, ...(current.recentSessions || [])].slice(0, 50);
 
+  // Update Skill sets based on tags and category
+  const updatedSkills = { ...(current.skills || {}) };
+  const lowerCat = categoryName.toLowerCase();
+  const lowerTags = tags.map((t) => t.toLowerCase());
+
+  DEFAULT_SKILLS_META.forEach((meta) => {
+    const isCategoryMatch = meta.relevantCategories.some((c) => lowerCat.includes(c.toLowerCase()));
+    const isTagMatch = meta.relevantKeywords.some((kw) =>
+      lowerTags.some((t) => t.includes(kw)) || lowerCat.includes(kw)
+    );
+
+    if (isCategoryMatch || isTagMatch) {
+      const prevSkill = updatedSkills[meta.label] || { attempted: 0, correct: 0 };
+      updatedSkills[meta.label] = {
+        attempted: prevSkill.attempted + total,
+        correct: prevSkill.correct + score,
+      };
+    }
+  });
+
   const updatedStats: RealtimeQuizStats = {
     ...current,
     streak: calculateStreak(updatedSessions),
-    accuracy7d: calculate7dAccuracy(updatedSessions, current.accuracy7d),
+    accuracy7d: calculate7dAccuracy(updatedSessions),
     solvedThisWeek: current.solvedThisWeek + total,
     categories: {
       ...current.categories,
@@ -184,6 +256,7 @@ export function recordPracticeAttempt(
         accuracy: newAccuracy,
       },
     },
+    skills: updatedSkills,
     recentSessions: updatedSessions,
   };
 
@@ -202,7 +275,8 @@ export function recordDuelAttempt(
     fullstack_blitz: "Web Dev",
   };
   const cat = categoryMap[track] || "Web Dev";
-  return recordPracticeAttempt(cat, solvedCount, totalQuestions);
+  const tags = track === "webdev_arena" ? ["webdev", "javascript", "react", "html", "css"] : ["dsa", "algorithms", "python", "typescript"];
+  return recordPracticeAttempt(cat, solvedCount, totalQuestions, tags);
 }
 
 export function useRealtimeQuizStats(): RealtimeQuizStats {
@@ -223,3 +297,20 @@ export function useRealtimeQuizStats(): RealtimeQuizStats {
   return stats;
 }
 
+export function useSkillsProgress(): SkillProgressItem[] {
+  const stats = useRealtimeQuizStats();
+
+  return DEFAULT_SKILLS_META.map((meta) => {
+    const entry = stats.skills?.[meta.label] || { attempted: 0, correct: 0 };
+    const value = entry.attempted > 0 ? Math.min(100, Math.max(0, Math.round((entry.correct / entry.attempted) * 100))) : 0;
+
+    return {
+      label: meta.label,
+      value,
+      attempted: entry.attempted,
+      correct: entry.correct,
+      indicatorClass: meta.indicatorClass,
+      trackClass: meta.trackClass,
+    };
+  });
+}

@@ -1,10 +1,7 @@
 import React, { useState, useEffect } from "react";
 import {
-  Users,
-  Trophy,
   Copy,
   Check,
-  Swords,
   Sparkles,
   ArrowRight,
   Loader2,
@@ -12,6 +9,7 @@ import {
   Terminal,
 } from "lucide-react";
 import { useRealtimeQuizStats } from "../../utils/quizStats";
+import SkillsProgress from "./SkillsProgress";
 import { socket, getPersistentPlayerId, getUserNickname } from "../../utils/duelSocket";
 import { ChallengeConfig } from "./Sidebar";
 import { auth } from "../../firebase";
@@ -185,84 +183,87 @@ export const QuizDashboardView: React.FC<QuizDashboardViewProps> = ({
   return (
     <div className="w-full h-full flex overflow-hidden bg-background text-foreground">
       {/* ─── LEFT COLUMN: Big Screen Statistics & Categories ─── */}
-      <div className="flex-1 overflow-y-auto p-6 sm:p-10 lg:p-14">
-        {/* Header Heading */}
-        <div className="space-y-1.5 max-w-2xl">
-          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground">
-            Ready to practice?
-          </h1>
-          <p className="text-sm sm:text-base text-muted-foreground">
-            Pick up where you left off, or start a fresh set from the panel on the right.
-          </p>
-        </div>
-
-        {/* 3 Real-time Stat Cards */}
-        <div className="grid grid-cols-3 gap-4 mt-8 max-w-2xl">
-          {/* Card 1: Day Streak */}
-          <div className="rounded-2xl border border-border/70 bg-card p-5 sm:p-6 shadow-xs flex flex-col justify-center">
-            <div className="text-3xl sm:text-4xl font-extrabold text-foreground tracking-tight">
-              {stats.streak > 0 ? stats.streak : "—"}
-            </div>
-            <div className="text-xs sm:text-sm text-muted-foreground mt-1.5">
-              day streak
-            </div>
+      <div className="flex-1 overflow-y-auto p-6 sm:p-10 lg:p-12">
+        <div className="w-full max-w-3xl space-y-6">
+          {/* Header Heading */}
+          <div>
+            <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground">
+              Ready to practice?
+            </h1>
+            <p className="text-sm sm:text-base text-muted-foreground mt-2">
+              Pick up where you left off, or start a fresh set from the panel on the right.
+            </p>
           </div>
 
-          {/* Card 2: 7d Accuracy */}
-          <div className="rounded-2xl border border-border/70 bg-card p-5 sm:p-6 shadow-xs flex flex-col justify-center">
-            <div className="text-3xl sm:text-4xl font-extrabold text-foreground tracking-tight">
-              {stats.accuracy7d > 0 ? `${stats.accuracy7d}%` : "—"}
-            </div>
-            <div className="text-xs sm:text-sm text-muted-foreground mt-1.5">
-              accuracy (7d)
-            </div>
-          </div>
-
-          {/* Card 3: Solved this week */}
-          <div className="rounded-2xl border border-border/70 bg-card p-5 sm:p-6 shadow-xs flex flex-col justify-center">
-            <div className="text-3xl sm:text-4xl font-extrabold text-foreground tracking-tight">
-              {stats.solvedThisWeek > 0 ? stats.solvedThisWeek : "—"}
-            </div>
-            <div className="text-xs sm:text-sm text-muted-foreground mt-1.5">
-              solved this week
-            </div>
-          </div>
-        </div>
-
-        {/* Accuracy by Category Card */}
-        <div className="mt-5 rounded-2xl border border-border/70 bg-card p-6 sm:p-8 shadow-xs max-w-2xl">
-          <h2 className="text-base sm:text-lg font-bold text-foreground">
-            Accuracy by category
-          </h2>
-          <p className="text-xs sm:text-sm text-muted-foreground mt-1 mb-6">
-            {categories.some((c) => c.attempted > 0)
-              ? `Where today's ${quizConfig.category} · ${quizConfig.difficulty} set should help most.`
-              : "Complete a practice quiz to see your accuracy breakdown here."}
-          </p>
-
-          <div className="space-y-4">
-            {categories.map((cat) => (
-              <div key={cat.name} className="flex items-center gap-3 sm:gap-4">
-                <span className="text-xs sm:text-sm font-medium text-foreground w-16 sm:w-20 shrink-0">
-                  {cat.name}
-                </span>
-                <div className="flex-1 bg-zinc-100 dark:bg-zinc-800 rounded-full h-2.5 overflow-hidden">
-                  <div
-                    className="bg-[#0d9488] h-full rounded-full transition-all duration-700 ease-out"
-                    style={{ width: `${Math.min(100, Math.max(0, cat.accuracy))}%` }}
-                  />
-                </div>
-                <span className="text-xs sm:text-sm font-medium text-muted-foreground w-10 text-right shrink-0">
-                  {cat.attempted > 0 ? `${cat.accuracy}%` : "—"}
-                </span>
+          {/* 3 Real-time Stat Cards */}
+          <div className="grid grid-cols-3 gap-4">
+            {/* Card 1: Day Streak */}
+            <div className="rounded-2xl border border-border/70 bg-card p-5 sm:p-6 shadow-xs flex flex-col justify-center">
+              <div className="text-3xl sm:text-4xl font-extrabold text-foreground tracking-tight">
+                {stats.streak > 0 ? stats.streak : "—"}
               </div>
-            ))}
+              <div className="text-xs sm:text-sm text-muted-foreground mt-1.5 font-medium">
+                day streak
+              </div>
+            </div>
+
+            {/* Card 2: 7d Accuracy */}
+            <div className="rounded-2xl border border-border/70 bg-card p-5 sm:p-6 shadow-xs flex flex-col justify-center">
+              <div className="text-3xl sm:text-4xl font-extrabold text-foreground tracking-tight">
+                {stats.accuracy7d > 0 ? `${stats.accuracy7d}%` : "—"}
+              </div>
+              <div className="text-xs sm:text-sm text-muted-foreground mt-1.5 font-medium">
+                accuracy (7d)
+              </div>
+            </div>
+
+            {/* Card 3: Solved this week */}
+            <div className="rounded-2xl border border-border/70 bg-card p-5 sm:p-6 shadow-xs flex flex-col justify-center">
+              <div className="text-3xl sm:text-4xl font-extrabold text-foreground tracking-tight">
+                {stats.solvedThisWeek > 0 ? stats.solvedThisWeek : "—"}
+              </div>
+              <div className="text-xs sm:text-sm text-muted-foreground mt-1.5 font-medium">
+                solved this week
+              </div>
+            </div>
           </div>
+
+          {/* Accuracy by Category Card */}
+          <div className="rounded-2xl border border-border/70 bg-card p-6 sm:p-8 shadow-xs">
+            <h2 className="text-base sm:text-lg font-bold text-foreground">
+              Accuracy by category
+            </h2>
+            <p className="text-xs sm:text-sm text-muted-foreground mt-1 mb-6">
+              Where today's {quizConfig.category} · {quizConfig.difficulty} set should help most.
+            </p>
+
+            <div className="space-y-4">
+              {categories.map((cat) => (
+                <div key={cat.name} className="flex items-center gap-3 sm:gap-4">
+                  <span className="text-xs sm:text-sm font-medium text-foreground w-16 sm:w-20 shrink-0">
+                    {cat.name}
+                  </span>
+                  <div className="flex-1 bg-zinc-100 dark:bg-zinc-800 rounded-full h-2.5 overflow-hidden">
+                    <div
+                      className="bg-[#0d9488] h-full rounded-full transition-all duration-700 ease-out"
+                      style={{ width: `${Math.min(100, Math.max(0, cat.accuracy))}%` }}
+                    />
+                  </div>
+                  <span className="text-xs sm:text-sm font-medium text-muted-foreground w-10 text-right shrink-0">
+                    {cat.attempted > 0 ? `${cat.accuracy}%` : "—"}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Real-time Dynamic Skill Progress Breakdown */}
+          <SkillsProgress />
         </div>
       </div>
 
       {/* ─── RIGHT COLUMN: Control Panel ─── */}
-      <div className="w-[300px] lg:w-[340px] shrink-0 h-full border-l border-border bg-card flex flex-col overflow-y-auto">
+      <div className="w-[340px] lg:w-[360px] shrink-0 h-full border-l border-border bg-card flex flex-col overflow-y-auto">
         <div className="p-5 space-y-5 flex-1">
           {/* Top Segmented Pill Control */}
           <div className="p-1 rounded-xl bg-zinc-100 dark:bg-zinc-800/80 flex gap-1 select-none">
@@ -537,25 +538,21 @@ export const QuizDashboardView: React.FC<QuizDashboardViewProps> = ({
                     type="button"
                     onClick={handleCreateRoom}
                     disabled={isCreatingRoom}
-                    className="w-full py-3 rounded-xl bg-[#0d9488] hover:bg-[#0f766e] text-white font-bold text-sm transition-all shadow-sm active:scale-[0.99] cursor-pointer border-none flex items-center justify-center gap-2"
+                    className="w-full py-3 rounded-xl bg-[#0d9488] hover:bg-[#0f766e] text-white font-bold text-sm transition-all shadow-sm active:scale-[0.99] cursor-pointer border-none flex items-center justify-center"
                   >
-                    {isCreatingRoom ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <Swords className="w-4 h-4" />
-                    )}
+                    {isCreatingRoom && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
                     <span>Create 1v1 Room</span>
                   </button>
 
-                  <div className="relative flex items-center gap-2 my-1">
+                  <div className="relative flex items-center gap-2 my-5">
                     <div className="flex-1 border-t border-border/70" />
-                    <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider shrink-0">
+                    <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider shrink-0 px-1">
                       Or Join
                     </span>
                     <div className="flex-1 border-t border-border/70" />
                   </div>
 
-                  <div className="flex gap-1.5">
+                  <div className="flex gap-2 pt-1">
                     <input
                       type="text"
                       maxLength={6}
@@ -568,7 +565,7 @@ export const QuizDashboardView: React.FC<QuizDashboardViewProps> = ({
                       type="button"
                       onClick={handleJoinRoom}
                       disabled={isJoiningRoom || !joinCodeInput.trim()}
-                      className="h-10 px-3 rounded-lg text-xs font-bold uppercase bg-card hover:bg-muted text-foreground border border-border/80 cursor-pointer transition-colors shrink-0 disabled:opacity-50"
+                      className="h-10 px-3.5 rounded-lg text-xs font-bold uppercase bg-card hover:bg-muted text-foreground border border-border/80 cursor-pointer transition-colors shrink-0 disabled:opacity-50"
                     >
                       {isJoiningRoom ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Join"}
                     </button>
@@ -577,29 +574,6 @@ export const QuizDashboardView: React.FC<QuizDashboardViewProps> = ({
               )}
             </div>
           )}
-        </div>
-
-        {/* Bottom Quick Links: Code a Friend & Tournaments */}
-        <div className="p-5 pt-0 space-y-1.5 border-t border-border/60 mt-auto">
-          <div className="pt-4 space-y-1.5">
-            <button
-              type="button"
-              onClick={() => setPanelTab("challenge")}
-              className="w-full py-2.5 px-4 rounded-xl border border-border/70 bg-background hover:bg-muted/40 transition-colors flex items-center gap-3 text-xs font-medium text-foreground cursor-pointer"
-            >
-              <Users className="w-4 h-4 text-muted-foreground shrink-0" />
-              <span>Code a Friend</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => alert("Tournaments schedule coming soon in the next release.")}
-              className="w-full py-2.5 px-4 rounded-xl border border-border/70 bg-background hover:bg-muted/40 transition-colors flex items-center gap-3 text-xs font-medium text-foreground cursor-pointer"
-            >
-              <Trophy className="w-4 h-4 text-muted-foreground shrink-0" />
-              <span>Tournaments</span>
-            </button>
-          </div>
         </div>
       </div>
     </div>

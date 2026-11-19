@@ -9,4 +9,5 @@ export { default as Sessions } from './Sessions';
 export { default as Sidebar } from './Sidebar';
 export type { ChallengeConfig } from './Sidebar';
 export { QuizDashboardView } from './QuizDashboardView';
+export { default as SkillsProgress } from './SkillsProgress';
 
