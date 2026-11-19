@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import {
-  Settings,
+  Settings as SettingsIcon,
   Sun,
   Moon,
   Laptop,
@@ -56,7 +56,7 @@ export const Settings: React.FC = () => {
       <div className="pb-3 border-b border-border flex items-center justify-between">
         <div>
           <h2 className="text-base sm:text-lg font-bold tracking-tight text-foreground flex items-center gap-2">
-            <Settings className="w-4 h-4 text-primary" />
+            <SettingsIcon className="w-4 h-4 text-primary" />
             <span>Settings</span>
           </h2>
           <p className="text-xs text-muted-foreground mt-0.5">
