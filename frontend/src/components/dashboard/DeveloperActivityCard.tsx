@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { auth, db } from "../../firebase";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 import { useTheme } from "../../context/ThemeContext";
 
 const GithubIcon: React.FC<{ className?: string }> = ({ className }) => (
@@ -76,27 +76,12 @@ interface ChessStats {
   };
 }
 
-const isLegacyTestUser = (val: string | null): boolean => {
-  if (!val) return false;
-  try {
-    const list = ["eWFuYWl4MTA=", "Y2hlY2tzNDU="].map((b) => atob(b));
-    return list.some((item) => val.toLowerCase() === item.toLowerCase());
-  } catch {
-    return false;
-  }
-};
-
 export const DeveloperActivityCard: React.FC<{ compact?: boolean }> = ({ compact = false }) => {
   const { resolvedTheme } = useTheme();
 
   // GitHub State
   const [githubUsername, setGithubUsername] = useState<string>(() => {
-    const val = localStorage.getItem("skillsphere_github_username");
-    if (isLegacyTestUser(val)) {
-      if (val) localStorage.removeItem("skillsphere_github_username");
-      return "";
-    }
-    return val || "";
+    return localStorage.getItem("skillsphere_github_username") || "";
   });
   const [githubInput, setGithubInput] = useState("");
   const [githubData, setGithubData] = useState<GitHubUser | null>(null);
@@ -107,12 +92,7 @@ export const DeveloperActivityCard: React.FC<{ compact?: boolean }> = ({ compact
 
   // Chess.com State
   const [chessUsername, setChessUsername] = useState<string>(() => {
-    const val = localStorage.getItem("skillsphere_chess_username");
-    if (isLegacyTestUser(val)) {
-      if (val) localStorage.removeItem("skillsphere_chess_username");
-      return "";
-    }
-    return val || "";
+    return localStorage.getItem("skillsphere_chess_username") || "";
   });
   const [chessInput, setChessInput] = useState("");
   const [chessUser, setChessUser] = useState<ChessUser | null>(null);
@@ -128,15 +108,7 @@ export const DeveloperActivityCard: React.FC<{ compact?: boolean }> = ({ compact
   useEffect(() => {
     const initProfiles = async () => {
       let savedGh = localStorage.getItem("skillsphere_github_username") || "";
-      if (isLegacyTestUser(savedGh)) {
-        if (savedGh) localStorage.removeItem("skillsphere_github_username");
-        savedGh = "";
-      }
       let savedChess = localStorage.getItem("skillsphere_chess_username") || "";
-      if (isLegacyTestUser(savedChess)) {
-        if (savedChess) localStorage.removeItem("skillsphere_chess_username");
-        savedChess = "";
-      }
 
       const user = auth.currentUser;
       if (user && user.uid !== "test-user-123") {
@@ -144,8 +116,14 @@ export const DeveloperActivityCard: React.FC<{ compact?: boolean }> = ({ compact
           const snap = await getDoc(doc(db, "users", user.uid));
           if (snap.exists()) {
             const data = snap.data();
-            if (data.githubUsername && !savedGh) savedGh = data.githubUsername;
-            if (data.chessUsername && !savedChess) savedChess = data.chessUsername;
+            if (data.githubUsername && !savedGh) {
+              savedGh = data.githubUsername;
+              localStorage.setItem("skillsphere_github_username", savedGh);
+            }
+            if (data.chessUsername && !savedChess) {
+              savedChess = data.chessUsername;
+              localStorage.setItem("skillsphere_chess_username", savedChess);
+            }
           }
         } catch {}
       }
@@ -192,6 +170,10 @@ export const DeveloperActivityCard: React.FC<{ compact?: boolean }> = ({ compact
       localStorage.setItem("skillsphere_github_username", username.trim());
       setGithubUsername(username.trim());
       setIsEditingGithub(false);
+      const user = auth.currentUser;
+      if (user && user.uid !== "test-user-123") {
+        setDoc(doc(db, "users", user.uid), { githubUsername: username.trim() }, { merge: true }).catch(() => {});
+      }
     } catch (err: any) {
       setGithubError(err.message || "Failed to load GitHub");
     } finally {
@@ -223,6 +205,10 @@ export const DeveloperActivityCard: React.FC<{ compact?: boolean }> = ({ compact
       localStorage.setItem("skillsphere_chess_username", username.trim().toLowerCase());
       setChessUsername(username.trim().toLowerCase());
       setIsEditingChess(false);
+      const user = auth.currentUser;
+      if (user && user.uid !== "test-user-123") {
+        setDoc(doc(db, "users", user.uid), { chessUsername: username.trim().toLowerCase() }, { merge: true }).catch(() => {});
+      }
     } catch (err: any) {
       const isNetworkErr = !navigator.onLine || err.message?.includes("fetch") || err.name === "TypeError";
       setChessError(
@@ -298,19 +284,19 @@ export const DeveloperActivityCard: React.FC<{ compact?: boolean }> = ({ compact
                     e.preventDefault();
                     fetchGithub(githubInput);
                   }}
-                  className="flex gap-2"
+                  className="flex items-center gap-2.5 max-w-sm"
                 >
                   <input
                     type="text"
                     value={githubInput}
                     onChange={(e) => setGithubInput(e.target.value)}
                     placeholder="Enter GitHub username"
-                    className="flex-1 px-4 py-2 rounded-xl bg-card/50 backdrop-blur-sm border border-border/80 text-[13px] text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 font-mono shadow-xs placeholder:text-muted-foreground/70"
+                    className="w-56 sm:w-64 px-3.5 py-2 rounded-xl bg-card/50 backdrop-blur-sm border border-border/80 text-[13px] text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 font-mono shadow-xs placeholder:text-muted-foreground/70"
                   />
                   <button
                     type="submit"
                     disabled={githubLoading}
-                    className="px-4 py-2 rounded-xl bg-primary text-primary-foreground text-[13px] font-semibold hover:opacity-95 transition-all cursor-pointer border-none shadow-xs"
+                    className="px-4 py-2 rounded-xl bg-primary text-primary-foreground text-[13px] font-semibold hover:opacity-95 transition-all cursor-pointer border-none shadow-xs shrink-0"
                   >
                     {githubLoading ? "Loading..." : "Connect"}
                   </button>
@@ -441,19 +427,19 @@ export const DeveloperActivityCard: React.FC<{ compact?: boolean }> = ({ compact
                     e.preventDefault();
                     fetchChess(chessInput);
                   }}
-                  className="flex gap-2"
+                  className="flex items-center gap-2.5 max-w-sm"
                 >
                   <input
                     type="text"
                     value={chessInput}
                     onChange={(e) => setChessInput(e.target.value)}
                     placeholder="Enter Chess.com username"
-                    className="flex-1 px-4 py-2 rounded-xl bg-card/50 backdrop-blur-sm border border-border/80 text-[13px] text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 font-mono shadow-xs placeholder:text-muted-foreground/70"
+                    className="w-56 sm:w-64 px-3.5 py-2 rounded-xl bg-card/50 backdrop-blur-sm border border-border/80 text-[13px] text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 font-mono shadow-xs placeholder:text-muted-foreground/70"
                   />
                   <button
                     type="submit"
                     disabled={chessLoading}
-                    className="px-4 py-2 rounded-xl bg-primary text-primary-foreground text-[13px] font-semibold hover:opacity-95 transition-all cursor-pointer border-none shadow-xs"
+                    className="px-4 py-2 rounded-xl bg-primary text-primary-foreground text-[13px] font-semibold hover:opacity-95 transition-all cursor-pointer border-none shadow-xs shrink-0"
                   >
                     {chessLoading ? "Loading..." : "Connect"}
                   </button>

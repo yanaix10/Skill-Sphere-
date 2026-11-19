@@ -13,6 +13,7 @@ import FeedPage from './pages/FeedPage';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsOfService from './pages/TermsOfService';
 import { ThemeProvider } from './context/ThemeContext';
+import { useUserPresence } from './utils/presence';
 
 function RootErrorBoundary() {
   return (
@@ -41,6 +42,8 @@ function Layout({ user }: { user: User | null }) {
 }
 
 function AppContent() {
+  useUserPresence();
+
   const getInitialUser = (): User | null => {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
@@ -60,32 +63,6 @@ function AppContent() {
   const [loading, setLoading] = useState<boolean>(() => getInitialUser() === null);
   
   useEffect(() => {
-    // Purge legacy test artifacts from localStorage on first load
-    try {
-      const legacyUsernames = ["eWFuYWl4MTA=", "Y2hlY2tzNDU=", "bmFpdGlr"].map((b) => atob(b));
-      ["skillsphere_github_username", "skillsphere_chess_username"].forEach((key) => {
-        const val = localStorage.getItem(key);
-        if (val && legacyUsernames.some((p) => val.toLowerCase() === p.toLowerCase())) {
-          localStorage.removeItem(key);
-        }
-      });
-      const devProfile = localStorage.getItem("skillsphere_dev_profile");
-      if (devProfile && legacyUsernames.some((p) => devProfile.toLowerCase().includes(p.toLowerCase()))) {
-        localStorage.removeItem("skillsphere_dev_profile");
-      }
-      // Purge hardcoded demo friend notifications if they were cached from a previous session
-      const storedNotifs = localStorage.getItem("skillsphere_friend_notifications");
-      if (storedNotifs) {
-        try {
-          const notifs = JSON.parse(storedNotifs);
-          const hasLegacy = Array.isArray(notifs) && notifs.some((n: any) =>
-            ["friend-soul", "friend-kritika", "friend-izuku"].includes(n?.friendId)
-          );
-          if (hasLegacy) localStorage.removeItem("skillsphere_friend_notifications");
-        } catch {}
-      }
-    } catch {}
-
     const params = new URLSearchParams(window.location.search);
     if (params.get('dev') === 'true') {
       setUser({

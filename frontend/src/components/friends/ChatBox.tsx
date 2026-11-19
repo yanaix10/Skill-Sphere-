@@ -14,6 +14,8 @@ import {
   writeBatch,
 } from "firebase/firestore";
 import { ref as storageRef, uploadBytesResumable, getDownloadURL } from "firebase/storage";
+import { isUserOnline, formatLastSeen } from "../../utils/presence";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -197,7 +199,37 @@ export const Chatbox: React.FC<ChatboxProps> = ({ selectedUser }) => {
   const [newMessage, setNewMessage] = useState<string>("");
   const [actualName, setActualName] = useState<string>(selectedUser.name || "");
   const [avatarUrl, setAvatarUrl] = useState<string>(selectedUser.avatarUrl || "");
+  const [presenceData, setPresenceData] = useState<{ isOnline: boolean; lastSeen: any }>({
+    isOnline: false,
+    lastSeen: null,
+  });
   const scrollRef = useRef<HTMLDivElement | null>(null);
+
+  // Subscribe to real-time friend presence and profile updates
+  useEffect(() => {
+    if (!selectedUser?.id) return;
+    const unsub = onSnapshot(
+      doc(db, "users", selectedUser.id),
+      (docSnap) => {
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          if (data.name) setActualName(data.name);
+          if (data.avatarUrl) setAvatarUrl(data.avatarUrl);
+          setPresenceData({
+            isOnline: Boolean(data.isOnline),
+            lastSeen: data.lastSeen,
+          });
+        }
+      },
+      (err) => {
+        console.warn("Presence snapshot error:", err);
+      }
+    );
+    return () => unsub();
+  }, [selectedUser?.id]);
+
+  const isOnline = isUserOnline(presenceData);
+  const statusLabel = isOnline ? "Online" : formatLastSeen(presenceData.lastSeen);
 
   // WhatsApp Features State
   const [activeReactionMessageId, setActiveReactionMessageId] = useState<string | null>(null);
@@ -661,12 +693,20 @@ export const Chatbox: React.FC<ChatboxProps> = ({ selectedUser }) => {
       {/* Chat Header */}
       <div className="h-14 border-b border-border/80 flex items-center px-4 justify-between bg-card/90 backdrop-blur-md shrink-0 z-20">
         <div className="flex items-center gap-3 min-w-0">
-          <Avatar className="size-9 shrink-0 border border-border/60">
-            {avatarUrl && <AvatarImage src={avatarUrl} alt={displayName} />}
-            <AvatarFallback className="bg-secondary text-foreground text-sm font-semibold">
-              {(displayName?.[0] || selectedUser.username?.[0] || "U").toUpperCase()}
-            </AvatarFallback>
-          </Avatar>
+          <div className="relative shrink-0">
+            <Avatar className="size-9 border border-border/60">
+              {avatarUrl && <AvatarImage src={avatarUrl} alt={displayName} />}
+              <AvatarFallback className="bg-secondary text-foreground text-sm font-semibold">
+                {(displayName?.[0] || selectedUser.username?.[0] || "U").toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+            <span
+              className={cn(
+                "absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-background",
+                isOnline ? "bg-emerald-500" : "bg-zinc-400"
+              )}
+            />
+          </div>
           <div className="space-y-0.5 min-w-0">
             <div className="flex items-center gap-2">
               <CardTitle className="text-sm font-semibold text-foreground truncate max-w-[180px] sm:max-w-[240px]">
@@ -681,7 +721,17 @@ export const Chatbox: React.FC<ChatboxProps> = ({ selectedUser }) => {
             <CardDescription className="text-xs text-muted-foreground flex items-center gap-1.5">
               <span className="truncate">@{selectedUser.username}</span>
               <span>•</span>
-              <span className="text-emerald-500 font-medium">Online</span>
+              <span className="flex items-center gap-1.5">
+                <span
+                  className={cn(
+                    "w-1.5 h-1.5 rounded-full shrink-0",
+                    isOnline ? "bg-emerald-500 animate-pulse" : "bg-zinc-400"
+                  )}
+                />
+                <span className={cn("font-medium", isOnline ? "text-emerald-500" : "text-muted-foreground")}>
+                  {statusLabel}
+                </span>
+              </span>
             </CardDescription>
           </div>
         </div>

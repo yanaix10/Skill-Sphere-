@@ -323,7 +323,7 @@ const styles = `
   );
   --gw-surface: var(--color-card, var(--color-background, Canvas));
   --gw-panel: var(--color-card, var(--color-background, Canvas));
-  --gw-highlight: var(--color-card, Canvas);
+  --gw-highlight: rgba(255, 255, 255, 0.85);
   --gw-shadow: color-mix(
     in srgb,
     var(--color-foreground, CanvasText) 14%,
@@ -376,20 +376,27 @@ const styles = `
   backdrop-filter: blur(var(--gw-blur)) saturate(var(--gw-saturation));
   -webkit-backdrop-filter: blur(var(--gw-blur)) saturate(var(--gw-saturation));
   box-shadow:
-    inset 0 1px 0
-      color-mix(
-        in srgb,
-        var(--gw-highlight) calc(var(--gw-edge) * 100%),
-        transparent
-      ),
-    inset 0 0 0 1px
-      color-mix(
-        in srgb,
-        var(--gw-highlight) calc(var(--gw-edge) * 34%),
-        transparent
-      ),
+    inset 0 1px 0 rgba(255, 255, 255, calc(var(--gw-edge) * 0.9)),
+    inset 0 0 0 1px rgba(255, 255, 255, calc(var(--gw-edge) * 0.35)),
     0 16px 40px -20px var(--gw-shadow);
   position: relative;
+  transition: box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+.dark .gw-glass,
+[data-theme="dark"] .gw-glass,
+html.dark .gw-glass,
+.dark .gw-root .gw-glass {
+  background: color-mix(
+    in srgb,
+    var(--color-card, #121824) calc(var(--gw-opacity) * 100%),
+    rgba(255, 255, 255, 0.035)
+  );
+  box-shadow:
+    inset 0 1px 1px 0 rgba(255, 255, 255, calc(var(--gw-edge) * 0.45)),
+    inset 0 0 0 1px rgba(255, 255, 255, calc(var(--gw-edge) * 0.16)),
+    0 16px 40px -15px rgba(0, 0, 0, 0.75),
+    0 0 25px -4px color-mix(in srgb, var(--gw-accent, #0d9488) 18%, transparent);
 }
 
 .gw-glass:before {
@@ -400,6 +407,14 @@ const styles = `
   opacity: 0.08;
   pointer-events: none;
   border-radius: inherit;
+  transition: opacity 0.3s ease;
+}
+
+.dark .gw-glass:before,
+[data-theme="dark"] .gw-glass:before,
+html.dark .gw-glass:before,
+.dark .gw-root .gw-glass:before {
+  opacity: 0.12;
 }
 
 .gw-material {

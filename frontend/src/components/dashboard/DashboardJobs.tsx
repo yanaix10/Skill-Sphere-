@@ -195,19 +195,19 @@ const DashboardJobsContent: React.FC = () => {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
             {filteredJobs.map((job) => (
               <div
                 key={job.id}
-                className="gw-glass p-5 rounded-2xl shadow-xs hover:scale-[1.01] transition-all duration-300 flex flex-col justify-between space-y-4 group"
+                className="gw-glass p-4 sm:p-4.5 rounded-2xl shadow-xs hover:scale-[1.01] transition-all duration-300 flex flex-col justify-between space-y-3.5 group"
               >
-                <div className="space-y-2.5">
+                <div className="space-y-2">
                   <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <h4 className="text-[16px] font-semibold text-foreground">{job.title}</h4>
-                      <div className="flex items-center gap-2 text-[13px] text-muted-foreground mt-1">
-                        <Building2 className="w-3.5 h-3.5 text-primary" />
-                        <span className="font-semibold text-foreground/90">{job.company}</span>
+                    <div className="min-w-0 flex-1">
+                      <h4 className="text-[15px] font-semibold text-foreground truncate">{job.title}</h4>
+                      <div className="flex items-center gap-1.5 text-[12px] text-muted-foreground mt-0.5 truncate">
+                        <Building2 className="w-3.5 h-3.5 text-primary shrink-0" />
+                        <span className="font-semibold text-foreground/90 truncate">{job.company}</span>
                       </div>
                     </div>
 
@@ -216,7 +216,7 @@ const DashboardJobsContent: React.FC = () => {
                       onChange={(e) =>
                         handleStatusChange(job.id, e.target.value as JobApplication["status"])
                       }
-                      className="text-[12px] font-semibold px-3 py-1.5 rounded-xl border border-white/20 dark:border-white/10 bg-card/50 backdrop-blur-sm text-foreground cursor-pointer focus:outline-none shadow-xs"
+                      className="text-[11px] font-semibold px-2.5 py-1 rounded-xl border border-white/20 dark:border-white/10 bg-card/50 backdrop-blur-sm text-foreground cursor-pointer focus:outline-none shadow-xs shrink-0"
                     >
                       <option value="saved">Saved</option>
                       <option value="applied">Applied</option>
@@ -226,33 +226,33 @@ const DashboardJobsContent: React.FC = () => {
                     </select>
                   </div>
 
-                  <div className="flex flex-wrap items-center gap-3 text-[12px] text-muted-foreground pt-1">
+                  <div className="flex flex-wrap items-center gap-2.5 text-[11px] text-muted-foreground pt-0.5">
                     {job.location && (
-                      <span className="flex items-center gap-1.5 font-medium">
-                        <MapPin className="w-3.5 h-3.5 text-muted-foreground" />
-                        {job.location}
+                      <span className="flex items-center gap-1 font-medium">
+                        <MapPin className="w-3 h-3 text-muted-foreground shrink-0" />
+                        <span className="truncate max-w-[120px]">{job.location}</span>
                       </span>
                     )}
                     {job.salary && (
-                      <span className="flex items-center gap-1 font-mono font-medium">
-                        <DollarSign className="w-3.5 h-3.5 text-muted-foreground" />
-                        {job.salary}
+                      <span className="flex items-center gap-0.5 font-mono font-medium">
+                        <DollarSign className="w-3 h-3 text-muted-foreground shrink-0" />
+                        <span>{job.salary}</span>
                       </span>
                     )}
-                    <span className="flex items-center gap-1.5 font-mono text-[11px] text-muted-foreground/80">
-                      <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
-                      {job.date}
+                    <span className="flex items-center gap-1 font-mono text-[10.5px] text-muted-foreground/80">
+                      <Calendar className="w-3 h-3 text-muted-foreground shrink-0" />
+                      <span>{job.date}</span>
                     </span>
                   </div>
 
                   {job.notes && (
-                    <p className="text-[12px] text-muted-foreground p-3 rounded-xl bg-card/30 backdrop-blur-sm border border-white/10 dark:border-white/5 mt-1 line-clamp-2">
+                    <p className="text-[11px] text-muted-foreground p-2.5 rounded-xl bg-card/30 backdrop-blur-sm border border-white/10 dark:border-white/5 mt-1 line-clamp-2">
                       {job.notes}
                     </p>
                   )}
                 </div>
 
-                <div className="flex items-center justify-between pt-3 border-t border-border/40 text-[12px]">
+                <div className="flex items-center justify-between pt-2.5 border-t border-border/40 text-[11px]">
                   {job.link ? (
                     <a
                       href={job.link}
@@ -261,7 +261,7 @@ const DashboardJobsContent: React.FC = () => {
                       className="text-primary hover:underline flex items-center gap-1.5 font-medium no-underline"
                     >
                       <span>Posting link</span>
-                      <ExternalLink className="w-3.5 h-3.5" />
+                      <ExternalLink className="w-3 h-3" />
                     </a>
                   ) : (
                     <span />

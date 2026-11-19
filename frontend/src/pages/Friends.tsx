@@ -47,6 +47,8 @@ import {
   PendingList,
   AddFriend,
 } from "../components/friends";
+import { isUserOnline, formatLastSeen } from "../utils/presence";
+import { cn } from "@/lib/utils";
 
 export interface Friend {
   id: string;
@@ -54,6 +56,8 @@ export interface Friend {
   name?: string;
   avatarUrl?: string;
   status: string;
+  isOnline?: boolean;
+  lastSeen?: any;
   updatedAt?: any;
 }
 
@@ -64,6 +68,23 @@ const Friends: React.FC = () => {
   const [searchName, setSearchName] = useState<string>("");
   const [results, setResults] = useState<any[]>([]);
   const [friendsList, setFriendsList] = useState<Friend[]>([]);
+  const [usersPresence, setUsersPresence] = useState<Record<string, { isOnline: boolean; lastSeen: any }>>({});
+
+  // Real-time listener for user presence
+  useEffect(() => {
+    const unsub = onSnapshot(collection(db, "users"), (snapshot) => {
+      const presenceMap: Record<string, { isOnline: boolean; lastSeen: any }> = {};
+      snapshot.forEach((docSnap) => {
+        const data = docSnap.data();
+        presenceMap[docSnap.id] = {
+          isOnline: Boolean(data.isOnline),
+          lastSeen: data.lastSeen,
+        };
+      });
+      setUsersPresence(presenceMap);
+    });
+    return () => unsub();
+  }, []);
 
   useEffect(() => {
     const currentUser = auth.currentUser;
@@ -277,6 +298,12 @@ const Friends: React.FC = () => {
                 {filteredFriends.map((friend) => {
                   const isSelected =
                     selectedUser?.id === friend.id && activeTab === "chat";
+                  const presence = usersPresence[friend.id] || {
+                    isOnline: friend.isOnline,
+                    lastSeen: friend.lastSeen,
+                  };
+                  const isOnline = isUserOnline(presence);
+
                   return (
                     <button
                       key={friend.id}
@@ -290,18 +317,34 @@ const Friends: React.FC = () => {
                           : "hover:bg-secondary/50 text-muted-foreground"
                       }`}
                     >
-                      <Avatar className="size-10 shrink-0 border border-border">
-                        {friend.avatarUrl && (
-                          <AvatarImage src={friend.avatarUrl} alt={friend.name || friend.username} />
-                        )}
-                        <AvatarFallback className="bg-secondary text-foreground font-semibold text-sm">
-                          {(friend.name || friend.username).charAt(0).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
+                      <div className="relative shrink-0">
+                        <Avatar className="size-10 border border-border">
+                          {friend.avatarUrl && (
+                            <AvatarImage src={friend.avatarUrl} alt={friend.name || friend.username} />
+                          )}
+                          <AvatarFallback className="bg-secondary text-foreground font-semibold text-sm">
+                            {(friend.name || friend.username).charAt(0).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span
+                          className={cn(
+                            "absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-background",
+                            isOnline ? "bg-emerald-500 ring-2 ring-emerald-500/20" : "bg-zinc-400"
+                          )}
+                          title={isOnline ? "Online" : "Offline"}
+                        />
+                      </div>
                       <div className="space-y-0.5 min-w-0 flex-1">
-                        <CardTitle className="text-sm font-medium text-foreground truncate">
-                          {friend.name || friend.username}
-                        </CardTitle>
+                        <div className="flex items-center justify-between gap-1">
+                          <CardTitle className="text-sm font-medium text-foreground truncate">
+                            {friend.name || friend.username}
+                          </CardTitle>
+                          {isOnline && (
+                            <span className="text-[10px] text-emerald-500 font-semibold shrink-0">
+                              Online
+                            </span>
+                          )}
+                        </div>
                         <CardDescription className="text-xs text-muted-foreground truncate">
                           @{friend.username}
                         </CardDescription>

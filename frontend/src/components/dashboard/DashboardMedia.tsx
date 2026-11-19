@@ -415,23 +415,23 @@ export const DashboardMedia: React.FC = () => {
             </h3>
           </div>
 
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 items-center">
             {links.map((link) => (
               <div
                 key={link.id}
-                className="group/tag inline-flex items-center gap-1.5 pl-2 pr-1 py-1 rounded-full bg-secondary border border-border hover:border-primary/50 hover:bg-secondary/70 transition-all text-[12px] font-medium text-foreground cursor-default"
+                className="group/tag inline-flex w-fit items-center gap-1.5 px-2.5 py-1 rounded-full bg-card/60 backdrop-blur-sm border border-white/20 dark:border-white/10 hover:border-primary/50 transition-all text-[12px] font-medium text-foreground cursor-default shadow-xs"
               >
                 {link.favicon ? (
                   <img
                     src={link.favicon}
                     alt=""
-                    className="w-4 h-4 rounded-sm object-contain shrink-0"
+                    className="w-3.5 h-3.5 rounded-sm object-contain shrink-0"
                     onError={(e) => {
                       (e.target as HTMLImageElement).style.display = "none";
                     }}
                   />
                 ) : (
-                  <div className="w-4 h-4 rounded-sm bg-primary/15 flex items-center justify-center shrink-0">
+                  <div className="w-3.5 h-3.5 rounded-sm bg-primary/15 flex items-center justify-center shrink-0">
                     <LinkIcon className="w-2.5 h-2.5 text-primary" />
                   </div>
                 )}
@@ -439,7 +439,7 @@ export const DashboardMedia: React.FC = () => {
                   href={link.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="max-w-[180px] truncate text-foreground hover:text-primary transition-colors no-underline leading-none"
+                  className="w-auto truncate text-foreground hover:text-primary transition-colors no-underline leading-none max-w-[240px]"
                   title={link.url}
                 >
                   {link.title}
@@ -454,6 +454,7 @@ export const DashboardMedia: React.FC = () => {
                   <ExternalLink className="w-3 h-3" />
                 </a>
                 <button
+                  type="button"
                   onClick={() => handleDeleteLink(link.id)}
                   className="p-0.5 rounded-full text-muted-foreground hover:text-destructive transition-colors cursor-pointer border-none bg-transparent opacity-0 group-hover/tag:opacity-100"
                   title="Remove"

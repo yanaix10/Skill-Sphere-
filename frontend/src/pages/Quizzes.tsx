@@ -163,7 +163,10 @@ export default function Quizzes(): React.ReactElement {
 
           <button
             type="button"
-            onClick={() => setActiveTopTab("Sessions")}
+            onClick={() => {
+              setActiveTopTab("Sessions");
+              if (mode !== "main" && mode !== "session") setMode("main");
+            }}
             className={`font-semibold cursor-pointer border-none bg-transparent transition-colors ${
               activeTopTab === "Sessions"
                 ? "text-[#0d9488] font-bold"
@@ -175,7 +178,10 @@ export default function Quizzes(): React.ReactElement {
 
           <button
             type="button"
-            onClick={() => setActiveTopTab("Coders")}
+            onClick={() => {
+              setActiveTopTab("Coders");
+              if (mode !== "main") setMode("main");
+            }}
             className={`font-semibold cursor-pointer border-none bg-transparent transition-colors ${
               activeTopTab === "Coders"
                 ? "text-[#0d9488] font-bold"
@@ -189,80 +195,41 @@ export default function Quizzes(): React.ReactElement {
 
       {/* ─── Main Content View ─── */}
       <main className="flex-1 min-h-0 overflow-hidden relative">
-        {activeTopTab === "Sessions" && (
-          <div className="h-full w-full overflow-y-auto max-w-4xl mx-auto p-4 sm:p-8">
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-xl font-bold text-foreground">Duel & Quiz Sessions</h2>
-              <button
-                type="button"
-                onClick={() => setActiveTopTab("+ Code")}
-                className="text-xs text-muted-foreground hover:text-foreground cursor-pointer bg-transparent border-none"
-              >
-                Close Sessions
-              </button>
-            </div>
-            <Sessions
-              setSelectedSessionId={(id) => {
-                setSelectedSessionId(id);
-                setMode("session");
-                setActiveTopTab("+ Code");
-              }}
-              setMode={setMode}
-            />
-          </div>
+        {mode === "practice" && (
+          <Practice setMode={setMode} quizConfig={quizConfig} />
         )}
 
-        {activeTopTab === "Coders" && (
-          <div className="h-full w-full overflow-y-auto max-w-4xl mx-auto p-4 sm:p-8">
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-xl font-bold text-foreground">Coder Leaderboard & Rivals</h2>
-              <button
-                type="button"
-                onClick={() => setActiveTopTab("+ Code")}
-                className="text-xs text-muted-foreground hover:text-foreground cursor-pointer bg-transparent border-none"
-              >
-                Back to Practice
-              </button>
-            </div>
-            <Coders />
-          </div>
+        {mode === "quest" && <QuestArena />}
+
+        {mode === "session" && selectedSessionId && (
+          <SessionDetails sessionId={selectedSessionId} setMode={setMode} />
         )}
 
-        {activeTopTab === "+ Code" && (
-          <>
-            {mode === "practice" && (
-              <Practice setMode={setMode} quizConfig={quizConfig} />
-            )}
+        {mode === "challenge" && (
+          <Challenge
+            setMode={setMode}
+            isDuelActive={true}
+            challengeConfig={challengeConfig}
+            onRoomCreated={handleRoomCreated}
+            onOpponentChange={(name) => setOpponentName(name)}
+          />
+        )}
 
-            {mode === "quest" && <QuestArena />}
-
-            {mode === "session" && selectedSessionId && (
-              <SessionDetails sessionId={selectedSessionId} setMode={setMode} />
-            )}
-
-            {mode === "challenge" && (
-              <Challenge
-                setMode={setMode}
-                isDuelActive={true}
-                challengeConfig={challengeConfig}
-                onRoomCreated={handleRoomCreated}
-                onOpponentChange={(name) => setOpponentName(name)}
-              />
-            )}
-
-            {mode === "main" && (
-              <QuizDashboardView
-                quizConfig={quizConfig}
-                setQuizConfig={setQuizConfig}
-                onStartPractice={handleStartPractice}
-                onLaunchChallenge={handleLaunchChallenge}
-                activeRoomCode={activeRoomCode}
-                setActiveRoomCode={setActiveRoomCode}
-                opponentName={opponentName}
-                setOpponentName={setOpponentName}
-              />
-            )}
-          </>
+        {mode === "main" && (
+          <QuizDashboardView
+            quizConfig={quizConfig}
+            setQuizConfig={setQuizConfig}
+            onStartPractice={handleStartPractice}
+            onLaunchChallenge={handleLaunchChallenge}
+            activeRoomCode={activeRoomCode}
+            setActiveRoomCode={setActiveRoomCode}
+            opponentName={opponentName}
+            setOpponentName={setOpponentName}
+            activeTopTab={activeTopTab}
+            setActiveTopTab={setActiveTopTab}
+            setSelectedSessionId={setSelectedSessionId}
+            setMode={setMode}
+          />
         )}
       </main>
     </div>
