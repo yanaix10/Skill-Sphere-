@@ -1,4 +1,6 @@
 import { Post } from '../services/feedService';
+import { auth, db } from '../firebase';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 const SAVED_POSTS_STORAGE_KEY = 'skillsphere_saved_posts';
 export const SAVED_POSTS_EVENT = 'skillsphere_saved_posts_changed';
@@ -43,6 +45,18 @@ export function savePost(post: Post): void {
     } catch (e) {
       console.warn('[savedPosts] Could not save post to localStorage:', e);
     }
+
+    // Sync to Firestore user document if signed in
+    const user = auth.currentUser;
+    if (user && user.uid !== 'test-user-123') {
+      setDoc(
+        doc(db, 'users', user.uid),
+        { savedPosts: updated },
+        { merge: true }
+      ).catch((err) => {
+        console.warn('[savedPosts] Could not sync saved post to firestore:', err);
+      });
+    }
   }
 }
 
@@ -58,6 +72,18 @@ export function unsavePost(postId: string): void {
     window.dispatchEvent(new Event(SAVED_POSTS_EVENT));
   } catch (e) {
     console.warn('[savedPosts] Could not update localStorage after unsaving:', e);
+  }
+
+  // Sync to Firestore user document if signed in
+  const user = auth.currentUser;
+  if (user && user.uid !== 'test-user-123') {
+    setDoc(
+      doc(db, 'users', user.uid),
+      { savedPosts: updated },
+      { merge: true }
+    ).catch((err) => {
+      console.warn('[savedPosts] Could not sync unsave to firestore:', err);
+    });
   }
 }
 
@@ -76,3 +102,24 @@ export function toggleSavePost(post: Post): boolean {
   }
 }
 
+/**
+ * Sync saved posts from Firestore into localStorage
+ */
+export async function syncSavedPostsWithFirestore(): Promise<Post[]> {
+  const user = auth.currentUser;
+  if (!user || user.uid === 'test-user-123') return getSavedPosts();
+  try {
+    const snap = await getDoc(doc(db, 'users', user.uid));
+    if (snap.exists()) {
+      const data = snap.data();
+      if (Array.isArray(data.savedPosts)) {
+        localStorage.setItem(SAVED_POSTS_STORAGE_KEY, JSON.stringify(data.savedPosts));
+        window.dispatchEvent(new Event(SAVED_POSTS_EVENT));
+        return data.savedPosts;
+      }
+    }
+  } catch (err) {
+    console.warn('[savedPosts] Failed to fetch saved posts from firestore:', err);
+  }
+  return getSavedPosts();
+}

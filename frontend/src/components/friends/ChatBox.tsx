@@ -12,6 +12,9 @@ import {
   updateDoc,
   getDocs,
   writeBatch,
+  setDoc,
+  arrayRemove,
+  arrayUnion,
 } from "firebase/firestore";
 import { ref as storageRef, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { isUserOnline, formatLastSeen } from "../../utils/presence";
@@ -404,6 +407,19 @@ export const Chatbox: React.FC<ChatboxProps> = ({ selectedUser }) => {
   // Real-time Messages Listener
   useEffect(() => {
     if (!chatId) return;
+
+    // Mark chat as read by current user upon viewing
+    if (currentUser?.uid) {
+      setDoc(
+        doc(db, "chats", chatId),
+        {
+          unreadBy: arrayRemove(currentUser.uid),
+          readBy: arrayUnion(currentUser.uid),
+        },
+        { merge: true }
+      ).catch(() => {});
+    }
+
     const q = query(
       collection(db, "chats", chatId, "messages"),
       orderBy("timestamp", "asc")
@@ -418,7 +434,7 @@ export const Chatbox: React.FC<ChatboxProps> = ({ selectedUser }) => {
     });
 
     return () => unsubscribe();
-  }, [chatId]);
+  }, [chatId, currentUser?.uid]);
 
   // Auto-scroll on new messages
   useEffect(() => {
@@ -463,6 +479,23 @@ export const Chatbox: React.FC<ChatboxProps> = ({ selectedUser }) => {
       }
 
       await addDoc(collection(db, "chats", chatId, "messages"), messageData);
+
+      // Update parent chat document with latest message info for real-time notifications
+      await setDoc(
+        doc(db, "chats", chatId),
+        {
+          id: chatId,
+          lastMessage: messageData.text || (fileAttachment ? "Shared an attachment" : "New message"),
+          lastSenderId: currentUser.uid,
+          lastSenderName: auth.currentUser?.displayName || "Friend",
+          lastTimestamp: Date.now(),
+          participants: [currentUser.uid, selectedUser.id],
+          unreadBy: [selectedUser.id],
+          readBy: [currentUser.uid],
+        },
+        { merge: true }
+      );
+
       setNewMessage("");
       clearStagedFile();
       setIsInputEmojiOpen(false);

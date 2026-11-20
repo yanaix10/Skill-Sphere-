@@ -73,6 +73,16 @@ export const QuizDashboardView: React.FC<QuizDashboardViewProps> = ({
 
     const handleChallengeState = (state: any) => {
       if (!state) return;
+      if (state.status === "started" || state.status === "in_progress") {
+        onLaunchChallenge({
+          gameMode: state.gameMode || challengeTrack,
+          language: (state.gameMode || challengeTrack) === "webdev_arena" ? "javascript" : "python",
+          questionCount,
+          roomCode: state.challengeId || activeRoomCode,
+          action: "join",
+        });
+        return;
+      }
       const players = state.players || [];
       const myId = getPersistentPlayerId();
       const opp = players.find(
@@ -94,8 +104,22 @@ export const QuizDashboardView: React.FC<QuizDashboardViewProps> = ({
       }
     };
 
+    const handleChallengeStarted = (startedState?: any) => {
+      const code = startedState?.challengeId || activeRoomCode;
+      if (code) {
+        onLaunchChallenge({
+          gameMode: startedState?.gameMode || challengeTrack,
+          language: (startedState?.gameMode || challengeTrack) === "webdev_arena" ? "javascript" : "python",
+          questionCount,
+          roomCode: code,
+          action: "join",
+        });
+      }
+    };
+
     socket.on("challenge_state", handleChallengeState);
     socket.on("match:state", handleMatchState);
+    socket.on("challenge_started", handleChallengeStarted);
 
     // Initial sync
     socket.emit("sync_arena", { challengeId: activeRoomCode });
@@ -103,8 +127,9 @@ export const QuizDashboardView: React.FC<QuizDashboardViewProps> = ({
     return () => {
       socket.off("challenge_state", handleChallengeState);
       socket.off("match:state", handleMatchState);
+      socket.off("challenge_started", handleChallengeStarted);
     };
-  }, [activeRoomCode, setOpponentName]);
+  }, [activeRoomCode, setOpponentName, challengeTrack, questionCount, onLaunchChallenge]);
 
   // Copy room code to clipboard
   const handleCopyCode = () => {
@@ -153,6 +178,13 @@ export const QuizDashboardView: React.FC<QuizDashboardViewProps> = ({
       gameMode: challengeTrack,
       language: lang,
       playerId: getPersistentPlayerId(),
+    });
+
+    onLaunchChallenge({
+      gameMode: challengeTrack,
+      language: lang,
+      roomCode: code,
+      action: "join",
     });
 
     setJoinCodeInput("");

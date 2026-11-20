@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { db, auth } from "../firebase";
 import {
   collection,
@@ -62,6 +63,7 @@ export interface Friend {
 }
 
 const Friends: React.FC = () => {
+  const [searchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState<string>("chat");
   const [selectedUser, setSelectedUser] = useState<Friend | null>(null);
   const [searchFilter, setSearchFilter] = useState<string>("");
@@ -69,6 +71,39 @@ const Friends: React.FC = () => {
   const [results, setResults] = useState<any[]>([]);
   const [friendsList, setFriendsList] = useState<Friend[]>([]);
   const [usersPresence, setUsersPresence] = useState<Record<string, { isOnline: boolean; lastSeen: any }>>({});
+
+  const friendIdParam = searchParams.get("friendId");
+
+  // Auto-open friend chat if navigated with friendId param
+  useEffect(() => {
+    if (!friendIdParam) return;
+
+    if (friendsList.length > 0) {
+      const target = friendsList.find((f) => f.id === friendIdParam);
+      if (target) {
+        setSelectedUser(target);
+        setActiveTab("chat");
+        return;
+      }
+    }
+
+    // If friend is not yet in friendsList or friend doc needed
+    getDoc(doc(db, "users", friendIdParam))
+      .then((uDoc) => {
+        if (uDoc.exists()) {
+          const uData = uDoc.data();
+          setSelectedUser({
+            id: friendIdParam,
+            username: uData.username || uData.name || "Friend",
+            name: uData.name || uData.username || "Friend",
+            avatarUrl: uData.avatarUrl || "",
+            status: "accepted",
+          });
+          setActiveTab("chat");
+        }
+      })
+      .catch(() => {});
+  }, [friendIdParam, friendsList]);
 
   // Real-time listener for user presence
   useEffect(() => {
