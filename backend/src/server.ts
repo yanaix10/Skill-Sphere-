@@ -1,4 +1,9 @@
-import "dotenv/config";
+import dotenv from "dotenv";
+import path from "path";
+dotenv.config();
+if (!process.env.MONGO_URI) {
+  dotenv.config({ path: path.resolve(process.cwd(), "backend/.env") });
+}
 import express from "express";
 import cors from "cors";
 import admin from "./config/firebase-config.js";
