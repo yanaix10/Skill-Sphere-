@@ -571,8 +571,9 @@ export const connectDB = async () => {
     if (!process.env.MONGO_URI) {
       throw new Error("MONGO_URI environment variable is not defined");
     }
-    const isLocal = process.env.MONGO_URI.includes("127.0.0.1") || process.env.MONGO_URI.includes("localhost");
-    await mongoose.connect(process.env.MONGO_URI, {
+    const mongoUri = process.env.MONGO_URI.trim().replace(/^['"]|['"]$/g, "");
+    const isLocal = mongoUri.includes("127.0.0.1") || mongoUri.includes("localhost");
+    await mongoose.connect(mongoUri, {
       serverSelectionTimeoutMS: isLocal ? 2000 : 8000
     } as any);
     console.log("MongoDB Connected successfully");
