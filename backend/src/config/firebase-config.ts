@@ -1,6 +1,7 @@
 import admin from "firebase-admin";
-import { readFile } from "fs/promises";
+import { readFile, readdir } from "fs/promises";
 import path from "path";
+import { fileURLToPath } from "url";
 import { existsSync } from "fs";
 
 let serviceAccount: any = null;
@@ -20,12 +21,42 @@ if (process.env.FIREBASE_SERVICE_ACCOUNT && process.env.FIREBASE_SERVICE_ACCOUNT
   }
 }
 
-// 2. Try local file serviceAccountKey.json
+// 2. Try local files in config directory (serviceAccountKey.json or any *-firebase-adminsdk-*.json)
 if (!serviceAccount) {
   try {
-    const fileUrl = new URL("./serviceAccountKey.json", import.meta.url);
-    const fileContent = await readFile(fileUrl, "utf8");
-    serviceAccount = JSON.parse(fileContent);
+    const __filename = fileURLToPath(import.meta.url);
+    const configDir = path.dirname(__filename);
+    const candidateFiles = [
+      path.join(configDir, "serviceAccountKey.json"),
+      path.join(process.cwd(), "backend/src/config/serviceAccountKey.json"),
+    ];
+
+    const dirsToCheck = [configDir, path.join(process.cwd(), "backend/src/config")];
+    for (const dir of dirsToCheck) {
+      if (existsSync(dir)) {
+        try {
+          const entries = await readdir(dir);
+          for (const file of entries) {
+            if (file.endsWith(".json") && (file.includes("firebase-adminsdk") || file.includes("serviceAccount"))) {
+              candidateFiles.push(path.join(dir, file));
+            }
+          }
+        } catch {}
+      }
+    }
+
+    for (const filePath of candidateFiles) {
+      if (existsSync(filePath)) {
+        try {
+          const content = await readFile(filePath, "utf8");
+          const parsed = JSON.parse(content);
+          if (parsed.type === "service_account" || parsed.project_id) {
+            serviceAccount = parsed;
+            break;
+          }
+        } catch {}
+      }
+    }
   } catch (err) {
     // Local key file not present; normal in development without service account
   }

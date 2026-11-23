@@ -23,6 +23,8 @@ build/
 .firebase/
 serviceAccountKey.json
 **/serviceAccountKey.json
+*firebase-adminsdk*.json
+**/*firebase-adminsdk*.json
 
 # Local scratch, notes, and template text files (keep locally, never push to GitHub)
 *.txt
